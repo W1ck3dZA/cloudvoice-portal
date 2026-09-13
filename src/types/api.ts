@@ -253,7 +253,6 @@ export interface QueueTier {
   position: number;
   state: string;
   agent_name: string;
-  agent_fs_name: string;
   agent_status: string;
   agent_state: string;
 }

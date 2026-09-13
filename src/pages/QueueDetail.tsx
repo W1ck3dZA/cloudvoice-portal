@@ -5,11 +5,13 @@ import {
   ArrowLeft,
   PhoneCall,
   Plus,
+  RefreshCw,
   Search,
   Trash2,
   Users,
 } from 'lucide-react';
-import { agentsApi, errorMessage, queuesApi } from '../lib/api';
+import { agentsApi, audioFilesApi, errorMessage, queuesApi } from '../lib/api';
+import { useSession } from '../lib/session';
 import {
   Card,
   Drawer,
@@ -25,6 +27,9 @@ export default function QueueDetail() {
   const { id } = useParams();
   const nav = useNavigate();
   const qc = useQueryClient();
+  const { session } = useSession();
+  const orgId = session?.orgId || '';
+  const [autoRefresh, setAutoRefresh] = useState(false);
   const queue = useQuery({
     queryKey: ['queue', id],
     queryFn: () => queuesApi.get(id!),
@@ -34,13 +39,13 @@ export default function QueueDetail() {
     queryKey: ['queue-stats', id],
     queryFn: () => queuesApi.stats(id!),
     enabled: !!id,
-    refetchInterval: 10000,
+    refetchInterval: autoRefresh ? 10000 : false,
   });
   const members = useQuery({
     queryKey: ['queue-members', id],
     queryFn: () => queuesApi.members(id!),
     enabled: !!id,
-    refetchInterval: 5000,
+    refetchInterval: autoRefresh ? 5000 : false,
   });
   const tiers = useQuery({
     queryKey: ['queue-tiers', id],
@@ -48,6 +53,14 @@ export default function QueueDetail() {
     enabled: !!id,
   });
   const agents = useQuery({ queryKey: ['agents'], queryFn: agentsApi.list });
+  const audioFiles = useQuery({
+    queryKey: ['audio-files', orgId],
+    queryFn: () => audioFilesApi.list(orgId, 200, 0),
+    enabled: !!orgId,
+  });
+  const mohName =
+    (audioFiles.data || []).find((f) => f.url === queue.data?.moh_sound)
+      ?.name || queue.data?.moh_sound;
   const [open, setOpen] = useState(false);
   const [form, setForm] = useState({ agent_id: '', level: '1', position: '1' });
   const [err, setErr] = useState('');
@@ -64,10 +77,12 @@ export default function QueueDetail() {
     },
     onError: (e) => setErr(errorMessage(e)),
   });
-  const toggleActive = useMutation({
-    mutationFn: () => queuesApi.update(id!, { active: !queue.data!.active }),
-    onSuccess: () => qc.invalidateQueries({ queryKey: ['queue', id] }),
-  });
+  const refreshAll = () => {
+    queue.refetch();
+    stats.refetch();
+    members.refetch();
+    tiers.refetch();
+  };
   if (queue.isLoading) return <Spinner />;
   if (!queue.data)
     return <Empty icon={<Search size={16} />} text="Queue not found." />;
@@ -79,9 +94,14 @@ export default function QueueDetail() {
         title={queue.data.name}
         description={queue.data.strategy}
         action={
-          <button className="btn" onClick={() => nav('/call-center')}>
-            <ArrowLeft size={15} /> Back
-          </button>
+          <>
+            <button className="btn" onClick={refreshAll}>
+              <RefreshCw size={15} /> Refresh
+            </button>
+            <button className="btn" onClick={() => nav('/call-center')}>
+              <ArrowLeft size={15} /> Back
+            </button>
+          </>
         }
       />
       <div className="metric-grid">
@@ -118,9 +138,9 @@ export default function QueueDetail() {
               <h2>Queue performance</h2>
             </div>
             <StatusToggle
-              checked={queue.data.active}
-              onChange={() => toggleActive.mutate()}
-              disabled={toggleActive.isPending}
+              checked={autoRefresh}
+              onChange={() => setAutoRefresh((v) => !v)}
+              title={autoRefresh ? 'Auto-refresh on' : 'Auto-refresh off'}
             />
           </div>
           <div className="detail-grid">
@@ -168,7 +188,7 @@ export default function QueueDetail() {
             </div>
             <div className="detail-item">
               <span>MOH</span>
-              <strong>{queue.data.moh_sound || '—'}</strong>
+              <strong>{mohName || '—'}</strong>
             </div>
             <div className="detail-item">
               <span>No answer status</span>
@@ -180,10 +200,10 @@ export default function QueueDetail() {
       <Card>
         <div className="card-title">
           <div>
-            <span className="eyebrow">Live callers</span>
-            <h2>Queue members</h2>
+            <span className="eyebrow">Caller history</span>
+            <h2>Queue callers</h2>
           </div>
-          <span className="muted">Refreshes every 5 seconds</span>
+          <span className="muted">Live and historical · refreshes every 5 seconds</span>
         </div>
         {members.isLoading ? (
           <Spinner />
@@ -255,7 +275,6 @@ export default function QueueDetail() {
                   <tr key={t.agent_id}>
                     <td>
                       <strong>{t.agent_name}</strong>
-                      <div className="muted">{t.agent_fs_name}</div>
                     </td>
                     <td>
                       <Status value={t.agent_status} />
