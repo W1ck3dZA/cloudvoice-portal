@@ -13,6 +13,7 @@ import {
   Pause,
   PhoneForwarded,
   Play,
+  Reply,
   Save,
   Trash2,
   UsersRound,
@@ -31,6 +32,7 @@ const catalog = [
   ['say', 'Say text', MessageSquareText],
   ['queue', 'Queue', UsersRound],
   ['hangup', 'Hang up', Volume2],
+  ['respond', 'Respond', Reply],
 ] as const;
 const defaults: Record<string, () => Verb> = {
   play: () => ({ verb: 'play', url: '' }),
@@ -58,6 +60,7 @@ const defaults: Record<string, () => Verb> = {
   pause: () => ({ verb: 'pause', length: 1 }),
   say: () => ({ verb: 'say', text: '' }),
   hangup: () => ({ verb: 'hangup', reason: 'NORMAL_CLEARING' }),
+  respond: () => ({ verb: 'respond', code: 486, reason: 'Busy Here' }),
   queue: () => ({
     verb: 'queue',
     queue_id: '',
@@ -106,6 +109,8 @@ function label(v: Verb) {
       return v.queue_id || 'Choose queue';
     case 'hangup':
       return v.reason || 'NORMAL_CLEARING';
+    case 'respond':
+      return `${v.code} ${v.reason}`.trim() || 'Set response code';
   }
 }
 export default function FlowBuilder() {
@@ -527,6 +532,26 @@ function Inspector({
                   patch({ headers: JSON.parse(e.target.value) });
                 } catch {}
               }}
+            />
+          </Field>
+        </>
+      )}
+      {node.verb === 'respond' && (
+        <>
+          <Field label="SIP status code" hint="e.g. 486, 603">
+            <input
+              type="number"
+              min="100"
+              max="699"
+              value={node.code}
+              onChange={(e) => patch({ code: +e.target.value })}
+            />
+          </Field>
+          <Field label="Reason phrase" hint="e.g. 'Busy Here'">
+            <input
+              maxLength={255}
+              value={node.reason}
+              onChange={(e) => patch({ reason: e.target.value })}
             />
           </Field>
         </>

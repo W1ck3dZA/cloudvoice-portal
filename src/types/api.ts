@@ -1,4 +1,14 @@
 export type Role = 'owner' | 'admin' | 'developer' | 'viewer';
+export interface AudioFile {
+  id: string;
+  organisation_id: string;
+  name: string;
+  original_filename: string;
+  content_type: string;
+  size_bytes: number;
+  duration_seconds: number;
+  url: string;
+}
 export interface ApiEnvelope<T> {
   success: boolean;
   data: T;
@@ -166,6 +176,11 @@ export type VerbQueue = {
   timeoutVerbs?: Verb[];
   abandonVerbs?: Verb[];
 };
+export type VerbRespond = {
+  verb: 'respond';
+  code: number;
+  reason: string;
+};
 export type Verb =
   | VerbPlay
   | VerbGather
@@ -174,7 +189,8 @@ export type Verb =
   | VerbPause
   | VerbSay
   | VerbHangup
-  | VerbQueue;
+  | VerbQueue
+  | VerbRespond;
 export interface Application {
   id: string;
   organisation_id: string;

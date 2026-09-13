@@ -1,6 +1,7 @@
 import axios from 'axios';
 import type {
   Agent,
+  AudioFile,
   ApiEnvelope,
   ApiKey,
   Application,
@@ -144,6 +145,53 @@ export const callsApi = {
   get: async (id: string) => unwrap<Call>(await api.get(`/v1/calls/${id}`)),
   create: async (body: any) => unwrap<any>(await api.post('/v1/calls', body)),
   hangup: async (id: string) => api.delete(`/v1/calls/${id}`),
+};
+export const audioFilesApi = {
+  list: async (orgId: string, limit = 50, offset = 0) =>
+    list<AudioFile>(
+      await api.get('/v1/audio-files', {
+        params: { org_id: orgId, limit, offset },
+      }),
+      ['audio_files'],
+    ),
+  get: async (id: string, orgId: string) =>
+    unwrap<AudioFile>(
+      await api.get(`/v1/audio-files/${id}`, {
+        params: { org_id: orgId },
+      }),
+    ),
+  upload: async (
+    file: File,
+    name: string,
+    orgId: string,
+    onProgress: (percent: number) => void,
+  ) => {
+    const body = new FormData();
+    body.append('file', file);
+    if (name.trim()) body.append('name', name.trim());
+    return unwrap<AudioFile>(
+      await api.post('/v1/audio-files', body, {
+        params: { org_id: orgId },
+        // Clear the JSON default so the browser supplies the multipart boundary.
+        headers: { 'Content-Type': undefined },
+        onUploadProgress: ({ loaded, total }) => {
+          if (total) onProgress(Math.round((loaded / total) * 100));
+        },
+      }),
+    );
+  },
+  rename: async (id: string, name: string, orgId: string) =>
+    unwrap<AudioFile>(
+      await api.patch(
+        `/v1/audio-files/${id}`,
+        { name },
+        {
+          params: { org_id: orgId },
+        },
+      ),
+    ),
+  remove: async (id: string, orgId: string) =>
+    api.delete(`/v1/audio-files/${id}`, { params: { org_id: orgId } }),
 };
 export const recordingsApi = {
   list: async () =>

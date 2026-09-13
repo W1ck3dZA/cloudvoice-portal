@@ -1669,3 +1669,115 @@ tbody tr:last-child td {
 .org-memberships {
   margin-top: 14px;
 }
+
+.audio-dialog {
+  width: min(560px, calc(100% - 32px));
+  max-height: calc(100dvh - 32px);
+  margin: auto;
+  padding: 24px;
+  border: 1px solid var(--line);
+  border-radius: 12px;
+  background: var(--surface);
+  color: var(--text);
+  overflow: auto;
+}
+.audio-dialog::backdrop {
+  background: rgb(0 0 0 / 55%);
+}
+.audio-dialog-heading {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 16px;
+  margin-bottom: 20px;
+}
+.audio-dialog-heading h2 {
+  margin: 0;
+}
+.audio-form {
+  display: grid;
+  gap: 16px;
+}
+.audio-form p {
+  margin: 0;
+}
+.audio-progress {
+  width: 100%;
+}
+.audio-name {
+  min-width: 240px;
+  max-width: 420px;
+  white-space: normal;
+  overflow-wrap: anywhere;
+}
+.audio-name > strong,
+.audio-name > span {
+  display: block;
+}
+.audio-preview {
+  display: grid;
+  gap: 12px;
+  margin-top: 16px;
+}
+.audio-preview audio {
+  width: 100%;
+}
+.audio-loading {
+  padding: 24px 0;
+}
+
+.audio-file-picker {
+  display: grid;
+  gap: 10px;
+  min-width: 0;
+}
+.audio-file-label {
+  font-size: 12px;
+  font-weight: 600;
+}
+.audio-dropzone {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 10px;
+  width: 100%;
+  padding: 28px 16px;
+  border: 1px dashed var(--muted);
+  border-radius: 8px;
+  background: var(--surface-2);
+  color: var(--text);
+  cursor: pointer;
+  text-align: center;
+}
+.audio-dropzone:not(:disabled):hover,
+.audio-dropzone.is-dragging {
+  border-color: var(--brand);
+  background: var(--surface);
+  box-shadow: inset 0 0 0 1px var(--brand);
+}
+.audio-dropzone:focus-visible {
+  outline: 2px solid var(--brand);
+  outline-offset: 3px;
+}
+.audio-dropzone:disabled {
+  cursor: not-allowed;
+  opacity: 0.6;
+}
+.audio-dropzone-icon {
+  display: grid;
+  place-items: center;
+  width: 48px;
+  height: 48px;
+  border: 1px solid var(--line);
+  border-radius: 8px;
+  background: var(--surface);
+}
+.audio-file-selection {
+  display: grid;
+  gap: 4px;
+  overflow-wrap: anywhere;
+  font-size: 12px;
+}
+.audio-file-selection:empty {
+  display: none;
+}

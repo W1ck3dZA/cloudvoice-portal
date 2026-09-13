@@ -9,6 +9,7 @@ import SipUsers from './pages/SipUsers';
 import Gateways from './pages/Gateways';
 import Calls from './pages/Calls';
 import Recordings from './pages/Recordings';
+import AudioFiles from './pages/AudioFiles';
 import Applications from './pages/Applications';
 import FlowBuilder from './pages/FlowBuilder';
 import CallCenter from './pages/CallCenter';
@@ -39,6 +40,7 @@ export default function App() {
         <Route path="/gateways" element={<Gateways />} />
         <Route path="/calls" element={<Calls />} />
         <Route path="/recordings" element={<Recordings />} />
+        <Route path="/audio-files" element={<AudioFiles />} />
         <Route path="/applications" element={<Applications />} />
         <Route path="/applications/:id/builder" element={<FlowBuilder />} />
         <Route path="/call-center" element={<CallCenter />} />
