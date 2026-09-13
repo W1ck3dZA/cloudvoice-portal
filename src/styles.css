@@ -1596,6 +1596,9 @@ tbody tr:last-child td {
 .mini-input {
   width: 64px;
 }
+.tier-card {
+  margin-top: 14px;
+}
 .danger-card {
   margin-top: 14px;
   display: flex;

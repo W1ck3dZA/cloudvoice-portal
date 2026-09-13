@@ -2,7 +2,8 @@ import { useState } from 'react';
 import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query';
 import { useNavigate } from 'react-router-dom';
 import { Users, UsersRound } from 'lucide-react';
-import { agentsApi, errorMessage, queuesApi } from '../lib/api';
+import { agentsApi, audioFilesApi, errorMessage, queuesApi } from '../lib/api';
+import { useSession } from '../lib/session';
 import type { Agent, Queue } from '../types/api';
 import {
   AddButton,
@@ -18,16 +19,14 @@ import {
 } from '../components/UI';
 const qBlank = {
   name: '',
-  fs_name: '',
   strategy: 'longest-idle-agent',
-  moh_sound: 'local_stream://moh',
+  moh_sound: '',
   max_wait_time: '0',
   discard_abandoned_after: '60',
   agent_no_answer_status: 'On Break',
 };
 const aBlank = {
   name: '',
-  fs_name: '',
   type: 'callback',
   contact: '',
   status: 'Logged Out',
@@ -36,6 +35,8 @@ const aBlank = {
 export default function CallCenter() {
   const nav = useNavigate();
   const qc = useQueryClient();
+  const { session } = useSession();
+  const orgId = session?.orgId || '';
   const [tab, setTab] = useState<'queues' | 'agents'>('queues');
   const qs = useQuery({
     queryKey: ['queues'],
@@ -46,6 +47,11 @@ export default function CallCenter() {
     queryKey: ['agents'],
     queryFn: agentsApi.list,
     refetchInterval: 15000,
+  });
+  const audioFiles = useQuery({
+    queryKey: ['audio-files', orgId],
+    queryFn: () => audioFilesApi.list(orgId, 200, 0),
+    enabled: !!orgId,
   });
   const [drawer, setDrawer] = useState<
     'qadd' | 'qedit' | 'aadd' | 'aedit' | null
@@ -146,7 +152,6 @@ export default function CallCenter() {
                 <thead>
                   <tr>
                     <th>Name</th>
-                    <th>FS Name</th>
                     <th>Strategy</th>
                     <th>Answered</th>
                     <th>Abandoned</th>
@@ -160,7 +165,6 @@ export default function CallCenter() {
                       <td>
                         <strong>{q.name}</strong>
                       </td>
-                      <td>{q.fs_name}</td>
                       <td>{q.strategy}</td>
                       <td>{q.calls_answered}</td>
                       <td>{q.calls_abandoned}</td>
@@ -181,7 +185,6 @@ export default function CallCenter() {
                             setQSel(q);
                             setQf({
                               name: q.name,
-                              fs_name: q.fs_name,
                               strategy: q.strategy,
                               moh_sound: q.moh_sound || '',
                               max_wait_time: String(q.max_wait_time || 0),
@@ -225,7 +228,6 @@ export default function CallCenter() {
                 <thead>
                   <tr>
                     <th>Name</th>
-                    <th>FS Name</th>
                     <th>Contact</th>
                     <th>Status</th>
                     <th>State</th>
@@ -239,7 +241,6 @@ export default function CallCenter() {
                       <td>
                         <strong>{a.name}</strong>
                       </td>
-                      <td>{a.fs_name}</td>
                       <td>{a.contact}</td>
                       <td>
                         <select
@@ -271,7 +272,6 @@ export default function CallCenter() {
                             setASel(a);
                             setAf({
                               name: a.name,
-                              fs_name: a.fs_name,
                               type: a.type,
                               contact: a.contact,
                               status: a.status,
@@ -328,16 +328,6 @@ export default function CallCenter() {
                 onChange={(e) => setQf((f) => ({ ...f, name: e.target.value }))}
               />
             </Field>
-            <Field label="FreeSWITCH name">
-              <input
-                required
-                disabled={drawer === 'qedit'}
-                value={qf.fs_name}
-                onChange={(e) =>
-                  setQf((f) => ({ ...f, fs_name: e.target.value }))
-                }
-              />
-            </Field>
             <Field label="Strategy">
               <select
                 value={qf.strategy}
@@ -360,12 +350,23 @@ export default function CallCenter() {
               </select>
             </Field>
             <Field label="Music on hold">
-              <input
+              <select
                 value={qf.moh_sound}
                 onChange={(e) =>
                   setQf((f) => ({ ...f, moh_sound: e.target.value }))
                 }
-              />
+              >
+                <option value="">None</option>
+                {qf.moh_sound &&
+                  !(audioFiles.data || []).some(
+                    (file) => file.url === qf.moh_sound,
+                  ) && <option value={qf.moh_sound}>{qf.moh_sound}</option>}
+                {(audioFiles.data || []).map((file) => (
+                  <option key={file.id} value={file.url}>
+                    {file.name}
+                  </option>
+                ))}
+              </select>
             </Field>
             <Field label="Max wait time">
               <input
@@ -404,16 +405,6 @@ export default function CallCenter() {
                 required
                 value={af.name}
                 onChange={(e) => setAf((f) => ({ ...f, name: e.target.value }))}
-              />
-            </Field>
-            <Field label="FreeSWITCH name">
-              <input
-                required
-                disabled={drawer === 'aedit'}
-                value={af.fs_name}
-                onChange={(e) =>
-                  setAf((f) => ({ ...f, fs_name: e.target.value }))
-                }
               />
             </Field>
             {drawer === 'aadd' && (

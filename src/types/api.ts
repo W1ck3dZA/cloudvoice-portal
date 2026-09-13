@@ -207,7 +207,6 @@ export interface Queue {
   id: string;
   organisation_id: string;
   name: string;
-  fs_name: string;
   strategy: string;
   moh_sound?: string | null;
   announce_sound?: string | null;
@@ -229,7 +228,6 @@ export interface Agent {
   id: string;
   organisation_id: string;
   name: string;
-  fs_name: string;
   type: 'callback' | 'uuid-standby';
   contact: string;
   sip_user_id: string | null;

@@ -76,7 +76,10 @@
           },
           "status": {
             "type": "string",
-            "enum": ["active", "suspended"]
+            "enum": [
+              "active",
+              "suspended"
+            ]
           },
           "created_at": {
             "type": "string",
@@ -99,11 +102,20 @@
           },
           "plan": {
             "type": "string",
-            "enum": ["free", "pro", "enterprise", "custom"]
+            "enum": [
+              "free",
+              "pro",
+              "enterprise",
+              "custom"
+            ]
           },
           "status": {
             "type": "string",
-            "enum": ["active", "suspended", "deleted"]
+            "enum": [
+              "active",
+              "suspended",
+              "deleted"
+            ]
           },
           "created_at": {
             "type": "string",
@@ -111,7 +123,12 @@
           },
           "role": {
             "type": "string",
-            "enum": ["owner", "admin", "developer", "viewer"]
+            "enum": [
+              "owner",
+              "admin",
+              "developer",
+              "viewer"
+            ]
           }
         }
       },
@@ -155,7 +172,12 @@
           },
           "role": {
             "type": "string",
-            "enum": ["owner", "admin", "developer", "viewer"]
+            "enum": [
+              "owner",
+              "admin",
+              "developer",
+              "viewer"
+            ]
           },
           "joined_at": {
             "type": "string",
@@ -179,7 +201,10 @@
           },
           "status": {
             "type": "string",
-            "enum": ["active", "revoked"]
+            "enum": [
+              "active",
+              "revoked"
+            ]
           },
           "scopes": {
             "type": "array",
@@ -221,11 +246,6 @@
           "name": {
             "type": "string",
             "example": "Support Queue"
-          },
-          "fs_name": {
-            "type": "string",
-            "example": "support",
-            "description": "FreeSWITCH-safe slug used in mod_callcenter"
           },
           "strategy": {
             "type": "string",
@@ -315,14 +335,12 @@
             "type": "string",
             "example": "Alice"
           },
-          "fs_name": {
-            "type": "string",
-            "example": "alice",
-            "description": "FreeSWITCH agent identifier (no spaces)"
-          },
           "type": {
             "type": "string",
-            "enum": ["callback", "uuid-standby"],
+            "enum": [
+              "callback",
+              "uuid-standby"
+            ],
             "example": "callback"
           },
           "contact": {
@@ -427,9 +445,6 @@
           "agent_name": {
             "type": "string"
           },
-          "agent_fs_name": {
-            "type": "string"
-          },
           "agent_status": {
             "type": "string"
           },
@@ -481,7 +496,12 @@
           },
           "status": {
             "type": "string",
-            "enum": ["waiting", "bridged", "completed", "abandoned"]
+            "enum": [
+              "waiting",
+              "bridged",
+              "completed",
+              "abandoned"
+            ]
           },
           "leaving_reason": {
             "type": "string",
@@ -509,9 +529,6 @@
           "queue_id": {
             "type": "string",
             "format": "uuid"
-          },
-          "fs_queue_name": {
-            "type": "string"
           },
           "calls_answered": {
             "type": "integer"
@@ -575,7 +592,10 @@
               "type": "string"
             },
             "description": "Empty array means subscribe to ALL event types",
-            "example": ["call.started", "call.ended"]
+            "example": [
+              "call.started",
+              "call.ended"
+            ]
           },
           "active": {
             "type": "boolean"
@@ -614,7 +634,11 @@
           },
           "status": {
             "type": "string",
-            "enum": ["pending", "delivered", "failed"]
+            "enum": [
+              "pending",
+              "delivered",
+              "failed"
+            ]
           },
           "response_status": {
             "type": "integer",
@@ -699,7 +723,10 @@
           },
           "direction": {
             "type": "string",
-            "enum": ["outbound", "inbound"]
+            "enum": [
+              "outbound",
+              "inbound"
+            ]
           },
           "from_number": {
             "type": "string",
@@ -713,7 +740,10 @@
           },
           "encoding": {
             "type": "string",
-            "enum": ["gsm7", "ucs2"]
+            "enum": [
+              "gsm7",
+              "ucs2"
+            ]
           },
           "segments": {
             "type": "integer"
@@ -778,11 +808,15 @@
           },
           "direction": {
             "type": "string",
-            "enum": ["outbound"]
+            "enum": [
+              "outbound"
+            ]
           },
           "status": {
             "type": "string",
-            "enum": ["queued"]
+            "enum": [
+              "queued"
+            ]
           },
           "to_number": {
             "type": "string"
@@ -793,7 +827,10 @@
           },
           "encoding": {
             "type": "string",
-            "enum": ["gsm7", "ucs2"]
+            "enum": [
+              "gsm7",
+              "ucs2"
+            ]
           },
           "segments": {
             "type": "integer"
@@ -922,9 +959,15 @@
             "type": "array",
             "items": {
               "type": "string",
-              "enum": ["voice", "sms"]
+              "enum": [
+                "voice",
+                "sms"
+              ]
             },
-            "example": ["voice", "sms"]
+            "example": [
+              "voice",
+              "sms"
+            ]
           },
           "application_id": {
             "type": "string",
@@ -990,7 +1033,10 @@
             "items": {
               "type": "string"
             },
-            "example": ["OPUS", "PCMU"]
+            "example": [
+              "OPUS",
+              "PCMU"
+            ]
           },
           "active": {
             "type": "boolean"
@@ -1047,7 +1093,10 @@
           },
           "direction": {
             "type": "string",
-            "enum": ["outbound", "inbound"]
+            "enum": [
+              "outbound",
+              "inbound"
+            ]
           },
           "from_number": {
             "type": "string",
@@ -1132,11 +1181,16 @@
           },
           "direction": {
             "type": "string",
-            "enum": ["outbound"]
+            "enum": [
+              "outbound"
+            ]
           },
           "status": {
             "type": "string",
-            "enum": ["initiated", "failed"]
+            "enum": [
+              "initiated",
+              "failed"
+            ]
           },
           "to_number": {
             "type": "string"
@@ -1167,12 +1221,18 @@
       },
       "CallTarget": {
         "type": "object",
-        "required": ["type"],
+        "required": [
+          "type"
+        ],
         "description": "Typed destination. The `type` discriminator picks which other fields are required.\n",
         "properties": {
           "type": {
             "type": "string",
-            "enum": ["phone", "sip", "user"]
+            "enum": [
+              "phone",
+              "sip",
+              "user"
+            ]
           },
           "number": {
             "type": "string",
@@ -1203,7 +1263,10 @@
                 "type": "string"
               }
             },
-            "required": ["username", "password"]
+            "required": [
+              "username",
+              "password"
+            ]
           },
           "outbound_proxy": {
             "type": "string",
@@ -1227,7 +1290,9 @@
       "AmdConfig": {
         "type": "object",
         "description": "Answering Machine Detection configuration. When present with `enabled: true`, the platform runs mod_amd on the answered channel before executing the application flow. Detection result is stored on the call record (`amd_result`) and a `call.amd` webhook event is fired with `result` and `cause` fields.\n**Results:** `human` | `machine` | `notsure` | `toolong`\n**Causes:** `connect` (human answered) | `longgreeting` | `maxwords` | `initialsilence` | `maxwordlength` | `toolong` (analysis timed out)\n**Tuning tips:**\n  - Increase `maximum_number_of_words` (default 3) if real people are being\n    misclassified as machines — 3 words is very aggressive.\n  - Increase `after_greeting_silence` to wait longer for silence after a\n    greeting before deciding the call is human.\n  - `total_analysis_time` is a hard cap — AMD returns as soon as it reaches\n    any decision, so the actual wait is usually much shorter.\n",
-        "required": ["enabled"],
+        "required": [
+          "enabled"
+        ],
         "properties": {
           "enabled": {
             "type": "boolean",
@@ -1296,6 +1361,44 @@
             "minimum": 1,
             "maximum": 100,
             "description": "Maximum number of words allowed before classifying as machine. If exceeded, result is `machine` / cause `maxwords`. **Increase this (e.g. to 6) if real people are being misclassified.**\n"
+          }
+        }
+      },
+      "AudioFile": {
+        "type": "object",
+        "properties": {
+          "id": {
+            "type": "string",
+            "format": "uuid"
+          },
+          "organisation_id": {
+            "type": "string",
+            "format": "uuid"
+          },
+          "name": {
+            "type": "string"
+          },
+          "original_filename": {
+            "type": "string"
+          },
+          "content_type": {
+            "type": "string",
+            "example": "audio/wav"
+          },
+          "size_bytes": {
+            "type": "integer"
+          },
+          "duration_seconds": {
+            "type": "number"
+          },
+          "created_at": {
+            "type": "string",
+            "format": "date-time"
+          },
+          "url": {
+            "type": "string",
+            "format": "uri",
+            "description": "Stable playback URL. Anyone possessing this URL can fetch this file without JWT authentication. Deletion disables future fetches."
           }
         }
       },
@@ -1382,6 +1485,9 @@
             },
             {
               "$ref": "#/components/schemas/VerbQueue"
+            },
+            {
+              "$ref": "#/components/schemas/VerbRespond"
             }
           ],
           "discriminator": {
@@ -1394,18 +1500,24 @@
               "pause": "#/components/schemas/VerbPause",
               "say": "#/components/schemas/VerbSay",
               "hangup": "#/components/schemas/VerbHangup",
-              "queue": "#/components/schemas/VerbQueue"
+              "queue": "#/components/schemas/VerbQueue",
+              "respond": "#/components/schemas/VerbRespond"
             }
           }
         }
       },
       "VerbPlay": {
         "type": "object",
-        "required": ["verb", "url"],
+        "required": [
+          "verb",
+          "url"
+        ],
         "properties": {
           "verb": {
             "type": "string",
-            "enum": ["play"]
+            "enum": [
+              "play"
+            ]
           },
           "url": {
             "description": "A single URL or an array of URLs (played in sequence).",
@@ -1445,19 +1557,27 @@
       },
       "VerbGather": {
         "type": "object",
-        "required": ["verb"],
+        "required": [
+          "verb"
+        ],
         "properties": {
           "verb": {
             "type": "string",
-            "enum": ["gather"]
+            "enum": [
+              "gather"
+            ]
           },
           "input": {
             "type": "array",
             "items": {
               "type": "string",
-              "enum": ["digits"]
+              "enum": [
+                "digits"
+              ]
             },
-            "default": ["digits"]
+            "default": [
+              "digits"
+            ]
           },
           "prompt": {
             "description": "Optional prompt to play before collecting digits.",
@@ -1526,11 +1646,16 @@
       },
       "VerbDial": {
         "type": "object",
-        "required": ["verb", "target"],
+        "required": [
+          "verb",
+          "target"
+        ],
         "properties": {
           "verb": {
             "type": "string",
-            "enum": ["dial"]
+            "enum": [
+              "dial"
+            ]
           },
           "target": {
             "type": "string",
@@ -1557,11 +1682,16 @@
       },
       "VerbListen": {
         "type": "object",
-        "required": ["verb", "url"],
+        "required": [
+          "verb",
+          "url"
+        ],
         "properties": {
           "verb": {
             "type": "string",
-            "enum": ["listen"]
+            "enum": [
+              "listen"
+            ]
           },
           "url": {
             "type": "string",
@@ -1585,11 +1715,16 @@
       },
       "VerbPause": {
         "type": "object",
-        "required": ["verb", "length"],
+        "required": [
+          "verb",
+          "length"
+        ],
         "properties": {
           "verb": {
             "type": "string",
-            "enum": ["pause"]
+            "enum": [
+              "pause"
+            ]
           },
           "length": {
             "type": "number",
@@ -1601,12 +1736,17 @@
       },
       "VerbSay": {
         "type": "object",
-        "required": ["verb", "text"],
+        "required": [
+          "verb",
+          "text"
+        ],
         "description": "STUB — TTS not yet configured. The verb is accepted but skipped at runtime.",
         "properties": {
           "verb": {
             "type": "string",
-            "enum": ["say"]
+            "enum": [
+              "say"
+            ]
           },
           "text": {
             "type": "string"
@@ -1621,11 +1761,15 @@
       },
       "VerbHangup": {
         "type": "object",
-        "required": ["verb"],
+        "required": [
+          "verb"
+        ],
         "properties": {
           "verb": {
             "type": "string",
-            "enum": ["hangup"]
+            "enum": [
+              "hangup"
+            ]
           },
           "reason": {
             "type": "string",
@@ -1642,12 +1786,17 @@
       },
       "VerbQueue": {
         "type": "object",
-        "required": ["verb", "queue_id"],
+        "required": [
+          "verb",
+          "queue_id"
+        ],
         "description": "Place the caller into a mod_callcenter queue. The call is held with hold music until an available agent bridges in, the caller hangs up, or `maxWaitSecs` expires. Flow execution blocks until one of those outcomes occurs, then continues with the appropriate branch verbs.\n",
         "properties": {
           "verb": {
             "type": "string",
-            "enum": ["queue"]
+            "enum": [
+              "queue"
+            ]
           },
           "queue_id": {
             "type": "string",
@@ -1674,6 +1823,34 @@
             "description": "Verbs to execute when the caller hangs up while waiting in the queue (before an agent answers). Useful for logging or sending a callback SMS. Note: the channel is already gone at this point so any verbs that require an active channel (play, gather, dial) will be silently skipped.\n"
           }
         }
+      },
+      "VerbRespond": {
+        "type": "object",
+        "required": [
+          "verb",
+          "code",
+          "reason"
+        ],
+        "description": "Send a SIP response via FreeSWITCH's `respond` application, e.g. to reject an unanswered call with a specific status instead of a generic hangup cause. A final response (code >= 200) ends the call; a provisional response (1xx) does not, and the flow continues.\n",
+        "properties": {
+          "verb": {
+            "type": "string",
+            "enum": [
+              "respond"
+            ]
+          },
+          "code": {
+            "type": "integer",
+            "minimum": 100,
+            "maximum": 699,
+            "description": "SIP status code to send, e.g. 486, 603."
+          },
+          "reason": {
+            "type": "string",
+            "maxLength": 255,
+            "description": "Reason phrase to send with the response, e.g. 'Busy Here'."
+          }
+        }
       }
     }
   },
@@ -1687,7 +1864,9 @@
       "get": {
         "summary": "Health check",
         "description": "Returns the health status of all service connectors (DB, Redis, ESL).",
-        "tags": ["Meta"],
+        "tags": [
+          "Meta"
+        ],
         "security": [],
         "responses": {
           "200": {
@@ -1776,7 +1955,9 @@
       "get": {
         "summary": "List supported API versions",
         "description": "Returns all supported API versions with their stability status.",
-        "tags": ["Meta"],
+        "tags": [
+          "Meta"
+        ],
         "security": [],
         "responses": {
           "200": {
@@ -1828,7 +2009,9 @@
     "/v1/webhooks": {
       "get": {
         "summary": "List webhook endpoints for the current organisation",
-        "tags": ["Webhooks"],
+        "tags": [
+          "Webhooks"
+        ],
         "security": [
           {
             "BearerAuth": []
@@ -1872,7 +2055,9 @@
       "post": {
         "summary": "Create a new webhook endpoint",
         "description": "The signing secret is returned **only once** at creation time. Store it securely — it cannot be retrieved again (use rotate-secret to get a new one).\n",
-        "tags": ["Webhooks"],
+        "tags": [
+          "Webhooks"
+        ],
         "security": [
           {
             "BearerAuth": []
@@ -1884,7 +2069,9 @@
             "application/json": {
               "schema": {
                 "type": "object",
-                "required": ["url"],
+                "required": [
+                  "url"
+                ],
                 "properties": {
                   "url": {
                     "type": "string",
@@ -1898,7 +2085,10 @@
                     },
                     "default": [],
                     "description": "Empty array = receive ALL events",
-                    "example": ["call.started", "call.ended"]
+                    "example": [
+                      "call.started",
+                      "call.ended"
+                    ]
                   },
                   "description": {
                     "type": "string",
@@ -1968,7 +2158,9 @@
     "/v1/webhooks/{id}": {
       "get": {
         "summary": "Get a single webhook endpoint",
-        "tags": ["Webhooks"],
+        "tags": [
+          "Webhooks"
+        ],
         "security": [
           {
             "BearerAuth": []
@@ -2029,7 +2221,9 @@
       },
       "patch": {
         "summary": "Update a webhook endpoint (owner or admin)",
-        "tags": ["Webhooks"],
+        "tags": [
+          "Webhooks"
+        ],
         "security": [
           {
             "BearerAuth": []
@@ -2128,7 +2322,9 @@
       },
       "delete": {
         "summary": "Delete a webhook endpoint (owner or admin)",
-        "tags": ["Webhooks"],
+        "tags": [
+          "Webhooks"
+        ],
         "security": [
           {
             "BearerAuth": []
@@ -2186,7 +2382,9 @@
       "post": {
         "summary": "Rotate the signing secret for a webhook endpoint (owner or admin)",
         "description": "Generates a new HMAC secret. The new secret is returned once — update your receiver immediately.",
-        "tags": ["Webhooks"],
+        "tags": [
+          "Webhooks"
+        ],
         "security": [
           {
             "BearerAuth": []
@@ -2265,7 +2463,9 @@
     "/v1/webhooks/{id}/deliveries": {
       "get": {
         "summary": "List delivery attempts for a webhook endpoint",
-        "tags": ["Webhooks"],
+        "tags": [
+          "Webhooks"
+        ],
         "security": [
           {
             "BearerAuth": []
@@ -2286,7 +2486,11 @@
             "name": "status",
             "schema": {
               "type": "string",
-              "enum": ["pending", "delivered", "failed"]
+              "enum": [
+                "pending",
+                "delivered",
+                "failed"
+              ]
             },
             "description": "Filter by delivery status"
           },
@@ -2365,7 +2569,9 @@
     "/v1/webhooks/{id}/deliveries/{deliveryId}/retry": {
       "post": {
         "summary": "Manually retry a failed delivery (owner or admin)",
-        "tags": ["Webhooks"],
+        "tags": [
+          "Webhooks"
+        ],
         "security": [
           {
             "BearerAuth": []
@@ -2469,7 +2675,9 @@
     "/v1/users/me": {
       "get": {
         "summary": "Get current user profile",
-        "tags": ["Users"],
+        "tags": [
+          "Users"
+        ],
         "security": [
           {
             "BearerAuth": []
@@ -2520,7 +2728,9 @@
       "patch": {
         "summary": "Update current user profile",
         "description": "Currently only `name` can be updated.",
-        "tags": ["Users"],
+        "tags": [
+          "Users"
+        ],
         "security": [
           {
             "BearerAuth": []
@@ -2597,7 +2807,9 @@
     "/v1/users/me/change-password": {
       "post": {
         "summary": "Change current user password",
-        "tags": ["Users"],
+        "tags": [
+          "Users"
+        ],
         "security": [
           {
             "BearerAuth": []
@@ -2609,7 +2821,10 @@
             "application/json": {
               "schema": {
                 "type": "object",
-                "required": ["current_password", "new_password"],
+                "required": [
+                  "current_password",
+                  "new_password"
+                ],
                 "properties": {
                   "current_password": {
                     "type": "string",
@@ -2677,7 +2892,9 @@
     "/v1/users/me/organisations": {
       "get": {
         "summary": "List organisations the current user belongs to",
-        "tags": ["Users"],
+        "tags": [
+          "Users"
+        ],
         "security": [
           {
             "BearerAuth": []
@@ -2722,7 +2939,9 @@
     "/v1/sms-credentials": {
       "get": {
         "summary": "Get this org's SMS credential",
-        "tags": ["SMS Credentials"],
+        "tags": [
+          "SMS Credentials"
+        ],
         "security": [
           {
             "BearerAuth": []
@@ -2768,7 +2987,9 @@
       },
       "post": {
         "summary": "Create an SMS credential (one per org)",
-        "tags": ["SMS Credentials"],
+        "tags": [
+          "SMS Credentials"
+        ],
         "security": [
           {
             "BearerAuth": []
@@ -2780,7 +3001,10 @@
             "application/json": {
               "schema": {
                 "type": "object",
-                "required": ["jasmin_username", "jasmin_password"],
+                "required": [
+                  "jasmin_username",
+                  "jasmin_password"
+                ],
                 "properties": {
                   "jasmin_username": {
                     "type": "string",
@@ -2830,7 +3054,9 @@
       },
       "patch": {
         "summary": "Update SMS credential fields",
-        "tags": ["SMS Credentials"],
+        "tags": [
+          "SMS Credentials"
+        ],
         "security": [
           {
             "BearerAuth": []
@@ -2890,7 +3116,9 @@
       },
       "delete": {
         "summary": "Remove the org's SMS credential",
-        "tags": ["SMS Credentials"],
+        "tags": [
+          "SMS Credentials"
+        ],
         "security": [
           {
             "BearerAuth": []
@@ -2912,7 +3140,9 @@
     "/v1/sms": {
       "post": {
         "summary": "Send an SMS",
-        "tags": ["SMS"],
+        "tags": [
+          "SMS"
+        ],
         "security": [
           {
             "BearerAuth": []
@@ -2924,7 +3154,10 @@
             "application/json": {
               "schema": {
                 "type": "object",
-                "required": ["to", "body"],
+                "required": [
+                  "to",
+                  "body"
+                ],
                 "properties": {
                   "to": {
                     "type": "string",
@@ -3001,7 +3234,9 @@
       },
       "get": {
         "summary": "List SMS messages",
-        "tags": ["SMS"],
+        "tags": [
+          "SMS"
+        ],
         "security": [
           {
             "BearerAuth": []
@@ -3013,7 +3248,10 @@
             "name": "direction",
             "schema": {
               "type": "string",
-              "enum": ["outbound", "inbound"]
+              "enum": [
+                "outbound",
+                "inbound"
+              ]
             }
           },
           {
@@ -3051,7 +3289,9 @@
     "/v1/sms/{id}": {
       "get": {
         "summary": "Get an SMS message",
-        "tags": ["SMS"],
+        "tags": [
+          "SMS"
+        ],
         "security": [
           {
             "BearerAuth": []
@@ -3081,7 +3321,9 @@
     "/v1/sip-users": {
       "get": {
         "summary": "List SIP users",
-        "tags": ["SipUsers"],
+        "tags": [
+          "SipUsers"
+        ],
         "security": [
           {
             "BearerAuth": []
@@ -3114,7 +3356,9 @@
       },
       "post": {
         "summary": "Create a SIP user (returns generated password ONCE)",
-        "tags": ["SipUsers"],
+        "tags": [
+          "SipUsers"
+        ],
         "security": [
           {
             "BearerAuth": []
@@ -3126,7 +3370,9 @@
             "application/json": {
               "schema": {
                 "type": "object",
-                "required": ["extension"],
+                "required": [
+                  "extension"
+                ],
                 "properties": {
                   "extension": {
                     "type": "string",
@@ -3186,7 +3432,9 @@
     "/v1/sip-users/{id}": {
       "get": {
         "summary": "Get a SIP user",
-        "tags": ["SipUsers"],
+        "tags": [
+          "SipUsers"
+        ],
         "security": [
           {
             "BearerAuth": []
@@ -3214,7 +3462,9 @@
       },
       "patch": {
         "summary": "Update a SIP user (cannot change password — use /password endpoint)",
-        "tags": ["SipUsers"],
+        "tags": [
+          "SipUsers"
+        ],
         "security": [
           {
             "BearerAuth": []
@@ -3265,7 +3515,9 @@
       },
       "delete": {
         "summary": "Delete a SIP user",
-        "tags": ["SipUsers"],
+        "tags": [
+          "SipUsers"
+        ],
         "security": [
           {
             "BearerAuth": []
@@ -3292,7 +3544,9 @@
     "/v1/sip-users/{id}/password": {
       "post": {
         "summary": "Rotate a SIP user's password (returns new password ONCE)",
-        "tags": ["SipUsers"],
+        "tags": [
+          "SipUsers"
+        ],
         "security": [
           {
             "BearerAuth": []
@@ -3351,7 +3605,9 @@
     "/v1/recordings": {
       "get": {
         "summary": "List recordings",
-        "tags": ["Recordings"],
+        "tags": [
+          "Recordings"
+        ],
         "security": [
           {
             "BearerAuth": []
@@ -3416,7 +3672,9 @@
     "/v1/recordings/{id}": {
       "get": {
         "summary": "Get recording metadata",
-        "tags": ["Recordings"],
+        "tags": [
+          "Recordings"
+        ],
         "security": [
           {
             "BearerAuth": []
@@ -3460,7 +3718,9 @@
       },
       "delete": {
         "summary": "Delete a recording (metadata + file)",
-        "tags": ["Recordings"],
+        "tags": [
+          "Recordings"
+        ],
         "security": [
           {
             "BearerAuth": []
@@ -3487,7 +3747,9 @@
     "/v1/recordings/{id}/download": {
       "get": {
         "summary": "Stream the audio file",
-        "tags": ["Recordings"],
+        "tags": [
+          "Recordings"
+        ],
         "security": [
           {
             "BearerAuth": []
@@ -3520,7 +3782,9 @@
     "/v1/organisations": {
       "get": {
         "summary": "List organisations for the current user",
-        "tags": ["Organisations"],
+        "tags": [
+          "Organisations"
+        ],
         "security": [
           {
             "BearerAuth": []
@@ -3563,7 +3827,9 @@
       },
       "post": {
         "summary": "Create a new organisation",
-        "tags": ["Organisations"],
+        "tags": [
+          "Organisations"
+        ],
         "security": [
           {
             "BearerAuth": []
@@ -3575,7 +3841,10 @@
             "application/json": {
               "schema": {
                 "type": "object",
-                "required": ["name", "slug"],
+                "required": [
+                  "name",
+                  "slug"
+                ],
                 "properties": {
                   "name": {
                     "type": "string",
@@ -3588,7 +3857,12 @@
                   },
                   "plan": {
                     "type": "string",
-                    "enum": ["free", "pro", "enterprise", "custom"],
+                    "enum": [
+                      "free",
+                      "pro",
+                      "enterprise",
+                      "custom"
+                    ],
                     "default": "free"
                   }
                 }
@@ -3652,7 +3926,9 @@
     "/v1/organisations/{orgId}": {
       "get": {
         "summary": "Get a single organisation",
-        "tags": ["Organisations"],
+        "tags": [
+          "Organisations"
+        ],
         "security": [
           {
             "BearerAuth": []
@@ -3720,7 +3996,9 @@
       },
       "patch": {
         "summary": "Update an organisation (owner or admin)",
-        "tags": ["Organisations"],
+        "tags": [
+          "Organisations"
+        ],
         "security": [
           {
             "BearerAuth": []
@@ -3806,7 +4084,9 @@
       },
       "delete": {
         "summary": "Soft-delete an organisation (owner only)",
-        "tags": ["Organisations"],
+        "tags": [
+          "Organisations"
+        ],
         "security": [
           {
             "BearerAuth": []
@@ -3853,7 +4133,9 @@
     "/v1/organisations/{orgId}/members": {
       "get": {
         "summary": "List members of an organisation",
-        "tags": ["Organisations"],
+        "tags": [
+          "Organisations"
+        ],
         "security": [
           {
             "BearerAuth": []
@@ -3917,7 +4199,9 @@
       },
       "post": {
         "summary": "Add a member to an organisation (owner or admin)",
-        "tags": ["Organisations"],
+        "tags": [
+          "Organisations"
+        ],
         "security": [
           {
             "BearerAuth": []
@@ -3940,7 +4224,9 @@
             "application/json": {
               "schema": {
                 "type": "object",
-                "required": ["email"],
+                "required": [
+                  "email"
+                ],
                 "properties": {
                   "email": {
                     "type": "string",
@@ -3949,7 +4235,11 @@
                   },
                   "role": {
                     "type": "string",
-                    "enum": ["admin", "developer", "viewer"],
+                    "enum": [
+                      "admin",
+                      "developer",
+                      "viewer"
+                    ],
                     "default": "developer"
                   }
                 }
@@ -4032,7 +4322,9 @@
     "/v1/organisations/{orgId}/members/{userId}/role": {
       "patch": {
         "summary": "Update a member's role (owner or admin)",
-        "tags": ["Organisations"],
+        "tags": [
+          "Organisations"
+        ],
         "security": [
           {
             "BearerAuth": []
@@ -4064,11 +4356,17 @@
             "application/json": {
               "schema": {
                 "type": "object",
-                "required": ["role"],
+                "required": [
+                  "role"
+                ],
                 "properties": {
                   "role": {
                     "type": "string",
-                    "enum": ["admin", "developer", "viewer"]
+                    "enum": [
+                      "admin",
+                      "developer",
+                      "viewer"
+                    ]
                   }
                 }
               }
@@ -4140,7 +4438,9 @@
     "/v1/organisations/{orgId}/members/{userId}": {
       "delete": {
         "summary": "Remove a member from an organisation (owner or admin)",
-        "tags": ["Organisations"],
+        "tags": [
+          "Organisations"
+        ],
         "security": [
           {
             "BearerAuth": []
@@ -4196,7 +4496,9 @@
     "/v1/organisations/{orgId}/limits": {
       "get": {
         "summary": "Get rate limits for an organisation (owner or admin)",
-        "tags": ["Organisations"],
+        "tags": [
+          "Organisations"
+        ],
         "security": [
           {
             "BearerAuth": []
@@ -4267,7 +4569,9 @@
       },
       "patch": {
         "summary": "Update rate limits for an organisation (owner only)",
-        "tags": ["Organisations"],
+        "tags": [
+          "Organisations"
+        ],
         "security": [
           {
             "BearerAuth": []
@@ -4375,7 +4679,9 @@
       "patch": {
         "summary": "Transfer organisation ownership to another member (owner only)",
         "description": "Transfers ownership of the organisation to another active user. The new owner must already exist as an active user (they do not need to be an existing member — they will be added automatically). The current owner is demoted to `admin` and remains a member.\n",
-        "tags": ["Organisations"],
+        "tags": [
+          "Organisations"
+        ],
         "security": [
           {
             "BearerAuth": []
@@ -4398,7 +4704,9 @@
             "application/json": {
               "schema": {
                 "type": "object",
-                "required": ["user_id"],
+                "required": [
+                  "user_id"
+                ],
                 "properties": {
                   "user_id": {
                     "type": "string",
@@ -4491,7 +4799,9 @@
       "get": {
         "summary": "List numbers",
         "description": "Returns all numbers registered to the organisation.",
-        "tags": ["Numbers"],
+        "tags": [
+          "Numbers"
+        ],
         "security": [
           {
             "BearerAuth": []
@@ -4559,7 +4869,9 @@
       "post": {
         "summary": "Register a number",
         "description": "Registers a phone number to the organisation. If `capabilities` includes `\"voice\"`, an `application_id` must also be supplied so inbound calls have somewhere to route.\n",
-        "tags": ["Numbers"],
+        "tags": [
+          "Numbers"
+        ],
         "security": [
           {
             "BearerAuth": []
@@ -4582,7 +4894,10 @@
             "application/json": {
               "schema": {
                 "type": "object",
-                "required": ["e164", "capabilities"],
+                "required": [
+                  "e164",
+                  "capabilities"
+                ],
                 "properties": {
                   "e164": {
                     "type": "string",
@@ -4593,9 +4908,15 @@
                     "type": "array",
                     "items": {
                       "type": "string",
-                      "enum": ["voice", "sms"]
+                      "enum": [
+                        "voice",
+                        "sms"
+                      ]
                     },
-                    "example": ["voice", "sms"]
+                    "example": [
+                      "voice",
+                      "sms"
+                    ]
                   },
                   "application_id": {
                     "type": "string",
@@ -4681,7 +5002,9 @@
     "/v1/numbers/{id}": {
       "get": {
         "summary": "Get a number",
-        "tags": ["Numbers"],
+        "tags": [
+          "Numbers"
+        ],
         "security": [
           {
             "BearerAuth": []
@@ -4765,7 +5088,9 @@
       "patch": {
         "summary": "Update a number",
         "description": "Update capabilities, application routing, or active status. All fields are optional.",
-        "tags": ["Numbers"],
+        "tags": [
+          "Numbers"
+        ],
         "security": [
           {
             "BearerAuth": []
@@ -4802,7 +5127,10 @@
                     "type": "array",
                     "items": {
                       "type": "string",
-                      "enum": ["voice", "sms"]
+                      "enum": [
+                        "voice",
+                        "sms"
+                      ]
                     }
                   },
                   "application_id": {
@@ -4886,7 +5214,9 @@
       "delete": {
         "summary": "Release a number",
         "description": "Removes the number from the organisation. Inbound traffic to this number will no longer be routed.",
-        "tags": ["Numbers"],
+        "tags": [
+          "Numbers"
+        ],
         "security": [
           {
             "BearerAuth": []
@@ -4962,7 +5292,9 @@
     "/v1/gateways": {
       "get": {
         "summary": "List SIP gateways for the current organisation",
-        "tags": ["Gateways"],
+        "tags": [
+          "Gateways"
+        ],
         "security": [
           {
             "BearerAuth": []
@@ -5005,7 +5337,9 @@
       },
       "post": {
         "summary": "Create a new SIP gateway (owner or admin)",
-        "tags": ["Gateways"],
+        "tags": [
+          "Gateways"
+        ],
         "security": [
           {
             "BearerAuth": []
@@ -5017,7 +5351,12 @@
             "application/json": {
               "schema": {
                 "type": "object",
-                "required": ["name", "realm", "username", "password"],
+                "required": [
+                  "name",
+                  "realm",
+                  "username",
+                  "password"
+                ],
                 "properties": {
                   "name": {
                     "type": "string",
@@ -5119,7 +5458,9 @@
     "/v1/gateways/{id}": {
       "get": {
         "summary": "Get a single SIP gateway",
-        "tags": ["Gateways"],
+        "tags": [
+          "Gateways"
+        ],
         "security": [
           {
             "BearerAuth": []
@@ -5180,7 +5521,9 @@
       },
       "patch": {
         "summary": "Update a SIP gateway (owner or admin)",
-        "tags": ["Gateways"],
+        "tags": [
+          "Gateways"
+        ],
         "security": [
           {
             "BearerAuth": []
@@ -5299,7 +5642,9 @@
       },
       "delete": {
         "summary": "Delete a SIP gateway (owner only)",
-        "tags": ["Gateways"],
+        "tags": [
+          "Gateways"
+        ],
         "security": [
           {
             "BearerAuth": []
@@ -5357,7 +5702,9 @@
       "post": {
         "summary": "Test gateway connectivity (owner or admin)",
         "description": "Tests connectivity to the gateway and returns the status response.",
-        "tags": ["Gateways"],
+        "tags": [
+          "Gateways"
+        ],
         "security": [
           {
             "BearerAuth": []
@@ -5449,7 +5796,9 @@
       "post": {
         "summary": "Originate an outbound call",
         "description": "Places an outbound call. Status updates (ringing, answered, completed, failed)\nare delivered in real-time via **WebSocket events** and **webhooks** — no polling required.\n\n---\n\n### Destination types (`to.type`)\n\n#### `phone` — Dial out via a SIP trunk\nRoutes the call through a configured SIP gateway. Auth, codecs, and proxy\nare taken from the gateway configuration.\n```json\n{\n  \"to\": {\n    \"type\": \"phone\",\n    \"number\": \"+27123456789\",\n    \"gateway_id\": \"<uuid>\"\n  }\n}\n```\n**Required:** `number` (E.164 format), `gateway_id`\n\n---\n\n#### `sip` — Dial a SIP URI directly\nSends the INVITE directly to any SIP URI using a named Sofia profile.\nUseful for calling SIP endpoints, SBCs, or inter-system trunks without\nconfiguring a gateway.\n```json\n{\n  \"to\": {\n    \"type\": \"sip\",\n    \"sip_uri\": \"sip:bob@example.com:5060\",\n    \"profile\": \"external\",\n    \"auth\": {\n      \"username\": \"bob\",\n      \"password\": \"secret\"\n    },\n    \"outbound_proxy\": \"sip:192.168.1.50:5060;lr\"\n  }\n}\n```\n**Required:** `sip_uri` (must include `sip:` or `sips:` scheme)\n\n**Optional fields:**\n- `profile` — Sofia profile to use (default: `external`)\n- `auth` — Digest credentials if the endpoint issues a 401 challenge.\n  The password is **never stored or echoed** in events.\n- `outbound_proxy` — Route the INVITE through a SIP proxy or SBC before\n  it reaches the destination URI. Must be a valid `sip:`/`sips:` URI.\n  Include `;lr` for RFC 3261 loose routing (e.g. `sip:192.168.1.50:5060;lr`).\n\n---\n\n#### `user` — Call a registered SIP extension\nResolves a SIP user registered with the platform and delivers the call\ndirectly to their device — no gateway or profile required.\n```json\n{\n  \"to\": {\n    \"type\": \"user\",\n    \"user\": \"1001@sip.example.com\"\n  }\n}\n```\n**Required:** `user` in `extension@realm` format\n\n---\n\n### Call control options\n- **`application_id`** — Run a call-flow application once the call answers\n  (play audio, collect digits, bridge, etc.).\n- **`record_calls`** — Enable recording for this call, overriding the\n  application's default.\n- **`amd`** — Answering Machine Detection. Fires a `call.amd` webhook event\n  with the result before the application flow starts.\n- **`time_limit`** — Hard cap on call duration (seconds). The call is\n  automatically ended when reached.\n- **`headers`** — Custom `X-` SIP headers added to the outgoing INVITE.\n- **`tag`** — Free-form metadata echoed in all webhook events for this call.\n",
-        "tags": ["Calls"],
+        "tags": [
+          "Calls"
+        ],
         "security": [
           {
             "BearerAuth": []
@@ -5461,7 +5810,9 @@
             "application/json": {
               "schema": {
                 "type": "object",
-                "required": ["to"],
+                "required": [
+                  "to"
+                ],
                 "properties": {
                   "to": {
                     "$ref": "#/components/schemas/CallTarget"
@@ -5598,7 +5949,9 @@
       },
       "get": {
         "summary": "List calls for the current organisation",
-        "tags": ["Calls"],
+        "tags": [
+          "Calls"
+        ],
         "security": [
           {
             "BearerAuth": []
@@ -5697,7 +6050,9 @@
     "/v1/calls/{id}": {
       "get": {
         "summary": "Get a single call record",
-        "tags": ["Calls"],
+        "tags": [
+          "Calls"
+        ],
         "security": [
           {
             "BearerAuth": []
@@ -5759,7 +6114,9 @@
       "delete": {
         "summary": "Hangup an active call",
         "description": "Terminates an active call and marks it as cancelled.",
-        "tags": ["Calls"],
+        "tags": [
+          "Calls"
+        ],
         "security": [
           {
             "BearerAuth": []
@@ -5851,7 +6208,9 @@
     "/v1/call-center/queues": {
       "post": {
         "summary": "Create a call center queue",
-        "tags": ["Call Center - Queues"],
+        "tags": [
+          "Call Center - Queues"
+        ],
         "security": [
           {
             "BearerAuth": []
@@ -5863,16 +6222,13 @@
             "application/json": {
               "schema": {
                 "type": "object",
-                "required": ["name", "fs_name"],
+                "required": [
+                  "name"
+                ],
                 "properties": {
                   "name": {
                     "type": "string",
                     "example": "Support Queue"
-                  },
-                  "fs_name": {
-                    "type": "string",
-                    "example": "support",
-                    "description": "FreeSWITCH-safe slug [A-Za-z0-9_-]{1,64}"
                   },
                   "strategy": {
                     "type": "string",
@@ -5951,7 +6307,9 @@
       },
       "get": {
         "summary": "List call center queues",
-        "tags": ["Call Center - Queues"],
+        "tags": [
+          "Call Center - Queues"
+        ],
         "security": [
           {
             "BearerAuth": []
@@ -6005,7 +6363,9 @@
     "/v1/call-center/queues/{id}": {
       "get": {
         "summary": "Get a queue by ID",
-        "tags": ["Call Center - Queues"],
+        "tags": [
+          "Call Center - Queues"
+        ],
         "security": [
           {
             "BearerAuth": []
@@ -6049,7 +6409,9 @@
       },
       "patch": {
         "summary": "Update queue settings",
-        "tags": ["Call Center - Queues"],
+        "tags": [
+          "Call Center - Queues"
+        ],
         "security": [
           {
             "BearerAuth": []
@@ -6126,7 +6488,9 @@
       },
       "delete": {
         "summary": "Delete (soft-delete) a queue",
-        "tags": ["Call Center - Queues"],
+        "tags": [
+          "Call Center - Queues"
+        ],
         "security": [
           {
             "BearerAuth": []
@@ -6156,7 +6520,9 @@
     "/v1/call-center/queues/{id}/members": {
       "get": {
         "summary": "List callers (live and historical) for a queue",
-        "tags": ["Call Center - Queues"],
+        "tags": [
+          "Call Center - Queues"
+        ],
         "security": [
           {
             "BearerAuth": []
@@ -6178,7 +6544,12 @@
             "description": "Filter by member status: waiting | bridged | completed | abandoned",
             "schema": {
               "type": "string",
-              "enum": ["waiting", "bridged", "completed", "abandoned"]
+              "enum": [
+                "waiting",
+                "bridged",
+                "completed",
+                "abandoned"
+              ]
             }
           },
           {
@@ -6231,7 +6602,9 @@
     "/v1/call-center/queues/{id}/stats": {
       "get": {
         "summary": "Aggregated stats for a queue (live counts + averages)",
-        "tags": ["Call Center - Queues"],
+        "tags": [
+          "Call Center - Queues"
+        ],
         "security": [
           {
             "BearerAuth": []
@@ -6277,7 +6650,9 @@
     "/v1/call-center/agents": {
       "post": {
         "summary": "Create a call center agent",
-        "tags": ["Call Center - Agents"],
+        "tags": [
+          "Call Center - Agents"
+        ],
         "security": [
           {
             "BearerAuth": []
@@ -6289,20 +6664,21 @@
             "application/json": {
               "schema": {
                 "type": "object",
-                "required": ["name", "fs_name", "contact"],
+                "required": [
+                  "name",
+                  "contact"
+                ],
                 "properties": {
                   "name": {
                     "type": "string",
                     "example": "Alice"
                   },
-                  "fs_name": {
-                    "type": "string",
-                    "example": "alice",
-                    "description": "FreeSWITCH agent name [A-Za-z0-9_-]{1,64}"
-                  },
                   "type": {
                     "type": "string",
-                    "enum": ["callback", "uuid-standby"],
+                    "enum": [
+                      "callback",
+                      "uuid-standby"
+                    ],
                     "default": "callback"
                   },
                   "contact": {
@@ -6377,7 +6753,9 @@
       },
       "get": {
         "summary": "List agents",
-        "tags": ["Call Center - Agents"],
+        "tags": [
+          "Call Center - Agents"
+        ],
         "security": [
           {
             "BearerAuth": []
@@ -6445,7 +6823,9 @@
     "/v1/call-center/agents/{id}": {
       "get": {
         "summary": "Get an agent by ID",
-        "tags": ["Call Center - Agents"],
+        "tags": [
+          "Call Center - Agents"
+        ],
         "security": [
           {
             "BearerAuth": []
@@ -6489,7 +6869,9 @@
       },
       "patch": {
         "summary": "Update agent settings",
-        "tags": ["Call Center - Agents"],
+        "tags": [
+          "Call Center - Agents"
+        ],
         "security": [
           {
             "BearerAuth": []
@@ -6565,7 +6947,9 @@
       },
       "delete": {
         "summary": "Delete (soft-delete) an agent",
-        "tags": ["Call Center - Agents"],
+        "tags": [
+          "Call Center - Agents"
+        ],
         "security": [
           {
             "BearerAuth": []
@@ -6596,7 +6980,9 @@
       "patch": {
         "summary": "Set agent availability status",
         "description": "Changes the agent's mod_callcenter status immediately. Valid values: Available | Available (On Demand) | On Break | Logged Out",
-        "tags": ["Call Center - Agents"],
+        "tags": [
+          "Call Center - Agents"
+        ],
         "security": [
           {
             "BearerAuth": []
@@ -6619,7 +7005,9 @@
             "application/json": {
               "schema": {
                 "type": "object",
-                "required": ["status"],
+                "required": [
+                  "status"
+                ],
                 "properties": {
                   "status": {
                     "type": "string",
@@ -6674,7 +7062,9 @@
     "/v1/call-center/queues/{id}/tiers": {
       "get": {
         "summary": "List agent tier assignments for a queue",
-        "tags": ["Call Center - Tiers"],
+        "tags": [
+          "Call Center - Tiers"
+        ],
         "security": [
           {
             "BearerAuth": []
@@ -6722,7 +7112,9 @@
       },
       "post": {
         "summary": "Add an agent to a queue (create tier assignment)",
-        "tags": ["Call Center - Tiers"],
+        "tags": [
+          "Call Center - Tiers"
+        ],
         "security": [
           {
             "BearerAuth": []
@@ -6746,7 +7138,9 @@
             "application/json": {
               "schema": {
                 "type": "object",
-                "required": ["agent_id"],
+                "required": [
+                  "agent_id"
+                ],
                 "properties": {
                   "agent_id": {
                     "type": "string",
@@ -6796,7 +7190,9 @@
     "/v1/call-center/queues/{id}/tiers/{agentId}": {
       "patch": {
         "summary": "Update a tier assignment's level or position",
-        "tags": ["Call Center - Tiers"],
+        "tags": [
+          "Call Center - Tiers"
+        ],
         "security": [
           {
             "BearerAuth": []
@@ -6870,7 +7266,9 @@
       },
       "delete": {
         "summary": "Remove an agent from a queue (delete tier assignment)",
-        "tags": ["Call Center - Tiers"],
+        "tags": [
+          "Call Center - Tiers"
+        ],
         "security": [
           {
             "BearerAuth": []
@@ -6911,7 +7309,9 @@
     "/v1/auth/register": {
       "post": {
         "summary": "Register a new user",
-        "tags": ["Auth"],
+        "tags": [
+          "Auth"
+        ],
         "security": [],
         "requestBody": {
           "required": true,
@@ -6919,7 +7319,11 @@
             "application/json": {
               "schema": {
                 "type": "object",
-                "required": ["email", "name", "password"],
+                "required": [
+                  "email",
+                  "name",
+                  "password"
+                ],
                 "properties": {
                   "email": {
                     "type": "string",
@@ -6967,7 +7371,12 @@
                         "role": {
                           "type": "string",
                           "nullable": true,
-                          "enum": ["owner", "admin", "developer", "viewer"],
+                          "enum": [
+                            "owner",
+                            "admin",
+                            "developer",
+                            "viewer"
+                          ],
                           "description": "Role in the primary organisation"
                         },
                         "token": {
@@ -7010,7 +7419,9 @@
     "/v1/auth/login": {
       "post": {
         "summary": "Log in with email and password",
-        "tags": ["Auth"],
+        "tags": [
+          "Auth"
+        ],
         "security": [],
         "requestBody": {
           "required": true,
@@ -7018,7 +7429,10 @@
             "application/json": {
               "schema": {
                 "type": "object",
-                "required": ["email", "password"],
+                "required": [
+                  "email",
+                  "password"
+                ],
                 "properties": {
                   "email": {
                     "type": "string",
@@ -7061,7 +7475,12 @@
                         "role": {
                           "type": "string",
                           "nullable": true,
-                          "enum": ["owner", "admin", "developer", "viewer"],
+                          "enum": [
+                            "owner",
+                            "admin",
+                            "developer",
+                            "viewer"
+                          ],
                           "description": "Role in the primary organisation"
                         },
                         "token": {
@@ -7101,10 +7520,399 @@
         }
       }
     },
+    "/v1/audio-files": {
+      "get": {
+        "summary": "List audio files",
+        "tags": [
+          "Audio Files"
+        ],
+        "responses": {
+          "200": {
+            "description": "Audio files",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object",
+                  "properties": {
+                    "success": {
+                      "type": "boolean"
+                    },
+                    "data": {
+                      "type": "array",
+                      "items": {
+                        "$ref": "#/components/schemas/AudioFile"
+                      }
+                    }
+                  }
+                }
+              }
+            }
+          },
+          "401": {
+            "description": "Authentication required"
+          },
+          "403": {
+            "description": "Organisation membership or write role required"
+          }
+        },
+        "parameters": [
+          {
+            "name": "org_id",
+            "in": "query",
+            "schema": {
+              "type": "string",
+              "format": "uuid"
+            },
+            "description": "Organisation selector for JWTs without an org claim; active membership is required. X-Org-Id header is also supported."
+          },
+          {
+            "name": "limit",
+            "in": "query",
+            "schema": {
+              "type": "integer",
+              "default": 50,
+              "minimum": 1,
+              "maximum": 200
+            }
+          },
+          {
+            "name": "offset",
+            "in": "query",
+            "schema": {
+              "type": "integer",
+              "default": 0,
+              "minimum": 0
+            }
+          }
+        ]
+      },
+      "post": {
+        "summary": "Upload audio",
+        "tags": [
+          "Audio Files"
+        ],
+        "responses": {
+          "201": {
+            "description": "Audio stored; use data.url in play.url or gather.prompt",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object",
+                  "properties": {
+                    "success": {
+                      "type": "boolean"
+                    },
+                    "data": {
+                      "$ref": "#/components/schemas/AudioFile"
+                    }
+                  }
+                }
+              }
+            }
+          },
+          "400": {
+            "description": "Invalid fields"
+          },
+          "401": {
+            "description": "Authentication required"
+          },
+          "403": {
+            "description": "Organisation membership or write role required"
+          },
+          "404": {
+            "description": "Audio file not found"
+          },
+          "413": {
+            "description": "File exceeds configured upload size (default 50 MiB)"
+          },
+          "415": {
+            "description": "Unsupported file extension; use WAV, MP3, Ogg, or FLAC"
+          },
+          "422": {
+            "description": "Invalid audio or duration over configured limit (default 30 minutes)"
+          },
+          "503": {
+            "description": "Audio processor unavailable or busy; retry later"
+          }
+        },
+        "parameters": [
+          {
+            "name": "org_id",
+            "in": "query",
+            "schema": {
+              "type": "string",
+              "format": "uuid"
+            },
+            "description": "Organisation selector for JWTs without an org claim; active membership is required. X-Org-Id header is also supported."
+          }
+        ],
+        "requestBody": {
+          "required": true,
+          "content": {
+            "multipart/form-data": {
+              "schema": {
+                "type": "object",
+                "required": [
+                  "file"
+                ],
+                "properties": {
+                  "file": {
+                    "type": "string",
+                    "format": "binary"
+                  },
+                  "name": {
+                    "type": "string",
+                    "maxLength": 255,
+                    "description": "Optional display name; defaults to original filename"
+                  }
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/v1/audio-files/{id}": {
+      "parameters": [
+        {
+          "name": "id",
+          "in": "path",
+          "required": true,
+          "schema": {
+            "type": "string",
+            "format": "uuid"
+          }
+        },
+        {
+          "name": "org_id",
+          "in": "query",
+          "schema": {
+            "type": "string",
+            "format": "uuid"
+          },
+          "description": "Organisation selector for JWTs without an org claim; active membership is required. X-Org-Id header is also supported."
+        }
+      ],
+      "get": {
+        "summary": "Get audio metadata",
+        "tags": [
+          "Audio Files"
+        ],
+        "responses": {
+          "200": {
+            "description": "Audio file",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object",
+                  "properties": {
+                    "success": {
+                      "type": "boolean"
+                    },
+                    "data": {
+                      "$ref": "#/components/schemas/AudioFile"
+                    }
+                  }
+                }
+              }
+            }
+          },
+          "400": {
+            "description": "Invalid fields"
+          },
+          "401": {
+            "description": "Authentication required"
+          },
+          "403": {
+            "description": "Organisation membership or write role required"
+          },
+          "404": {
+            "description": "Audio file not found"
+          }
+        }
+      },
+      "patch": {
+        "summary": "Rename an audio file",
+        "tags": [
+          "Audio Files"
+        ],
+        "responses": {
+          "200": {
+            "description": "Renamed audio; playback URL is unchanged",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object",
+                  "properties": {
+                    "success": {
+                      "type": "boolean"
+                    },
+                    "data": {
+                      "$ref": "#/components/schemas/AudioFile"
+                    }
+                  }
+                }
+              }
+            }
+          },
+          "400": {
+            "description": "Invalid fields"
+          },
+          "401": {
+            "description": "Authentication required"
+          },
+          "403": {
+            "description": "Organisation membership or write role required"
+          },
+          "404": {
+            "description": "Audio file not found"
+          }
+        },
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "type": "object",
+                "required": [
+                  "name"
+                ],
+                "properties": {
+                  "name": {
+                    "type": "string",
+                    "minLength": 1,
+                    "maxLength": 255
+                  }
+                }
+              }
+            }
+          }
+        }
+      },
+      "delete": {
+        "summary": "Delete audio and disable its playback URL",
+        "tags": [
+          "Audio Files"
+        ],
+        "responses": {
+          "204": {
+            "description": "Deleted. Applications using this URL must be updated."
+          },
+          "400": {
+            "description": "Invalid fields"
+          },
+          "401": {
+            "description": "Authentication required"
+          },
+          "403": {
+            "description": "Organisation membership or write role required"
+          },
+          "404": {
+            "description": "Audio file not found"
+          }
+        }
+      }
+    },
+    "/media/audio/{token}.wav": {
+      "parameters": [
+        {
+          "name": "token",
+          "in": "path",
+          "required": true,
+          "schema": {
+            "type": "string",
+            "pattern": "^[a-f0-9]{64}$"
+          },
+          "description": "Secret playback token from the upload URL"
+        }
+      ],
+      "get": {
+        "summary": "Fetch audio",
+        "tags": [
+          "Audio Files"
+        ],
+        "responses": {
+          "200": {
+            "description": "WAV audio",
+            "content": {
+              "audio/wav": {
+                "schema": {
+                  "type": "string",
+                  "format": "binary"
+                }
+              }
+            }
+          },
+          "206": {
+            "description": "Partial audio content"
+          },
+          "404": {
+            "description": "Unknown file, deleted file, or inactive organisation"
+          },
+          "416": {
+            "description": "Requested byte range is not satisfiable"
+          }
+        },
+        "security": [],
+        "description": "Requires no Authorization header. Supports Range requests. Treat the complete URL as a secret; do not cache at the reverse proxy.",
+        "parameters": [
+          {
+            "name": "Range",
+            "in": "header",
+            "schema": {
+              "type": "string",
+              "example": "bytes=0-1023"
+            }
+          }
+        ]
+      },
+      "head": {
+        "summary": "Get audio response headers",
+        "tags": [
+          "Audio Files"
+        ],
+        "responses": {
+          "200": {
+            "description": "Headers only",
+            "content": {
+              "audio/wav": {
+                "schema": {
+                  "type": "string",
+                  "format": "binary"
+                }
+              }
+            }
+          },
+          "206": {
+            "description": "Partial audio content"
+          },
+          "404": {
+            "description": "Unknown file, deleted file, or inactive organisation"
+          },
+          "416": {
+            "description": "Requested byte range is not satisfiable"
+          }
+        },
+        "security": [],
+        "description": "Requires no Authorization header. Supports Range requests. Treat the complete URL as a secret; do not cache at the reverse proxy.",
+        "parameters": [
+          {
+            "name": "Range",
+            "in": "header",
+            "schema": {
+              "type": "string",
+              "example": "bytes=0-1023"
+            }
+          }
+        ]
+      }
+    },
     "/v1/applications": {
       "get": {
         "summary": "List applications for the current organisation",
-        "tags": ["Applications"],
+        "tags": [
+          "Applications"
+        ],
         "security": [
           {
             "BearerAuth": []
@@ -7137,7 +7945,9 @@
       },
       "post": {
         "summary": "Create a new application",
-        "tags": ["Applications"],
+        "tags": [
+          "Applications"
+        ],
         "security": [
           {
             "BearerAuth": []
@@ -7149,7 +7959,10 @@
             "application/json": {
               "schema": {
                 "type": "object",
-                "required": ["name", "flow"],
+                "required": [
+                  "name",
+                  "flow"
+                ],
                 "properties": {
                   "name": {
                     "type": "string",
@@ -7209,7 +8022,9 @@
     "/v1/applications/{id}": {
       "get": {
         "summary": "Get a single application",
-        "tags": ["Applications"],
+        "tags": [
+          "Applications"
+        ],
         "security": [
           {
             "BearerAuth": []
@@ -7253,7 +8068,9 @@
       },
       "patch": {
         "summary": "Update an application — bumps version when `flow` changes",
-        "tags": ["Applications"],
+        "tags": [
+          "Applications"
+        ],
         "security": [
           {
             "BearerAuth": []
@@ -7328,7 +8145,9 @@
       "delete": {
         "summary": "Delete an application",
         "description": "Deletes the application. In-flight calls keep their attached application_id but with a NULL FK link (ON DELETE SET NULL).\n",
-        "tags": ["Applications"],
+        "tags": [
+          "Applications"
+        ],
         "security": [
           {
             "BearerAuth": []
@@ -7358,7 +8177,9 @@
     "/v1/api-keys": {
       "get": {
         "summary": "List API keys for the current user",
-        "tags": ["API Keys"],
+        "tags": [
+          "API Keys"
+        ],
         "security": [
           {
             "BearerAuth": []
@@ -7413,7 +8234,9 @@
       "post": {
         "summary": "Create a new API key",
         "description": "The raw key value is returned **only once** in the response. Store it securely — it cannot be retrieved again.\n",
-        "tags": ["API Keys"],
+        "tags": [
+          "API Keys"
+        ],
         "security": [
           {
             "BearerAuth": []
@@ -7425,7 +8248,10 @@
             "application/json": {
               "schema": {
                 "type": "object",
-                "required": ["name", "org_id"],
+                "required": [
+                  "name",
+                  "org_id"
+                ],
                 "properties": {
                   "name": {
                     "type": "string",
@@ -7441,8 +8267,13 @@
                     "items": {
                       "type": "string"
                     },
-                    "default": ["read"],
-                    "example": ["read", "write"]
+                    "default": [
+                      "read"
+                    ],
+                    "example": [
+                      "read",
+                      "write"
+                    ]
                   },
                   "expires_at": {
                     "type": "string",
@@ -7543,7 +8374,9 @@
     "/v1/api-keys/{id}": {
       "get": {
         "summary": "Get a single API key by ID",
-        "tags": ["API Keys"],
+        "tags": [
+          "API Keys"
+        ],
         "security": [
           {
             "BearerAuth": []
@@ -7605,7 +8438,9 @@
       },
       "delete": {
         "summary": "Revoke an API key",
-        "tags": ["API Keys"],
+        "tags": [
+          "API Keys"
+        ],
         "security": [
           {
             "BearerAuth": []
@@ -7653,7 +8488,9 @@
     "/v1/api-keys/{id}/limits": {
       "patch": {
         "summary": "Update rate limits for an API key",
-        "tags": ["API Keys"],
+        "tags": [
+          "API Keys"
+        ],
         "security": [
           {
             "BearerAuth": []
@@ -7758,7 +8595,9 @@
       "post": {
         "summary": "Publish an event to all subscribers (WebSocket + webhooks)",
         "description": "Publishes a structured event to the Redis pub/sub channel for the authenticated organisation. All connected WebSocket clients for that org will receive the event in real-time, and any registered webhook endpoints matching the event type will be called asynchronously.\n",
-        "tags": ["Events"],
+        "tags": [
+          "Events"
+        ],
         "security": [
           {
             "BearerAuth": []
@@ -7770,7 +8609,9 @@
             "application/json": {
               "schema": {
                 "type": "object",
-                "required": ["type"],
+                "required": [
+                  "type"
+                ],
                 "properties": {
                   "type": {
                     "type": "string",
@@ -7903,6 +8744,10 @@
     {
       "name": "Auth",
       "description": "Registration and login — no authentication required"
+    },
+    {
+      "name": "Audio Files",
+      "description": "Organisation audio library. Uploads are converted to 8 kHz mono 16-bit PCM WAV. Owners, admins, and developers can write; all members can read."
     },
     {
       "name": "Applications",

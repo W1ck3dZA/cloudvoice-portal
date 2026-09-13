@@ -77,7 +77,7 @@ export default function QueueDetail() {
       <PageHeader
         eyebrow="Call Center / Queue"
         title={queue.data.name}
-        description={`${queue.data.fs_name} · ${queue.data.strategy}`}
+        description={queue.data.strategy}
         action={
           <button className="btn" onClick={() => nav('/call-center')}>
             <ArrowLeft size={15} /> Back
@@ -225,7 +225,7 @@ export default function QueueDetail() {
           />
         )}
       </Card>
-      <Card>
+      <Card className="tier-card">
         <div className="card-title">
           <div>
             <span className="eyebrow">Agent routing</span>

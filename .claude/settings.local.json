@@ -7,7 +7,8 @@
       "Bash(python3 -c ' *)",
       "Bash(pkill -f \"vite --port 5184\")",
       "Bash(pkill -f \"vite --port 5185\")",
-      "Bash(npx tsc *)"
+      "Bash(npx tsc *)",
+      "Bash(awk -F: '{print $1}')"
     ]
   }
 }
