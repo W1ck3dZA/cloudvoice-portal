@@ -2,9 +2,16 @@ import { useState } from 'react';
 import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query';
 import { useNavigate } from 'react-router-dom';
 import { Users, UsersRound } from 'lucide-react';
-import { agentsApi, audioFilesApi, errorMessage, queuesApi } from '../lib/api';
+import {
+  agentsApi,
+  audioFilesApi,
+  errorMessage,
+  gatewaysApi,
+  queuesApi,
+  sipUsersApi,
+} from '../lib/api';
 import { useSession } from '../lib/session';
-import type { Agent, Queue } from '../types/api';
+import type { Agent, CallTarget, Queue } from '../types/api';
 import {
   AddButton,
   Card,
@@ -27,10 +34,17 @@ const qBlank = {
 };
 const aBlank = {
   name: '',
-  type: 'callback',
-  contact: '',
   status: 'Logged Out',
   wrap_up_time: '0',
+  target_type: 'phone',
+  number: '',
+  gateway_id: '',
+  sip_uri: '',
+  profile: 'external',
+  sip_username: '',
+  sip_password: '',
+  outbound_proxy: '',
+  user: '',
 };
 export default function CallCenter() {
   const nav = useNavigate();
@@ -52,6 +66,14 @@ export default function CallCenter() {
     queryKey: ['audio-files', orgId],
     queryFn: () => audioFilesApi.list(orgId, 200, 0),
     enabled: !!orgId,
+  });
+  const gateways = useQuery({
+    queryKey: ['gateways'],
+    queryFn: gatewaysApi.list,
+  });
+  const sipUsers = useQuery({
+    queryKey: ['sip-users'],
+    queryFn: sipUsersApi.list,
   });
   const [drawer, setDrawer] = useState<
     'qadd' | 'qedit' | 'aadd' | 'aedit' | null
@@ -91,15 +113,42 @@ export default function CallCenter() {
     mutationFn: (q: Queue) => queuesApi.update(q.id, { active: !q.active }),
     onSuccess: () => qc.invalidateQueries({ queryKey: ['queues'] }),
   });
+  const buildTarget = (): CallTarget | undefined => {
+    if (af.target_type === 'phone') {
+      if (!af.number || !af.gateway_id) return undefined;
+      return { type: 'phone', number: af.number, gateway_id: af.gateway_id };
+    }
+    if (af.target_type === 'sip') {
+      if (!af.sip_uri) return undefined;
+      return {
+        type: 'sip',
+        sip_uri: af.sip_uri,
+        profile: af.profile || undefined,
+        auth: af.sip_username
+          ? { username: af.sip_username, password: af.sip_password }
+          : undefined,
+        outbound_proxy: af.outbound_proxy || undefined,
+      };
+    }
+    if (!af.user) return undefined;
+    return { type: 'user', user: af.user };
+  };
   const asave = useMutation({
-    mutationFn: () =>
-      drawer === 'aadd'
-        ? agentsApi.create({ ...af, wrap_up_time: +af.wrap_up_time })
+    mutationFn: () => {
+      const target = buildTarget();
+      return drawer === 'aadd'
+        ? agentsApi.create({
+            name: af.name,
+            target,
+            status: af.status,
+            wrap_up_time: +af.wrap_up_time,
+          })
         : agentsApi.update(aSel!.id, {
             name: af.name,
-            contact: af.contact,
+            ...(target && { target }),
             wrap_up_time: +af.wrap_up_time,
-          }),
+          });
+    },
     onSuccess: () => {
       qc.invalidateQueries({ queryKey: ['agents'] });
       close();
@@ -228,7 +277,6 @@ export default function CallCenter() {
                 <thead>
                   <tr>
                     <th>Name</th>
-                    <th>Contact</th>
                     <th>Status</th>
                     <th>State</th>
                     <th>Calls</th>
@@ -241,7 +289,6 @@ export default function CallCenter() {
                       <td>
                         <strong>{a.name}</strong>
                       </td>
-                      <td>{a.contact}</td>
                       <td>
                         <select
                           className="status-select"
@@ -271,9 +318,8 @@ export default function CallCenter() {
                           onEdit={() => {
                             setASel(a);
                             setAf({
+                              ...aBlank,
                               name: a.name,
-                              type: a.type,
-                              contact: a.contact,
                               status: a.status,
                               wrap_up_time: String(a.wrap_up_time || 0),
                             });
@@ -407,28 +453,125 @@ export default function CallCenter() {
                 onChange={(e) => setAf((f) => ({ ...f, name: e.target.value }))}
               />
             </Field>
-            {drawer === 'aadd' && (
-              <Field label="Type">
+            <Field
+              label="Target type"
+              hint={
+                drawer === 'aedit'
+                  ? 'Leave unset to keep the current target'
+                  : undefined
+              }
+            >
+              <select
+                value={af.target_type}
+                onChange={(e) =>
+                  setAf((f) => ({ ...f, target_type: e.target.value }))
+                }
+              >
+                <option value="phone">Phone via gateway</option>
+                <option value="sip">SIP URI</option>
+                <option value="user">Registered SIP user</option>
+              </select>
+            </Field>
+            {af.target_type === 'phone' && (
+              <>
+                <Field label="Destination number">
+                  <input
+                    required={drawer === 'aadd'}
+                    value={af.number}
+                    onChange={(e) =>
+                      setAf((f) => ({ ...f, number: e.target.value }))
+                    }
+                    placeholder="+27821234567"
+                  />
+                </Field>
+                <Field label="Gateway">
+                  <select
+                    required={drawer === 'aadd'}
+                    value={af.gateway_id}
+                    onChange={(e) =>
+                      setAf((f) => ({ ...f, gateway_id: e.target.value }))
+                    }
+                  >
+                    <option value="">Choose gateway…</option>
+                    {(gateways.data || []).map((g) => (
+                      <option key={g.id} value={g.id}>
+                        {g.name}
+                      </option>
+                    ))}
+                  </select>
+                </Field>
+              </>
+            )}
+            {af.target_type === 'sip' && (
+              <>
+                <Field label="SIP URI">
+                  <input
+                    required={drawer === 'aadd'}
+                    value={af.sip_uri}
+                    onChange={(e) =>
+                      setAf((f) => ({ ...f, sip_uri: e.target.value }))
+                    }
+                    placeholder="sip:bob@example.com"
+                  />
+                </Field>
+                <Field label="Sofia profile">
+                  <input
+                    value={af.profile}
+                    onChange={(e) =>
+                      setAf((f) => ({ ...f, profile: e.target.value }))
+                    }
+                  />
+                </Field>
+                <Field label="Digest username">
+                  <input
+                    value={af.sip_username}
+                    onChange={(e) =>
+                      setAf((f) => ({ ...f, sip_username: e.target.value }))
+                    }
+                  />
+                </Field>
+                <Field label="Digest password">
+                  <input
+                    type="password"
+                    value={af.sip_password}
+                    onChange={(e) =>
+                      setAf((f) => ({ ...f, sip_password: e.target.value }))
+                    }
+                  />
+                </Field>
+                <Field label="Outbound proxy">
+                  <input
+                    value={af.outbound_proxy}
+                    onChange={(e) =>
+                      setAf((f) => ({ ...f, outbound_proxy: e.target.value }))
+                    }
+                    placeholder="sip:192.168.1.50:5060;lr"
+                  />
+                </Field>
+              </>
+            )}
+            {af.target_type === 'user' && (
+              <Field label="Registered user">
                 <select
-                  value={af.type}
+                  required={drawer === 'aadd'}
+                  value={af.user}
                   onChange={(e) =>
-                    setAf((f) => ({ ...f, type: e.target.value }))
+                    setAf((f) => ({ ...f, user: e.target.value }))
                   }
                 >
-                  <option value="callback">callback</option>
-                  <option value="uuid-standby">uuid-standby</option>
+                  <option value="">Choose SIP user…</option>
+                  {(sipUsers.data || []).map((u) => (
+                    <option
+                      key={u.id}
+                      value={`${u.extension}@${u.realm}`}
+                    >
+                      {u.extension}
+                      {u.display_name ? ` · ${u.display_name}` : ''}
+                    </option>
+                  ))}
                 </select>
               </Field>
             )}
-            <Field label="Contact">
-              <input
-                required
-                value={af.contact}
-                onChange={(e) =>
-                  setAf((f) => ({ ...f, contact: e.target.value }))
-                }
-              />
-            </Field>
             <Field label="Wrap-up seconds">
               <input
                 type="number"

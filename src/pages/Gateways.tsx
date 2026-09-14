@@ -16,16 +16,16 @@ import {
   StatusToggle,
   Toggle,
 } from '../components/UI';
+const CODEC_OPTIONS = ['OPUS', 'PCMU', 'PCMA', 'G729', 'G722'];
 const blank = {
   name: '',
-  profile: 'external',
   realm: '',
   proxy: '',
   username: '',
   password: '',
   caller_id_number: '',
   caller_id_name: '',
-  codecs: 'PCMU,PCMA',
+  codecs: ['PCMU', 'PCMA'] as string[],
   active: true,
 };
 export default function Gateways() {
@@ -47,11 +47,15 @@ export default function Gateways() {
       password: form.password || undefined,
       caller_id_number: form.caller_id_number || null,
       caller_id_name: form.caller_id_name || null,
-      codecs: form.codecs
-        .split(',')
-        .map((x) => x.trim())
-        .filter(Boolean),
     };
+  }
+  function codec(c: string, v: boolean) {
+    setForm((f) => ({
+      ...f,
+      codecs: v
+        ? [...new Set([...f.codecs, c])]
+        : f.codecs.filter((x) => x !== c),
+    }));
   }
   const save = useMutation({
     mutationFn: () =>
@@ -85,14 +89,13 @@ export default function Gateways() {
     setSelected(g);
     setForm({
       name: g.name,
-      profile: g.profile,
       realm: g.realm,
       proxy: g.proxy || '',
       username: g.username,
       password: '',
       caller_id_number: g.caller_id_number || '',
       caller_id_name: g.caller_id_name || '',
-      codecs: (g.codecs || []).join(','),
+      codecs: g.codecs || [],
       active: g.active,
     });
     setMode('edit');
@@ -124,7 +127,6 @@ export default function Gateways() {
                 <tr>
                   <th>Name</th>
                   <th>Realm</th>
-                  <th>Profile</th>
                   <th>Username</th>
                   <th>Codecs</th>
                   <th>Status</th>
@@ -138,7 +140,6 @@ export default function Gateways() {
                       <strong>{g.name}</strong>
                     </td>
                     <td>{g.realm}</td>
-                    <td>{g.profile}</td>
                     <td>{g.username}</td>
                     <td>{g.codecs?.join(', ') || '—'}</td>
                     <td>
@@ -227,14 +228,12 @@ export default function Gateways() {
             {(
               [
                 'name',
-                'profile',
                 'realm',
                 'proxy',
                 'username',
                 'password',
                 'caller_id_number',
                 'caller_id_name',
-                'codecs',
               ] as const
             ).map((k) => (
               <Field label={k.replaceAll('_', ' ')} key={k}>
@@ -253,6 +252,21 @@ export default function Gateways() {
                 />
               </Field>
             ))}
+            <div>
+              <div className="field-label">Codecs</div>
+              <div className="check-row">
+                {CODEC_OPTIONS.map((c) => (
+                  <label key={c}>
+                    <input
+                      type="checkbox"
+                      checked={form.codecs.includes(c)}
+                      onChange={(e) => codec(c, e.target.checked)}
+                    />{' '}
+                    {c}
+                  </label>
+                ))}
+              </div>
+            </div>
             <Toggle
               checked={form.active}
               onChange={(v) => setForm((f) => ({ ...f, active: v }))}

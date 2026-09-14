@@ -71,7 +71,6 @@ export interface SipGateway {
   id: string;
   organisation_id: string;
   name: string;
-  profile: string;
   realm: string;
   proxy: string | null;
   username: string;
@@ -91,6 +90,16 @@ export interface Recording {
   duration_seconds: number | null;
   created_at: string;
 }
+export type CallTarget =
+  | { type: 'phone'; number: string; gateway_id: string }
+  | {
+      type: 'sip';
+      sip_uri: string;
+      profile?: string;
+      auth?: { username: string; password: string };
+      outbound_proxy?: string;
+    }
+  | { type: 'user'; user: string };
 export interface Call {
   id: string;
   organisation_id: string;
@@ -228,8 +237,6 @@ export interface Agent {
   id: string;
   organisation_id: string;
   name: string;
-  type: 'callback' | 'uuid-standby';
-  contact: string;
   sip_user_id: string | null;
   status: 'Available' | 'Available (On Demand)' | 'On Break' | 'Logged Out';
   state: string;

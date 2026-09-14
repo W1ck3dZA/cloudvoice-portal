@@ -1,4 +1,5 @@
 import axios from 'axios';
+import { showToast } from './toast';
 import type {
   Agent,
   AudioFile,
@@ -41,6 +42,22 @@ api.interceptors.response.use(
       localStorage.removeItem('cv_token');
       localStorage.removeItem('cv_session');
       if (!location.pathname.endsWith('/login')) location.href = '/login';
+      return Promise.reject(e);
+    }
+    const err = e.response?.data?.error;
+    if (err?.code === 'rate_limit_exceeded') {
+      const resetAt = err.reset_at ? new Date(err.reset_at) : null;
+      showToast({
+        kind: 'error',
+        message: resetAt
+          ? `Too many requests — you've hit the daily limit (${err.limit}). Try again after ${resetAt.toLocaleTimeString()}.`
+          : "Too many requests — you've hit the daily rate limit. Please try again later.",
+        durationMs: 10000,
+      });
+    } else if (err?.message) {
+      showToast({ kind: 'error', message: err.message });
+    } else if (e.message && e.code !== 'ERR_CANCELED') {
+      showToast({ kind: 'error', message: e.message });
     }
     return Promise.reject(e);
   },
