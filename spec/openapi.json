@@ -335,23 +335,11 @@
             "type": "string",
             "example": "Alice"
           },
-          "type": {
-            "type": "string",
-            "enum": [
-              "callback",
-              "uuid-standby"
-            ],
-            "example": "callback"
-          },
-          "contact": {
-            "type": "string",
-            "example": "sofia/internal/1001@sip.local",
-            "description": "Dial string or UUID for uuid-standby agents"
-          },
           "sip_user_id": {
             "type": "string",
             "format": "uuid",
-            "nullable": true
+            "nullable": true,
+            "description": "Set when target.type was \"sip_user\""
           },
           "status": {
             "type": "string",
@@ -999,11 +987,6 @@
           "name": {
             "type": "string",
             "example": "Primary Trunk"
-          },
-          "profile": {
-            "type": "string",
-            "example": "external",
-            "description": "SIP profile name"
           },
           "realm": {
             "type": "string",
@@ -5362,10 +5345,6 @@
                     "type": "string",
                     "example": "Primary Trunk"
                   },
-                  "profile": {
-                    "type": "string",
-                    "default": "external"
-                  },
                   "realm": {
                     "type": "string",
                     "example": "sip.carrier.com"
@@ -5548,9 +5527,6 @@
                 "type": "object",
                 "properties": {
                   "name": {
-                    "type": "string"
-                  },
-                  "profile": {
                     "type": "string"
                   },
                   "realm": {
@@ -6666,29 +6642,84 @@
                 "type": "object",
                 "required": [
                   "name",
-                  "contact"
+                  "target"
                 ],
                 "properties": {
                   "name": {
                     "type": "string",
                     "example": "Alice"
                   },
-                  "type": {
-                    "type": "string",
-                    "enum": [
-                      "callback",
-                      "uuid-standby"
-                    ],
-                    "default": "callback"
-                  },
-                  "contact": {
-                    "type": "string",
-                    "example": "sofia/internal/1001@sip.local"
-                  },
-                  "sip_user_id": {
-                    "type": "string",
-                    "format": "uuid",
-                    "nullable": true
+                  "target": {
+                    "description": "Where calls to this agent should ring. One of three shapes, same pattern as `to` on POST /v1/calls — no FreeSWITCH dialstring knowledge required.\n",
+                    "oneOf": [
+                      {
+                        "type": "object",
+                        "required": [
+                          "type",
+                          "number",
+                          "gateway_id"
+                        ],
+                        "properties": {
+                          "type": {
+                            "type": "string",
+                            "enum": [
+                              "phone"
+                            ]
+                          },
+                          "number": {
+                            "type": "string",
+                            "example": "+27821234567"
+                          },
+                          "gateway_id": {
+                            "type": "string",
+                            "format": "uuid"
+                          }
+                        }
+                      },
+                      {
+                        "type": "object",
+                        "required": [
+                          "type",
+                          "sip_user_id"
+                        ],
+                        "properties": {
+                          "type": {
+                            "type": "string",
+                            "enum": [
+                              "sip_user"
+                            ]
+                          },
+                          "sip_user_id": {
+                            "type": "string",
+                            "format": "uuid",
+                            "description": "An existing SIP user (extension) from POST /v1/sip-users"
+                          }
+                        }
+                      },
+                      {
+                        "type": "object",
+                        "required": [
+                          "type",
+                          "sip_uri"
+                        ],
+                        "properties": {
+                          "type": {
+                            "type": "string",
+                            "enum": [
+                              "sip"
+                            ]
+                          },
+                          "sip_uri": {
+                            "type": "string",
+                            "example": "sip:bob@example.com"
+                          },
+                          "profile": {
+                            "type": "string",
+                            "default": "external"
+                          }
+                        }
+                      }
+                    ]
                   },
                   "status": {
                     "type": "string",
@@ -6898,8 +6929,9 @@
                   "name": {
                     "type": "string"
                   },
-                  "contact": {
-                    "type": "string"
+                  "target": {
+                    "description": "Same typed shape as on create — see POST /v1/call-center/agents.",
+                    "type": "object"
                   },
                   "max_no_answer": {
                     "type": "integer"

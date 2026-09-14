@@ -100,6 +100,10 @@ export type CallTarget =
       outbound_proxy?: string;
     }
   | { type: 'user'; user: string };
+export type AgentTarget =
+  | { type: 'phone'; number: string; gateway_id: string }
+  | { type: 'sip_user'; sip_user_id: string }
+  | { type: 'sip'; sip_uri: string; profile?: string };
 export interface Call {
   id: string;
   organisation_id: string;
