@@ -1,0 +1,19 @@
+services:
+  cloudvoice-portal:
+    container_name: cloudvoice-portal
+    build:
+      context: ..
+      dockerfile: deploy/Dockerfile
+      args:
+        VITE_API_URL: ${VITE_API_URL:-https://api.cloudvoice.network}
+    restart: unless-stopped
+    ports:
+      - '8080:80'
+    networks:
+      - local-bridge
+
+networks:
+  local-bridge:
+    driver: bridge
+    name: local-bridge
+    external: true

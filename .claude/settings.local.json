@@ -9,7 +9,13 @@
       "Bash(pkill -f \"vite --port 5185\")",
       "Bash(npx tsc *)",
       "Bash(awk -F: '{print $1}')",
-      "Bash(npx vite *)"
+      "Bash(npx vite *)",
+      "Bash(echo \"exists: $?\")",
+      "Bash(docker info *)",
+      "Bash(docker network *)",
+      "Bash(docker build *)",
+      "Bash(docker rm *)",
+      "Bash(docker rmi *)"
     ]
   }
 }
