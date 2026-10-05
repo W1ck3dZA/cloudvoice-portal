@@ -1,13 +1,30 @@
-export function Brand({ compact = false }: { compact?: boolean }) {
+import logo from '../assets/brand/logo.png';
+import logoWhite from '../assets/brand/logo-white.png';
+import mark from '../assets/brand/mark.png';
+import markWhite from '../assets/brand/mark-white.png';
+
+// onDark forces the white artwork (e.g. on the always-dark login panel);
+// otherwise the variant follows the active light/dark theme.
+export function Brand({
+  compact = false,
+  onDark = false,
+}: {
+  compact?: boolean;
+  onDark?: boolean;
+}) {
+  const color = compact ? mark : logo;
+  const white = compact ? markWhite : logoWhite;
+  const cls = compact ? 'brand-mark' : 'brand-logo';
   return (
     <div className="brand">
-      <div className="brand-mark" aria-hidden="true">
-        <svg viewBox="0 0 48 48">
-          <path d="M14 35h21a8 8 0 0 0 1-16 13 13 0 0 0-24-3A10 10 0 0 0 14 35Z" />
-          <path d="M17 27c3-6 11-6 14 0M20 30c2-3 6-3 8 0" />
-        </svg>
-      </div>
-      {!compact && <span>Cloudvoice</span>}
+      {onDark ? (
+        <img className={cls} src={white} alt="Cloudvoice" />
+      ) : (
+        <>
+          <img className={cls + ' brand-light'} src={color} alt="Cloudvoice" />
+          <img className={cls + ' brand-dark'} src={white} alt="" aria-hidden="true" />
+        </>
+      )}
     </div>
   );
 }

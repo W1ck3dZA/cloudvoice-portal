@@ -30,7 +30,7 @@ export default function Register() {
     <div className="login-page">
       <div className="login-art">
         <div className="login-brand">
-          <Brand />
+          <Brand onDark />
           <h1>
             Your voice platform,
             <br />

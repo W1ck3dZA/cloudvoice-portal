@@ -29,7 +29,7 @@ export default function Login() {
     <div className="login-page">
       <div className="login-art">
         <div className="login-brand">
-          <Brand />
+          <Brand onDark />
           <h1>
             Voice infrastructure,
             <br />
