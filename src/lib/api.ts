@@ -94,6 +94,10 @@ export const authApi = {
     current_password: string;
     new_password: string;
   }) => unwrap<any>(await api.post('/v1/users/me/change-password', body)),
+  changeEmail: async (body: { new_email: string; current_password: string }) =>
+    unwrap<{ id: string; email: string }>(
+      await api.post('/v1/users/me/change-email', body),
+    ),
   organisations: async () =>
     list<Organisation>(await api.get('/v1/users/me/organisations'), [
       'organisations',
