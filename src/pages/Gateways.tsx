@@ -1,6 +1,7 @@
 import { useState } from 'react';
 import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query';
 import { Router } from 'lucide-react';
+import { showToast } from '../lib/toast';
 import { errorMessage, gatewaysApi } from '../lib/api';
 import type { SipGateway } from '../types/api';
 import {
@@ -27,6 +28,16 @@ const blank = {
   caller_id_name: '',
   codecs: ['PCMU', 'PCMA'] as string[],
   active: true,
+};
+const GATEWAY_STATUS: Record<string, string> = {
+  registered: 'Gateway is registered with the carrier',
+  up: 'Gateway is reachable',
+  registering: 'Gateway is registering. Test again in a few seconds',
+  unregistered: 'Gateway is not registered',
+  failed: 'Gateway registration failed. Check the username, password and realm',
+  down: 'Gateway is unreachable',
+  not_found: 'Gateway is not loaded yet. Save it again or contact support',
+  unknown: 'Gateway status is unknown',
 };
 export default function Gateways() {
   const qc = useQueryClient();
@@ -77,7 +88,11 @@ export default function Gateways() {
   });
   const test = useMutation({
     mutationFn: gatewaysApi.test,
-    onSuccess: (d: any) => alert(d?.message || 'Gateway test completed'),
+    onSuccess: (d: { connected: boolean; status: string }) =>
+      showToast({
+        kind: d.connected ? 'success' : 'error',
+        message: GATEWAY_STATUS[d.status] ?? 'Gateway status is unknown',
+      }),
     onError: (e) => alert(errorMessage(e)),
   });
   const toggleActive = useMutation({

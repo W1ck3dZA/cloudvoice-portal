@@ -19,8 +19,14 @@ import {
   UsersRound,
   Volume2,
 } from 'lucide-react';
-import { appsApi, errorMessage, queuesApi } from '../lib/api';
-import type { Verb } from '../types/api';
+import {
+  appsApi,
+  errorMessage,
+  gatewaysApi,
+  queuesApi,
+  sipUsersApi,
+} from '../lib/api';
+import type { CallTarget, SipGateway, SipUser, Verb } from '../types/api';
 import { ErrorBox, Field, Spinner, Toggle } from '../components/UI';
 type Path = (string | number)[];
 const catalog = [
@@ -47,7 +53,7 @@ const defaults: Record<string, () => Verb> = {
   }),
   dial: () => ({
     verb: 'dial',
-    target: '',
+    to: { type: 'phone', number: '', gateway_id: '' },
     timeoutSecs: 30,
     answerOnBridge: false,
   }),
@@ -91,6 +97,12 @@ function setFlow(root: Verb[], path: Path, next: Verb[]): Verb[] {
   cur[path[path.length - 1] as any] = next;
   return copy;
 }
+function dialLabel(to?: CallTarget) {
+  if (to?.type === 'phone') return to.number || 'Set number';
+  if (to?.type === 'sip') return to.sip_uri || 'Set SIP URI';
+  if (to?.type === 'user') return to.user || 'Choose SIP user';
+  return 'Set destination';
+}
 function label(v: Verb) {
   switch (v.verb) {
     case 'play':
@@ -98,7 +110,7 @@ function label(v: Verb) {
     case 'gather':
       return `Collect ${v.numDigits || v.maxDigits || 'DTMF'} digit(s)`;
     case 'dial':
-      return v.target || 'Set dial target';
+      return dialLabel(v.to);
     case 'listen':
       return v.url || 'Set recording path';
     case 'pause':
@@ -123,6 +135,14 @@ export default function FlowBuilder() {
     enabled: !!id,
   });
   const queues = useQuery({ queryKey: ['queues'], queryFn: queuesApi.list });
+  const gateways = useQuery({
+    queryKey: ['gateways'],
+    queryFn: gatewaysApi.list,
+  });
+  const sipUsers = useQuery({
+    queryKey: ['sip-users'],
+    queryFn: sipUsersApi.list,
+  });
   const [root, setRoot] = useState<Verb[]>([]);
   const [path, setPath] = useState<Path>([]);
   const [selected, setSelected] = useState<number | null>(null);
@@ -331,6 +351,8 @@ export default function FlowBuilder() {
               patch={patch}
               drill={drill}
               queues={queues.data || []}
+              gateways={gateways.data || []}
+              sipUsers={sipUsers.data || []}
             />
           ) : (
             <div className="inspector-empty">
@@ -351,11 +373,15 @@ function Inspector({
   patch,
   drill,
   queues,
+  gateways,
+  sipUsers,
 }: {
   node: Verb;
   patch: (p: any) => void;
   drill: (p: Path) => void;
   queues: any[];
+  gateways: SipGateway[];
+  sipUsers: SipUser[];
 }) {
   const [branch, setBranch] = useState('');
   return (
@@ -415,13 +441,84 @@ function Inspector({
       )}
       {node.verb === 'dial' && (
         <>
-          <Field label="FreeSWITCH dial target">
-            <input
-              value={node.target}
-              onChange={(e) => patch({ target: e.target.value })}
-              placeholder="sofia/gateway/main/+2711…"
-            />
+          <Field label="Destination type">
+            <select
+              value={node.to?.type || ''}
+              onChange={(e) =>
+                patch({
+                  to:
+                    e.target.value === 'phone'
+                      ? { type: 'phone', number: '', gateway_id: '' }
+                      : e.target.value === 'sip'
+                        ? { type: 'sip', sip_uri: '' }
+                        : { type: 'user', user: '' },
+                })
+              }
+            >
+              {!node.to && <option value="">Choose destination…</option>}
+              <option value="phone">Phone via gateway</option>
+              <option value="sip">SIP URI</option>
+              <option value="user">Registered SIP user</option>
+            </select>
           </Field>
+          {node.to?.type === 'phone' && (
+            <>
+              <Field label="Gateway">
+                <select
+                  value={node.to.gateway_id}
+                  onChange={(e) =>
+                    patch({ to: { ...node.to, gateway_id: e.target.value } })
+                  }
+                >
+                  <option value="">Choose gateway…</option>
+                  {gateways.map((g) => (
+                    <option key={g.id} value={g.id}>
+                      {g.name}
+                    </option>
+                  ))}
+                </select>
+              </Field>
+              <Field label="Number">
+                <input
+                  value={node.to.number}
+                  onChange={(e) =>
+                    patch({ to: { ...node.to, number: e.target.value } })
+                  }
+                  placeholder="+27115551234"
+                />
+              </Field>
+            </>
+          )}
+          {node.to?.type === 'sip' && (
+            <Field label="SIP URI">
+              <input
+                value={node.to.sip_uri}
+                onChange={(e) =>
+                  patch({ to: { ...node.to, sip_uri: e.target.value } })
+                }
+                placeholder="sip:bob@example.com"
+              />
+            </Field>
+          )}
+          {node.to?.type === 'user' && (
+            <Field label="SIP user">
+              <select
+                value={node.to.user}
+                onChange={(e) =>
+                  patch({ to: { type: 'user', user: e.target.value } })
+                }
+              >
+                <option value="">Choose SIP user…</option>
+                {sipUsers.map((u) => (
+                  <option key={u.id} value={`${u.extension}@${u.realm}`}>
+                    {u.display_name
+                      ? `${u.display_name} (${u.extension})`
+                      : u.extension}
+                  </option>
+                ))}
+              </select>
+            </Field>
+          )}
           <Field label="Caller ID">
             <input
               value={node.callerId || ''}

@@ -24,17 +24,18 @@ import {
   Spinner,
   StatusToggle,
 } from '../components/UI';
+import { AGENT_STATUSES, humanize } from '../lib/labels';
 const qBlank = {
   name: '',
   strategy: 'longest-idle-agent',
   moh_sound: '',
   max_wait_time: '0',
   discard_abandoned_after: '60',
-  agent_no_answer_status: 'On Break',
+  agent_no_answer_status: 'on_break',
 };
 const aBlank = {
   name: '',
-  status: 'Logged Out',
+  status: 'logged_out',
   wrap_up_time: '0',
   target_type: 'phone',
   number: '',
@@ -148,7 +149,7 @@ export default function CallCenter() {
       <PageHeader
         eyebrow="Operations"
         title="Call Center"
-        description="Manage queues and agents backed by FreeSWITCH mod_callcenter."
+        description="Manage call queues and the agents who answer them."
         action={
           <AddButton
             onClick={() => {
@@ -229,7 +230,7 @@ export default function CallCenter() {
                                 q.discard_abandoned_after || 60,
                               ),
                               agent_no_answer_status:
-                                q.agent_no_answer_status || 'On Break',
+                                q.agent_no_answer_status || 'on_break',
                             });
                             setDrawer('qedit');
                           }}
@@ -289,17 +290,14 @@ export default function CallCenter() {
                               )
                           }
                         >
-                          {[
-                            'Available',
-                            'Available (On Demand)',
-                            'On Break',
-                            'Logged Out',
-                          ].map((x) => (
-                            <option key={x}>{x}</option>
+                          {AGENT_STATUSES.map((x) => (
+                            <option key={x.value} value={x.value}>
+                              {x.label}
+                            </option>
                           ))}
                         </select>
                       </td>
-                      <td>{a.state}</td>
+                      <td>{humanize(a.state)}</td>
                       <td>{a.calls_answered}</td>
                       <td>
                         <RowActions

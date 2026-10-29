@@ -2,6 +2,7 @@ import { useState } from 'react';
 import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query';
 import { PhoneCall, PhoneOutgoing, Search } from 'lucide-react';
 import { appsApi, callsApi, errorMessage, gatewaysApi } from '../lib/api';
+import { humanize } from '../lib/labels';
 import type { Call } from '../types/api';
 import {
   AddButton,
@@ -24,7 +25,6 @@ const blank = {
   number: '',
   gateway_id: '',
   sip_uri: '',
-  profile: 'external',
   sip_username: '',
   sip_password: '',
   outbound_proxy: '',
@@ -83,7 +83,6 @@ export default function Calls() {
             ? {
                 type: 'sip',
                 sip_uri: form.sip_uri,
-                profile: form.profile,
                 auth: form.sip_username
                   ? { username: form.sip_username, password: form.sip_password }
                   : undefined,
@@ -180,7 +179,7 @@ export default function Calls() {
                     <td>
                       <Status value={c.status} />
                     </td>
-                    <td>{c.hangup_cause || '—'}</td>
+                    <td>{humanize(c.hangup_cause)}</td>
                     <td>
                       {c.duration_seconds == null
                         ? '—'
@@ -234,7 +233,7 @@ export default function Calls() {
               ['From', view.from_number],
               ['To', view.to_number],
               ['Status', <Status value={view.status} />],
-              ['Hangup cause', view.hangup_cause || '—'],
+              ['Hangup cause', humanize(view.hangup_cause)],
               [
                 'Duration',
                 view.duration_seconds == null
@@ -337,14 +336,6 @@ export default function Calls() {
                         setForm((f) => ({ ...f, sip_uri: e.target.value }))
                       }
                       placeholder="sip:bob@example.com"
-                    />
-                  </Field>
-                  <Field label="Sofia profile">
-                    <input
-                      value={form.profile}
-                      onChange={(e) =>
-                        setForm((f) => ({ ...f, profile: e.target.value }))
-                      }
                     />
                   </Field>
                   <Field label="Digest username">

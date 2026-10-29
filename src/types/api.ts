@@ -1,3 +1,4 @@
+import type { AgentStatus } from '../lib/labels';
 export type Role = 'owner' | 'admin' | 'developer' | 'viewer';
 export interface AudioFile {
   id: string;
@@ -95,7 +96,6 @@ export type CallTarget =
   | {
       type: 'sip';
       sip_uri: string;
-      profile?: string;
       auth?: { username: string; password: string };
       outbound_proxy?: string;
     }
@@ -103,7 +103,7 @@ export type CallTarget =
 export type AgentTarget =
   | { type: 'phone'; number: string; gateway_id: string }
   | { type: 'sip_user'; sip_user_id: string }
-  | { type: 'sip'; sip_uri: string; profile?: string };
+  | { type: 'sip'; sip_uri: string };
 export interface Call {
   id: string;
   organisation_id: string;
@@ -156,7 +156,7 @@ export type VerbGather = {
 };
 export type VerbDial = {
   verb: 'dial';
-  target: string;
+  to: CallTarget;
   callerId?: string;
   callerIdName?: string;
   timeoutSecs?: number;
@@ -230,20 +230,21 @@ export interface Queue {
   tier_rule_wait_second?: number;
   discard_abandoned_after: number;
   abandoned_resume_allowed?: boolean;
-  agent_no_answer_status: string;
+  agent_no_answer_status: AgentStatus;
   ring_progressively_delay?: number;
   calls_answered: number;
   calls_abandoned: number;
   active: boolean;
   created_at: string;
 }
+export type AgentState = 'idle' | 'waiting' | 'receiving' | 'in_call' | 'reserved';
 export interface Agent {
   id: string;
   organisation_id: string;
   name: string;
   sip_user_id: string | null;
-  status: 'Available' | 'Available (On Demand)' | 'On Break' | 'Logged Out';
-  state: string;
+  status: AgentStatus;
+  state: AgentState | null;
   max_no_answer: number;
   wrap_up_time: number;
   reject_delay_time: number;
@@ -262,10 +263,10 @@ export interface QueueTier {
   organisation_id: string;
   level: number;
   position: number;
-  state: string;
+  state: 'ready' | 'offering' | 'active' | 'standby' | 'no_answer' | null;
   agent_name: string;
-  agent_status: string;
-  agent_state: string;
+  agent_status: AgentStatus;
+  agent_state: AgentState | null;
 }
 export interface QueueStats {
   queue_id: string;
@@ -293,9 +294,7 @@ export interface SmsMessage {
   encoding: 'gsm7' | 'ucs2';
   segments: number;
   status: string;
-  provider_message_id?: string | null;
   error_code?: string | null;
-  diagnostic_info?: string | null;
   tag?: Record<string, unknown> | null;
   submitted_at?: string | null;
   delivered_at?: string | null;
@@ -343,8 +342,8 @@ export interface ApiKey {
 export interface SmsCredential {
   id: string;
   organisation_id: string;
-  jasmin_username: string;
-  jasmin_password?: string;
+  username: string;
+  password_set: boolean;
   default_sender_id: string | null;
   active: boolean;
   created_at: string;
@@ -355,14 +354,19 @@ export interface CallCenterMember {
   id: string;
   queue_id: string;
   organisation_id: string;
-  freeswitch_uuid: string;
   call_id: string | null;
   agent_id: string | null;
   agent_name: string | null;
   cid_name: string | null;
   cid_number: string | null;
   status: 'waiting' | 'bridged' | 'completed' | 'abandoned';
-  leaving_reason: string | null;
+  leaving_reason:
+    | 'timeout'
+    | 'no_agents'
+    | 'exit_key'
+    | 'caller_left'
+    | 'other'
+    | null;
   joined_at: string;
   bridged_at: string | null;
   left_at: string | null;
