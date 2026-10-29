@@ -232,7 +232,7 @@ export default function Calls() {
               ['Direction', view.direction],
               ['From', view.from_number],
               ['To', view.to_number],
-              ['Status', <Status value={view.status} />],
+              ['Status', humanize(view.status)],
               ['Hangup cause', humanize(view.hangup_cause)],
               [
                 'Duration',
