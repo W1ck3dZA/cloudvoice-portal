@@ -3,6 +3,7 @@ import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query';
 import { AlertTriangle, Settings2, UserCog, Users } from 'lucide-react';
 import { errorMessage, orgApi } from '../lib/api';
 import { useSession } from '../lib/session';
+import { humanize } from '../lib/labels';
 import { useSwitchOrganisation } from '../lib/useSwitchOrganisation';
 import type { Organisation as Org } from '../types/api';
 import type { Member } from '../types/api';
@@ -16,7 +17,6 @@ import {
   PageHeader,
   RowActions,
   Spinner,
-  StatusToggle,
 } from '../components/UI';
 
 export default function Organisation() {
@@ -201,14 +201,7 @@ export default function Organisation() {
             </div>
             <div className="detail-item">
               <span>Status</span>
-              <StatusToggle
-                checked={
-                  (org.data?.status || 'active').toLowerCase() === 'active'
-                }
-                onChange={() => {}}
-                disabled
-                title={org.data?.status || 'active'}
-              />
+              <strong>{humanize(org.data?.status)}</strong>
             </div>
             <div className="detail-item">
               <span>Your role</span>
@@ -269,14 +262,7 @@ export default function Organisation() {
                     </td>
                     <td>{m.email}</td>
                     <td>{m.role}</td>
-                    <td>
-                      <StatusToggle
-                        checked={m.status?.toLowerCase() === 'active'}
-                        onChange={() => {}}
-                        disabled
-                        title={m.status}
-                      />
-                    </td>
+                    <td>{humanize(m.status)}</td>
                     <td>{new Date(m.joined_at).toLocaleDateString()}</td>
                     <td>
                       {canManage && m.role !== 'owner' && (
