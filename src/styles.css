@@ -419,6 +419,14 @@ select {
   overflow: auto;
   margin: 0 -20px -20px;
 }
+/* With no toolbar above it, the table sits flush with the card's top edge. */
+.table-wrap:first-child {
+  margin-top: -20px;
+  border-radius: 15px 15px 0 0;
+}
+.table-wrap:first-child th {
+  border-top: none;
+}
 table {
   width: 100%;
   border-collapse: collapse;
