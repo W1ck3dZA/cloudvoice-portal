@@ -23,6 +23,7 @@ import {
   Status,
   StatusToggle,
 } from '../components/UI';
+import { humanize } from '../lib/labels';
 export default function QueueDetail() {
   const { id } = useParams();
   const nav = useNavigate();
@@ -192,7 +193,7 @@ export default function QueueDetail() {
             </div>
             <div className="detail-item">
               <span>No answer status</span>
-              <strong>{queue.data.agent_no_answer_status}</strong>
+              <strong>{humanize(queue.data.agent_no_answer_status)}</strong>
             </div>
           </div>
         </Card>
@@ -279,7 +280,7 @@ export default function QueueDetail() {
                     <td>
                       <Status value={t.agent_status} />
                     </td>
-                    <td>{t.agent_state}</td>
+                    <td>{humanize(t.agent_state)}</td>
                     <td>
                       <input
                         className="mini-input"

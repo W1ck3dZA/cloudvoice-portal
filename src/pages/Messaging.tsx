@@ -3,6 +3,7 @@ import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query';
 import { KeyRound, MessageSquare, Send } from 'lucide-react';
 import { errorMessage, smsApi, smsCredentialsApi } from '../lib/api';
 import type { SmsMessage } from '../types/api';
+import { humanize } from '../lib/labels';
 import {
   AddButton,
   Card,
@@ -34,8 +35,8 @@ export default function Messaging() {
   const [view, setView] = useState<SmsMessage | null>(null);
   const [form, setForm] = useState({ to: '', from: '', body: '' });
   const [cform, setCform] = useState({
-    jasmin_username: '',
-    jasmin_password: '',
+    username: '',
+    password: '',
     default_sender_id: '',
     active: true,
   });
@@ -54,7 +55,7 @@ export default function Messaging() {
       creds.data
         ? smsCredentialsApi.update({
             ...cform,
-            jasmin_password: cform.jasmin_password || undefined,
+            password: cform.password || undefined,
             default_sender_id: cform.default_sender_id || null,
           })
         : smsCredentialsApi.create({
@@ -85,8 +86,8 @@ export default function Messaging() {
               onClick={() => {
                 const c = creds.data;
                 setCform({
-                  jasmin_username: c?.jasmin_username || '',
-                  jasmin_password: '',
+                  username: c?.username || '',
+                  password: '',
                   default_sender_id: c?.default_sender_id || '',
                   active: c?.active ?? true,
                 });
@@ -166,8 +167,12 @@ export default function Messaging() {
             <>
               <div className="detail-grid">
                 <div className="detail-item">
-                  <span>Jasmin username</span>
-                  <strong>{creds.data.jasmin_username}</strong>
+                  <span>Username</span>
+                  <strong>{creds.data.username}</strong>
+                </div>
+                <div className="detail-item">
+                  <span>Password</span>
+                  <strong>{creds.data.password_set ? 'Saved' : 'Not set'}</strong>
                 </div>
                 <div className="detail-item">
                   <span>Default sender</span>
@@ -188,8 +193,8 @@ export default function Messaging() {
                   onClick={() => {
                     const c = creds.data!;
                     setCform({
-                      jasmin_username: c.jasmin_username,
-                      jasmin_password: '',
+                      username: c.username,
+                      password: '',
                       default_sender_id: c.default_sender_id || '',
                       active: c.active,
                     });
@@ -279,9 +284,9 @@ export default function Messaging() {
           <Field label="Username">
             <input
               required
-              value={cform.jasmin_username}
+              value={cform.username}
               onChange={(e) =>
-                setCform((f) => ({ ...f, jasmin_username: e.target.value }))
+                setCform((f) => ({ ...f, username: e.target.value }))
               }
             />
           </Field>
@@ -292,9 +297,9 @@ export default function Messaging() {
             <input
               type="password"
               required={!creds.data}
-              value={cform.jasmin_password}
+              value={cform.password}
               onChange={(e) =>
-                setCform((f) => ({ ...f, jasmin_password: e.target.value }))
+                setCform((f) => ({ ...f, password: e.target.value }))
               }
             />
           </Field>
@@ -328,8 +333,7 @@ export default function Messaging() {
               ['Status', <Status value={view.status} />],
               ['Encoding', view.encoding],
               ['Segments', view.segments],
-              ['Provider ID', view.provider_message_id || '—'],
-              ['Error', view.error_code || '—'],
+              ['Error', humanize(view.error_code)],
               ['Created', new Date(view.created_at).toLocaleString()],
             ].map(([a, b]) => (
               <div className="detail-item" key={String(a)}>

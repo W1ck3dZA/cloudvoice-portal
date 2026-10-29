@@ -299,7 +299,14 @@
           },
           "agent_no_answer_status": {
             "type": "string",
-            "example": "On Break"
+            "enum": [
+              "available",
+              "available_on_demand",
+              "on_break",
+              "logged_out"
+            ],
+            "example": "on_break",
+            "description": "Status an agent is moved to after missing too many calls"
           },
           "ring_progressively_delay": {
             "type": "integer",
@@ -344,17 +351,25 @@
           "status": {
             "type": "string",
             "enum": [
-              "Available",
-              "Available (On Demand)",
-              "On Break",
-              "Logged Out"
+              "available",
+              "available_on_demand",
+              "on_break",
+              "logged_out"
             ],
-            "example": "Available"
+            "example": "available"
           },
           "state": {
             "type": "string",
-            "example": "Waiting",
-            "description": "Live state set by mod_callcenter"
+            "enum": [
+              "idle",
+              "waiting",
+              "receiving",
+              "in_call",
+              "reserved"
+            ],
+            "nullable": true,
+            "example": "waiting",
+            "description": "Live state, updated by the platform"
           },
           "max_no_answer": {
             "type": "integer",
@@ -428,16 +443,38 @@
           },
           "state": {
             "type": "string",
-            "example": "Ready"
+            "enum": [
+              "ready",
+              "offering",
+              "active",
+              "standby",
+              "no_answer"
+            ],
+            "nullable": true,
+            "example": "ready"
           },
           "agent_name": {
             "type": "string"
           },
           "agent_status": {
-            "type": "string"
+            "type": "string",
+            "enum": [
+              "available",
+              "available_on_demand",
+              "on_break",
+              "logged_out"
+            ]
           },
           "agent_state": {
-            "type": "string"
+            "type": "string",
+            "enum": [
+              "idle",
+              "waiting",
+              "receiving",
+              "in_call",
+              "reserved"
+            ],
+            "nullable": true
           }
         }
       },
@@ -455,10 +492,6 @@
           "organisation_id": {
             "type": "string",
             "format": "uuid"
-          },
-          "freeswitch_uuid": {
-            "type": "string",
-            "description": "FS channel UUID of the caller"
           },
           "call_id": {
             "type": "string",
@@ -493,6 +526,13 @@
           },
           "leaving_reason": {
             "type": "string",
+            "enum": [
+              "timeout",
+              "no_agents",
+              "exit_key",
+              "caller_left",
+              "other"
+            ],
             "nullable": true
           },
           "joined_at": {
@@ -674,12 +714,12 @@
             "type": "string",
             "format": "uuid"
           },
-          "jasmin_username": {
+          "username": {
             "type": "string"
           },
-          "jasmin_password": {
-            "type": "string",
-            "description": "Plaintext password (admin-only route). Parity with sip_gateways.password."
+          "password_set": {
+            "type": "boolean",
+            "description": "Whether a password is saved. The password itself is never returned."
           },
           "default_sender_id": {
             "type": "string",
@@ -750,17 +790,17 @@
               "unknown"
             ]
           },
-          "provider_message_id": {
-            "type": "string",
-            "nullable": true
-          },
           "error_code": {
             "type": "string",
-            "nullable": true
-          },
-          "diagnostic_info": {
-            "type": "string",
-            "nullable": true
+            "nullable": true,
+            "enum": [
+              "not_configured",
+              "authentication_failed",
+              "no_route",
+              "rate_limited",
+              "provider_unavailable",
+              "send_failed"
+            ]
           },
           "tag": {
             "type": "object",
@@ -1110,7 +1150,19 @@
           "hangup_cause": {
             "type": "string",
             "nullable": true,
-            "example": "NORMAL_CLEARING"
+            "enum": [
+              "normal",
+              "time_limit",
+              "busy",
+              "no_answer",
+              "rejected",
+              "unallocated_number",
+              "network_error",
+              "timeout",
+              "limit_exceeded",
+              "failed"
+            ],
+            "example": "normal"
           },
           "duration_seconds": {
             "type": "integer",
@@ -1230,11 +1282,6 @@
             "type": "string",
             "description": "sip:/sips: URI (required when type=sip)"
           },
-          "profile": {
-            "type": "string",
-            "default": "external",
-            "description": "Sofia profile to use (type=sip only)"
-          },
           "auth": {
             "type": "object",
             "description": "Optional digest auth for type=sip when the URI 401-challenges. Password is NEVER stored or echoed in events.\n",
@@ -1254,7 +1301,7 @@
           "outbound_proxy": {
             "type": "string",
             "nullable": true,
-            "description": "Optional SIP proxy/SBC URI to route the outgoing INVITE through (type=sip only). Sets the FreeSWITCH `sip_route_uri` channel variable, which forces the INVITE to this address regardless of the Request-URI. Must be a valid `sip:` or `sips:` URI. Include `;lr` for RFC 3261 loose routing (recommended).\n",
+            "description": "Optional SIP proxy/SBC URI to route the outgoing INVITE through (type=sip only). The INVITE is sent to this address regardless of the Request-URI. Must be a valid `sip:` or `sips:` URI. Include `;lr` for RFC 3261 loose routing (recommended).\n",
             "example": "sip:192.168.1.50:5060;lr"
           },
           "user": {
@@ -1272,7 +1319,7 @@
       },
       "AmdConfig": {
         "type": "object",
-        "description": "Answering Machine Detection configuration. When present with `enabled: true`, the platform runs mod_amd on the answered channel before executing the application flow. Detection result is stored on the call record (`amd_result`) and a `call.amd` webhook event is fired with `result` and `cause` fields.\n**Results:** `human` | `machine` | `notsure` | `toolong`\n**Causes:** `connect` (human answered) | `longgreeting` | `maxwords` | `initialsilence` | `maxwordlength` | `toolong` (analysis timed out)\n**Tuning tips:**\n  - Increase `maximum_number_of_words` (default 3) if real people are being\n    misclassified as machines — 3 words is very aggressive.\n  - Increase `after_greeting_silence` to wait longer for silence after a\n    greeting before deciding the call is human.\n  - `total_analysis_time` is a hard cap — AMD returns as soon as it reaches\n    any decision, so the actual wait is usually much shorter.\n",
+        "description": "Answering Machine Detection configuration. When present with `enabled: true`, the platform runs answering machine detection on the answered call before executing the application flow. Detection result is stored on the call record (`amd_result`) and a `call.amd` webhook event is fired with `result` and `cause` fields.\n**Results:** `human` | `machine` | `notsure` | `toolong`\n**Causes:** `connect` (human answered) | `longgreeting` | `maxwords` | `initialsilence` | `maxwordlength` | `toolong` (analysis timed out)\n**Tuning tips:**\n  - Increase `maximum_number_of_words` (default 3) if real people are being\n    misclassified as machines — 3 words is very aggressive.\n  - Increase `after_greeting_silence` to wait longer for silence after a\n    greeting before deciding the call is human.\n  - `total_analysis_time` is a hard cap — AMD returns as soon as it reaches\n    any decision, so the actual wait is usually much shorter.\n",
         "required": [
           "enabled"
         ],
@@ -1631,8 +1678,9 @@
         "type": "object",
         "required": [
           "verb",
-          "target"
+          "to"
         ],
+        "description": "Bridge the caller to another destination. `to` takes the same typed destination as POST /v1/calls: a phone number through one of your gateways, a SIP URI, or a registered SIP user.\n",
         "properties": {
           "verb": {
             "type": "string",
@@ -1640,9 +1688,8 @@
               "dial"
             ]
           },
-          "target": {
-            "type": "string",
-            "example": "sofia/gateway/main/+27115551234"
+          "to": {
+            "$ref": "#/components/schemas/CallTarget"
           },
           "callerId": {
             "type": "string",
@@ -1756,7 +1803,7 @@
           },
           "reason": {
             "type": "string",
-            "description": "Free-text reason for the hangup. If it matches a known SIP cause string (UPPER_SNAKE_CASE like USER_BUSY, CALL_REJECTED, etc.) it's used as the SIP hangup cause. Any other value is stamped on the outgoing BYE as `X-Reason` and the cause defaults to NORMAL_CLEARING.\n"
+            "description": "Free-text reason for the hangup. If it matches a standard Q.850 cause name (UPPER_SNAKE_CASE like USER_BUSY or CALL_REJECTED) it's used as the hangup cause. Any other value is stamped on the outgoing BYE as `X-Reason` and the call ends with a normal hangup.\n"
           },
           "headers": {
             "type": "object",
@@ -1773,7 +1820,7 @@
           "verb",
           "queue_id"
         ],
-        "description": "Place the caller into a mod_callcenter queue. The call is held with hold music until an available agent bridges in, the caller hangs up, or `maxWaitSecs` expires. Flow execution blocks until one of those outcomes occurs, then continues with the appropriate branch verbs.\n",
+        "description": "Place the caller into a call center queue. The call is held with hold music until an available agent bridges in, the caller hangs up, or `maxWaitSecs` expires. Flow execution blocks until one of those outcomes occurs, then continues with the appropriate branch verbs.\n",
         "properties": {
           "verb": {
             "type": "string",
@@ -1814,7 +1861,7 @@
           "code",
           "reason"
         ],
-        "description": "Send a SIP response via FreeSWITCH's `respond` application, e.g. to reject an unanswered call with a specific status instead of a generic hangup cause. A final response (code >= 200) ends the call; a provisional response (1xx) does not, and the flow continues.\n",
+        "description": "Send a SIP response to the caller, e.g. to reject an unanswered call with a specific status instead of a generic hangup cause. A final response (code >= 200) ends the call; a provisional response (1xx) does not, and the flow continues.\n",
         "properties": {
           "verb": {
             "type": "string",
@@ -1846,7 +1893,7 @@
     "/health": {
       "get": {
         "summary": "Health check",
-        "description": "Returns the health status of all service connectors (DB, Redis, ESL).",
+        "description": "Returns the health status of the API and the services it depends on.",
         "tags": [
           "Meta"
         ],
@@ -2872,6 +2919,106 @@
         }
       }
     },
+    "/v1/users/me/change-email": {
+      "post": {
+        "summary": "Change current user email address",
+        "description": "The email is the sign-in identifier, so the current password is required.",
+        "tags": [
+          "Users"
+        ],
+        "security": [
+          {
+            "BearerAuth": []
+          }
+        ],
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "type": "object",
+                "required": [
+                  "new_email",
+                  "current_password"
+                ],
+                "properties": {
+                  "new_email": {
+                    "type": "string",
+                    "format": "email",
+                    "example": "alice.new@example.com"
+                  },
+                  "current_password": {
+                    "type": "string",
+                    "example": "P@ssword1"
+                  }
+                }
+              }
+            }
+          }
+        },
+        "responses": {
+          "200": {
+            "description": "Email updated successfully",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object",
+                  "properties": {
+                    "success": {
+                      "type": "boolean",
+                      "example": true
+                    },
+                    "data": {
+                      "type": "object",
+                      "properties": {
+                        "id": {
+                          "type": "string",
+                          "format": "uuid"
+                        },
+                        "email": {
+                          "type": "string",
+                          "format": "email"
+                        }
+                      }
+                    }
+                  }
+                }
+              }
+            }
+          },
+          "400": {
+            "description": "Missing fields, invalid email, or current password incorrect",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorResponse"
+                }
+              }
+            }
+          },
+          "401": {
+            "description": "Unauthenticated",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorResponse"
+                }
+              }
+            }
+          },
+          "409": {
+            "description": "Another account already uses this email",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorResponse"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
     "/v1/users/me/organisations": {
       "get": {
         "summary": "List organisations the current user belongs to",
@@ -2985,15 +3132,15 @@
               "schema": {
                 "type": "object",
                 "required": [
-                  "jasmin_username",
-                  "jasmin_password"
+                  "username",
+                  "password"
                 ],
                 "properties": {
-                  "jasmin_username": {
+                  "username": {
                     "type": "string",
                     "example": "myuser"
                   },
-                  "jasmin_password": {
+                  "password": {
                     "type": "string",
                     "example": "secret"
                   },
@@ -3052,10 +3199,10 @@
               "schema": {
                 "type": "object",
                 "properties": {
-                  "jasmin_username": {
+                  "username": {
                     "type": "string"
                   },
-                  "jasmin_password": {
+                  "password": {
                     "type": "string"
                   },
                   "default_sender_id": {
@@ -3363,7 +3510,7 @@
                   },
                   "realm": {
                     "type": "string",
-                    "description": "Defaults to FS_DEFAULT_REALM"
+                    "description": "Defaults to the platform's SIP domain"
                   },
                   "password": {
                     "type": "string",
@@ -5677,7 +5824,7 @@
     "/v1/gateways/{id}/test": {
       "post": {
         "summary": "Test gateway connectivity (owner or admin)",
-        "description": "Tests connectivity to the gateway and returns the status response.",
+        "description": "Checks the gateway's registration with the carrier. `status` is one of registered, registering, unregistered, failed, up (no registration needed and reachable), down, not_found or unknown.\n",
         "tags": [
           "Gateways"
         ],
@@ -5715,8 +5862,18 @@
                         "connected": {
                           "type": "boolean"
                         },
-                        "raw": {
-                          "type": "string"
+                        "status": {
+                          "type": "string",
+                          "enum": [
+                            "registered",
+                            "registering",
+                            "unregistered",
+                            "failed",
+                            "up",
+                            "down",
+                            "not_found",
+                            "unknown"
+                          ]
                         }
                       }
                     }
@@ -5771,7 +5928,7 @@
     "/v1/calls": {
       "post": {
         "summary": "Originate an outbound call",
-        "description": "Places an outbound call. Status updates (ringing, answered, completed, failed)\nare delivered in real-time via **WebSocket events** and **webhooks** — no polling required.\n\n---\n\n### Destination types (`to.type`)\n\n#### `phone` — Dial out via a SIP trunk\nRoutes the call through a configured SIP gateway. Auth, codecs, and proxy\nare taken from the gateway configuration.\n```json\n{\n  \"to\": {\n    \"type\": \"phone\",\n    \"number\": \"+27123456789\",\n    \"gateway_id\": \"<uuid>\"\n  }\n}\n```\n**Required:** `number` (E.164 format), `gateway_id`\n\n---\n\n#### `sip` — Dial a SIP URI directly\nSends the INVITE directly to any SIP URI using a named Sofia profile.\nUseful for calling SIP endpoints, SBCs, or inter-system trunks without\nconfiguring a gateway.\n```json\n{\n  \"to\": {\n    \"type\": \"sip\",\n    \"sip_uri\": \"sip:bob@example.com:5060\",\n    \"profile\": \"external\",\n    \"auth\": {\n      \"username\": \"bob\",\n      \"password\": \"secret\"\n    },\n    \"outbound_proxy\": \"sip:192.168.1.50:5060;lr\"\n  }\n}\n```\n**Required:** `sip_uri` (must include `sip:` or `sips:` scheme)\n\n**Optional fields:**\n- `profile` — Sofia profile to use (default: `external`)\n- `auth` — Digest credentials if the endpoint issues a 401 challenge.\n  The password is **never stored or echoed** in events.\n- `outbound_proxy` — Route the INVITE through a SIP proxy or SBC before\n  it reaches the destination URI. Must be a valid `sip:`/`sips:` URI.\n  Include `;lr` for RFC 3261 loose routing (e.g. `sip:192.168.1.50:5060;lr`).\n\n---\n\n#### `user` — Call a registered SIP extension\nResolves a SIP user registered with the platform and delivers the call\ndirectly to their device — no gateway or profile required.\n```json\n{\n  \"to\": {\n    \"type\": \"user\",\n    \"user\": \"1001@sip.example.com\"\n  }\n}\n```\n**Required:** `user` in `extension@realm` format\n\n---\n\n### Call control options\n- **`application_id`** — Run a call-flow application once the call answers\n  (play audio, collect digits, bridge, etc.).\n- **`record_calls`** — Enable recording for this call, overriding the\n  application's default.\n- **`amd`** — Answering Machine Detection. Fires a `call.amd` webhook event\n  with the result before the application flow starts.\n- **`time_limit`** — Hard cap on call duration (seconds). The call is\n  automatically ended when reached.\n- **`headers`** — Custom `X-` SIP headers added to the outgoing INVITE.\n- **`tag`** — Free-form metadata echoed in all webhook events for this call.\n",
+        "description": "Places an outbound call. Status updates (ringing, answered, completed, failed)\nare delivered in real-time via **WebSocket events** and **webhooks** — no polling required.\n\n---\n\n### Destination types (`to.type`)\n\n#### `phone` — Dial out via a SIP trunk\nRoutes the call through a configured SIP gateway. Auth, codecs, and proxy\nare taken from the gateway configuration.\n```json\n{\n  \"to\": {\n    \"type\": \"phone\",\n    \"number\": \"+27123456789\",\n    \"gateway_id\": \"<uuid>\"\n  }\n}\n```\n**Required:** `number` (E.164 format), `gateway_id`\n\n---\n\n#### `sip` — Dial a SIP URI directly\nSends the INVITE directly to any SIP URI.\nUseful for calling SIP endpoints, SBCs, or inter-system trunks without\nconfiguring a gateway.\n```json\n{\n  \"to\": {\n    \"type\": \"sip\",\n    \"sip_uri\": \"sip:bob@example.com:5060\",\n    \"auth\": {\n      \"username\": \"bob\",\n      \"password\": \"secret\"\n    },\n    \"outbound_proxy\": \"sip:192.168.1.50:5060;lr\"\n  }\n}\n```\n**Required:** `sip_uri` (must include `sip:` or `sips:` scheme)\n\n**Optional fields:**\n- `auth` — Digest credentials if the endpoint issues a 401 challenge.\n  The password is **never stored or echoed** in events.\n- `outbound_proxy` — Route the INVITE through a SIP proxy or SBC before\n  it reaches the destination URI. Must be a valid `sip:`/`sips:` URI.\n  Include `;lr` for RFC 3261 loose routing (e.g. `sip:192.168.1.50:5060;lr`).\n\n---\n\n#### `user` — Call a registered SIP extension\nResolves a SIP user registered with the platform and delivers the call\ndirectly to their device — no gateway required.\n```json\n{\n  \"to\": {\n    \"type\": \"user\",\n    \"user\": \"1001@sip.example.com\"\n  }\n}\n```\n**Required:** `user` in `extension@realm` format\n\n---\n\n### Call control options\n- **`application_id`** — Run a call-flow application once the call answers\n  (play audio, collect digits, bridge, etc.).\n- **`record_calls`** — Enable recording for this call, overriding the\n  application's default.\n- **`amd`** — Answering Machine Detection. Fires a `call.amd` webhook event\n  with the result before the application flow starts.\n- **`time_limit`** — Hard cap on call duration (seconds). The call is\n  automatically ended when reached.\n- **`headers`** — Custom `X-` SIP headers added to the outgoing INVITE.\n- **`tag`** — Free-form metadata echoed in all webhook events for this call.\n",
         "tags": [
           "Calls"
         ],
@@ -5797,7 +5954,7 @@
                     "type": "string",
                     "nullable": true,
                     "example": "+27100562194",
-                    "description": "Outbound caller ID number in E.164 format. Both `caller_id_number` and `caller_id_name` get this value. Falls back to the gateway's configured caller ID for type=phone, or to the platform's profile defaults for type=sip/user.\n"
+                    "description": "Outbound caller ID number in E.164 format. Both `caller_id_number` and `caller_id_name` get this value. Falls back to the gateway's configured caller ID for type=phone, or to the platform defaults for type=sip/user.\n"
                   },
                   "from_host": {
                     "type": "string",
@@ -5882,7 +6039,7 @@
             }
           },
           "400": {
-            "description": "Missing required fields or ESL error",
+            "description": "Missing or invalid fields",
             "content": {
               "application/json": {
                 "schema": {
@@ -5903,6 +6060,16 @@
           },
           "404": {
             "description": "Gateway not found",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorResponse"
+                }
+              }
+            }
+          },
+          "502": {
+            "description": "The call could not be placed (error code `call_failed`)",
             "content": {
               "application/json": {
                 "schema": {
@@ -6246,7 +6413,13 @@
                   },
                   "agent_no_answer_status": {
                     "type": "string",
-                    "example": "On Break"
+                    "enum": [
+                      "available",
+                      "available_on_demand",
+                      "on_break",
+                      "logged_out"
+                    ],
+                    "example": "on_break"
                   }
                 }
               }
@@ -6650,7 +6823,7 @@
                     "example": "Alice"
                   },
                   "target": {
-                    "description": "Where calls to this agent should ring. One of three shapes, same pattern as `to` on POST /v1/calls — no FreeSWITCH dialstring knowledge required.\n",
+                    "description": "Where calls to this agent should ring. One of three shapes, same pattern as `to` on POST /v1/calls.\n",
                     "oneOf": [
                       {
                         "type": "object",
@@ -6712,10 +6885,6 @@
                           "sip_uri": {
                             "type": "string",
                             "example": "sip:bob@example.com"
-                          },
-                          "profile": {
-                            "type": "string",
-                            "default": "external"
                           }
                         }
                       }
@@ -6724,12 +6893,12 @@
                   "status": {
                     "type": "string",
                     "enum": [
-                      "Available",
-                      "Available (On Demand)",
-                      "On Break",
-                      "Logged Out"
+                      "available",
+                      "available_on_demand",
+                      "on_break",
+                      "logged_out"
                     ],
-                    "default": "Logged Out"
+                    "default": "logged_out"
                   },
                   "max_no_answer": {
                     "type": "integer",
@@ -6800,10 +6969,10 @@
             "schema": {
               "type": "string",
               "enum": [
-                "Available",
-                "Available (On Demand)",
-                "On Break",
-                "Logged Out"
+                "available",
+                "available_on_demand",
+                "on_break",
+                "logged_out"
               ]
             }
           },
@@ -7011,7 +7180,7 @@
     "/v1/call-center/agents/{id}/status": {
       "patch": {
         "summary": "Set agent availability status",
-        "description": "Changes the agent's mod_callcenter status immediately. Valid values: Available | Available (On Demand) | On Break | Logged Out",
+        "description": "Changes the agent's availability immediately.",
         "tags": [
           "Call Center - Agents"
         ],
@@ -7044,12 +7213,12 @@
                   "status": {
                     "type": "string",
                     "enum": [
-                      "Available",
-                      "Available (On Demand)",
-                      "On Break",
-                      "Logged Out"
+                      "available",
+                      "available_on_demand",
+                      "on_break",
+                      "logged_out"
                     ],
-                    "example": "Available"
+                    "example": "available"
                   }
                 }
               }
@@ -8730,106 +8899,6 @@
           }
         }
       }
-    },
-    "/v1/users/me/change-email": {
-      "post": {
-        "summary": "Change current user email address",
-        "description": "The email is the sign-in identifier, so the current password is required.",
-        "tags": [
-          "Users"
-        ],
-        "security": [
-          {
-            "BearerAuth": []
-          }
-        ],
-        "requestBody": {
-          "required": true,
-          "content": {
-            "application/json": {
-              "schema": {
-                "type": "object",
-                "required": [
-                  "new_email",
-                  "current_password"
-                ],
-                "properties": {
-                  "new_email": {
-                    "type": "string",
-                    "format": "email",
-                    "example": "alice.new@example.com"
-                  },
-                  "current_password": {
-                    "type": "string",
-                    "example": "P@ssword1"
-                  }
-                }
-              }
-            }
-          }
-        },
-        "responses": {
-          "200": {
-            "description": "Email updated successfully",
-            "content": {
-              "application/json": {
-                "schema": {
-                  "type": "object",
-                  "properties": {
-                    "success": {
-                      "type": "boolean",
-                      "example": true
-                    },
-                    "data": {
-                      "type": "object",
-                      "properties": {
-                        "id": {
-                          "type": "string",
-                          "format": "uuid"
-                        },
-                        "email": {
-                          "type": "string",
-                          "format": "email"
-                        }
-                      }
-                    }
-                  }
-                }
-              }
-            }
-          },
-          "400": {
-            "description": "Missing fields, invalid email, or current password incorrect",
-            "content": {
-              "application/json": {
-                "schema": {
-                  "$ref": "#/components/schemas/ErrorResponse"
-                }
-              }
-            }
-          },
-          "401": {
-            "description": "Unauthenticated",
-            "content": {
-              "application/json": {
-                "schema": {
-                  "$ref": "#/components/schemas/ErrorResponse"
-                }
-              }
-            }
-          },
-          "409": {
-            "description": "Another account already uses this email",
-            "content": {
-              "application/json": {
-                "schema": {
-                  "$ref": "#/components/schemas/ErrorResponse"
-                }
-              }
-            }
-          }
-        }
-      }
     }
   },
   "tags": [
@@ -8843,11 +8912,11 @@
     },
     {
       "name": "SMS Credentials",
-      "description": "Manage Jasmin SMS credentials (one per organisation). Owner/admin only."
+      "description": "Manage the organisation's SMS sending credentials (one per organisation). Owner/admin only."
     },
     {
       "name": "SMS",
-      "description": "Send and receive SMS via the Jasmin gateway."
+      "description": "Send and receive SMS."
     },
     {
       "name": "SipUsers",
