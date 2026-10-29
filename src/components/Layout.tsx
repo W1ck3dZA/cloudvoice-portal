@@ -2,6 +2,7 @@ import { useEffect, useRef, useState } from 'react';
 import { useQuery } from '@tanstack/react-query';
 import { NavLink, Outlet, useLocation, useNavigate } from 'react-router-dom';
 import {
+  Activity,
   AppWindow,
   Building2,
   Check,
@@ -55,6 +56,7 @@ const groups = [
     label: 'Developers',
     items: [
       ['/webhooks', 'Webhooks', Webhook],
+      ['/websocket', 'WebSocket', Activity],
       ['/events', 'Event Publisher', Code2],
       ['/api-keys', 'API Keys', KeyRound],
     ],

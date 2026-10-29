@@ -18,6 +18,7 @@ import QueueDetail from './pages/QueueDetail';
 import Messaging from './pages/Messaging';
 import Webhooks from './pages/Webhooks';
 import EventTester from './pages/EventTester';
+import WebSocketPage from './pages/WebSocket';
 import ApiKeys from './pages/ApiKeys';
 import Organisation from './pages/Organisation';
 import Settings from './pages/Settings';
@@ -51,6 +52,7 @@ export default function App() {
           <Route path="/messaging" element={<Messaging />} />
           <Route path="/webhooks" element={<Webhooks />} />
           <Route path="/events" element={<EventTester />} />
+          <Route path="/websocket" element={<WebSocketPage />} />
           <Route path="/api-keys" element={<ApiKeys />} />
           <Route path="/organisation" element={<Organisation />} />
           <Route path="/settings" element={<Settings />} />
