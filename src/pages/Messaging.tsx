@@ -172,7 +172,9 @@ export default function Messaging() {
                 </div>
                 <div className="detail-item">
                   <span>Password</span>
-                  <strong>{creds.data.password_set ? 'Saved' : 'Not set'}</strong>
+                  <strong>
+                    {creds.data.password_set ? 'Saved' : 'Not set'}
+                  </strong>
                 </div>
                 <div className="detail-item">
                   <span>Default sender</span>
@@ -330,7 +332,7 @@ export default function Messaging() {
               ['Direction', view.direction],
               ['From', view.from_number || '—'],
               ['To', view.to_number],
-              ['Status', <Status value={view.status} />],
+              ['Status', humanize(view.status)],
               ['Encoding', view.encoding],
               ['Segments', view.segments],
               ['Error', humanize(view.error_code)],

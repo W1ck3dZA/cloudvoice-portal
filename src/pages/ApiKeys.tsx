@@ -3,6 +3,7 @@ import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query';
 import { KeyRound } from 'lucide-react';
 import { apiKeysApi, errorMessage } from '../lib/api';
 import { useSession } from '../lib/session';
+import { humanize } from '../lib/labels';
 import type { ApiKey } from '../types/api';
 import {
   AddButton,
@@ -228,7 +229,7 @@ export default function ApiKeys() {
             </div>
             <div className="detail-item">
               <span>Status</span>
-              <Status value={view.status} />
+              <strong>{humanize(view.status)}</strong>
             </div>
             <div className="detail-item full">
               <span>Scopes</span>
