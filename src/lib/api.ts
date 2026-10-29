@@ -26,6 +26,8 @@ import type {
 } from '../types/api';
 const baseURL =
   import.meta.env.VITE_API_URL || 'https://api.cloudvoice.network';
+// Live events: same host as the API, over ws:// or wss://.
+export const wsUrl = `${baseURL.replace(/^http/, 'ws').replace(/\/+$/, '')}/ws`;
 export const api = axios.create({
   baseURL,
   headers: { 'Content-Type': 'application/json' },

@@ -1924,3 +1924,134 @@ tbody tr:last-child td {
 .toast-close:hover {
   background: var(--surface-2);
 }
+
+/* WebSocket page */
+.ws-live .card-title {
+  align-items: center;
+}
+.ws-state {
+  display: inline-flex;
+  align-items: center;
+  gap: 7px;
+  font-size: 12px;
+  font-weight: 600;
+  color: var(--muted);
+}
+.ws-dot {
+  width: 7px;
+  height: 7px;
+  border-radius: 50%;
+  background: var(--muted);
+}
+.ws-state-connected {
+  color: var(--good);
+}
+.ws-state-connected .ws-dot {
+  background: var(--good);
+}
+.ws-state-connecting .ws-dot {
+  animation: ws-pulse 1s ease-in-out infinite;
+}
+@keyframes ws-pulse {
+  50% {
+    opacity: 0.3;
+  }
+}
+@media (prefers-reduced-motion: reduce) {
+  .ws-state-connecting .ws-dot {
+    animation: none;
+  }
+}
+.ws-log {
+  margin-top: 16px;
+  max-height: 420px;
+  overflow: auto;
+  border: 1px solid var(--line);
+  border-radius: 10px;
+}
+.ws-empty {
+  padding: 18px 14px;
+  margin: 0;
+}
+.ws-entry + .ws-entry {
+  border-top: 1px solid var(--line);
+}
+.ws-entry summary {
+  display: flex;
+  align-items: baseline;
+  gap: 12px;
+  padding: 10px 14px;
+  cursor: pointer;
+  font-size: 13px;
+  min-width: 0;
+}
+.ws-entry summary strong {
+  overflow-wrap: anywhere;
+}
+.ws-entry time {
+  font-size: 11px;
+  color: var(--muted);
+  font-variant-numeric: tabular-nums;
+  flex: none;
+}
+.ws-kind {
+  font-size: 11px;
+  color: var(--muted);
+  width: 72px;
+  flex: none;
+}
+.ws-entry-received .ws-kind {
+  color: var(--good);
+}
+.ws-entry .json-preview {
+  margin: 0 14px 12px;
+}
+.ws-docs {
+  margin-top: 14px;
+}
+.ws-steps {
+  display: flex;
+  flex-direction: column;
+  gap: 16px;
+  margin: 0 0 16px;
+  padding-left: 18px;
+}
+.ws-steps li {
+  display: flex;
+  flex-direction: column;
+  gap: 6px;
+  font-size: 13px;
+}
+.ws-steps li > span {
+  color: var(--muted);
+  line-height: 1.55;
+}
+.ws-steps code,
+.ws-note code {
+  font-size: 12px;
+}
+.ws-url {
+  display: block;
+  padding: 10px 12px;
+  border-radius: 10px;
+  background: var(--surface-2);
+  border: 1px solid var(--line);
+  overflow-wrap: anywhere;
+}
+.ws-types {
+  font-weight: 500;
+  line-height: 1.6;
+}
+.ws-note {
+  margin-top: 14px;
+}
+.ws-note a {
+  color: inherit;
+  text-decoration: underline;
+}
+.ws-live .button-row {
+  flex-wrap: wrap;
+}
+.ws-live .button-row .btn {
+  white-space: nowrap;
+}
