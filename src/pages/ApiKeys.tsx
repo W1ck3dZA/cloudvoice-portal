@@ -17,6 +17,21 @@ import {
   Spinner,
   Status,
 } from '../components/UI';
+const SCOPES = [
+  {
+    value: 'read',
+    label: 'Read',
+    hint: 'View calls, numbers, recordings and settings',
+  },
+  {
+    value: 'write',
+    label: 'Write',
+    hint: 'Place calls, send SMS, and create, change or delete anything',
+  },
+] as const;
+const scopeLabel = (scopes: string[]) =>
+  scopes.map((s) => SCOPES.find((x) => x.value === s)?.label ?? s).join(', ') ||
+  '—';
 export default function ApiKeys() {
   const { session } = useSession();
   const qc = useQueryClient();
@@ -32,7 +47,7 @@ export default function ApiKeys() {
   const [err, setErr] = useState('');
   const [form, setForm] = useState({
     name: '',
-    scopes: 'read',
+    scopes: ['read'] as string[],
     expires_at: '',
   });
   const create = useMutation({
@@ -40,10 +55,7 @@ export default function ApiKeys() {
       apiKeysApi.create({
         name: form.name,
         org_id: session?.orgId,
-        scopes: form.scopes
-          .split(',')
-          .map((x) => x.trim())
-          .filter(Boolean),
+        scopes: form.scopes,
         expires_at: form.expires_at || null,
       }),
     onSuccess: (d: any) => {
@@ -93,7 +105,7 @@ export default function ApiKeys() {
                     <td>
                       <code>{k.prefix}</code>
                     </td>
-                    <td>{k.scopes.join(', ')}</td>
+                    <td>{scopeLabel(k.scopes)}</td>
                     <td>
                       <Status value={k.status} />
                     </td>
@@ -158,14 +170,34 @@ export default function ApiKeys() {
               onChange={(e) => setForm((f) => ({ ...f, name: e.target.value }))}
             />
           </Field>
-          <Field label="Scopes" hint="Comma-separated">
-            <input
-              value={form.scopes}
-              onChange={(e) =>
-                setForm((f) => ({ ...f, scopes: e.target.value }))
-              }
-            />
-          </Field>
+          <fieldset className="check-list">
+            <legend className="field-label">Scopes</legend>
+            {SCOPES.map((sc) => (
+              <label key={sc.value}>
+                <input
+                  type="checkbox"
+                  checked={form.scopes.includes(sc.value)}
+                  onChange={(e) =>
+                    setForm((f) => ({
+                      ...f,
+                      scopes: e.target.checked
+                        ? [...f.scopes, sc.value]
+                        : f.scopes.filter((x) => x !== sc.value),
+                    }))
+                  }
+                />
+                <span>
+                  <strong>{sc.label}</strong>
+                  <small>{sc.hint}</small>
+                </span>
+              </label>
+            ))}
+            {!form.scopes.length && (
+              <small className="check-list-note" role="alert">
+                Choose at least one scope.
+              </small>
+            )}
+          </fieldset>
           <Field label="Expires at">
             <input
               type="datetime-local"
@@ -175,7 +207,10 @@ export default function ApiKeys() {
               }
             />
           </Field>
-          <button className="btn primary" disabled={create.isPending}>
+          <button
+            className="btn primary"
+            disabled={create.isPending || !form.scopes.length}
+          >
             Create key
           </button>
         </form>
@@ -197,7 +232,7 @@ export default function ApiKeys() {
             </div>
             <div className="detail-item full">
               <span>Scopes</span>
-              <strong>{view.scopes.join(', ')}</strong>
+              <strong>{scopeLabel(view.scopes)}</strong>
             </div>
           </div>
         )}

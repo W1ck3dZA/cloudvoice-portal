@@ -209,8 +209,13 @@
           "scopes": {
             "type": "array",
             "items": {
-              "type": "string"
-            }
+              "type": "string",
+              "enum": [
+                "read",
+                "write"
+              ]
+            },
+            "description": "read allows GET requests; write allows creating, changing and deleting"
           },
           "expires_at": {
             "type": "string",
@@ -8570,9 +8575,15 @@
                   },
                   "scopes": {
                     "type": "array",
+                    "description": "`read` allows GET requests; `write` allows creating, changing and deleting (POST, PATCH, PUT, DELETE). A request without the needed scope gets 403.\n",
                     "items": {
-                      "type": "string"
+                      "type": "string",
+                      "enum": [
+                        "read",
+                        "write"
+                      ]
                     },
+                    "minItems": 1,
                     "default": [
                       "read"
                     ],
@@ -8626,7 +8637,11 @@
                         "scopes": {
                           "type": "array",
                           "items": {
-                            "type": "string"
+                            "type": "string",
+                            "enum": [
+                              "read",
+                              "write"
+                            ]
                           }
                         },
                         "expires_at": {
