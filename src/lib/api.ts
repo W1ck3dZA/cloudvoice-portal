@@ -87,6 +87,13 @@ export const authApi = {
       role: string | null;
       token: string;
     }>(await api.post('/v1/auth/login', { email, password })),
+  switchOrganisation: async (organisation_id: string) =>
+    unwrap<{
+      user: User;
+      orgId: string;
+      role: string;
+      token: string;
+    }>(await api.post('/v1/auth/switch-organisation', { organisation_id })),
   me: async () => unwrap<User>(await api.get('/v1/users/me')),
   updateMe: async (body: { name: string }) =>
     unwrap<User>(await api.patch('/v1/users/me', body)),

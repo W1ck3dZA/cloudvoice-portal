@@ -1,8 +1,10 @@
 import { useEffect, useRef, useState } from 'react';
+import { useQuery } from '@tanstack/react-query';
 import { NavLink, Outlet, useLocation, useNavigate } from 'react-router-dom';
 import {
   AppWindow,
   Building2,
+  Check,
   ChevronDown,
   Code2,
   FileAudio,
@@ -24,7 +26,9 @@ import {
   X,
 } from 'lucide-react';
 import { Brand } from './Brand';
+import { orgApi } from '../lib/api';
 import { useSession } from '../lib/session';
+import { useSwitchOrganisation } from '../lib/useSwitchOrganisation';
 import { useTheme } from '../lib/theme';
 const groups = [
   { label: 'Overview', items: [['/', 'Dashboard', LayoutDashboard]] },
@@ -69,6 +73,13 @@ export function Layout() {
   const menuRef = useRef<HTMLDivElement>(null);
   const { session, logout } = useSession();
   const { theme, toggleTheme } = useTheme();
+  const organisations = useQuery({
+    queryKey: ['organisations'],
+    queryFn: orgApi.list,
+    enabled: !!session,
+  });
+  const switchOrg = useSwitchOrganisation();
+  const orgs = organisations.data || [];
   const navigate = useNavigate();
   const location = useLocation();
   const isFullBleed = /\/applications\/[^/]+\/builder/.test(location.pathname);
@@ -163,6 +174,30 @@ export function Layout() {
                     <span>{session?.user?.email}</span>
                     <span className="caps">{session?.role || 'user'}</span>
                   </div>
+                  {orgs.length > 1 && (
+                    <div className="org-menu-items org-menu-orgs">
+                      <span className="org-menu-label">Organisations</span>
+                      {orgs.map((o) => {
+                        const current = o.id === session?.orgId;
+                        return (
+                          <button
+                            key={o.id}
+                            aria-current={current || undefined}
+                            disabled={current || switchOrg.isPending}
+                            onClick={() => switchOrg.mutate(o.id)}
+                          >
+                            <span className="org-menu-org">
+                              <span>{o.name}</span>
+                              <small className="caps">{o.role}</small>
+                            </span>
+                            {current && (
+                              <Check size={15} aria-label="Current" />
+                            )}
+                          </button>
+                        );
+                      })}
+                    </div>
+                  )}
                   <div className="org-menu-items">
                     <button
                       onClick={() => {

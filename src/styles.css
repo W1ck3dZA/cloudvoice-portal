@@ -248,6 +248,37 @@ select {
 .org-menu-items button:hover {
   background: var(--surface-2);
 }
+.org-menu-orgs {
+  border-bottom: 1px solid var(--line);
+}
+.org-menu-label {
+  padding: 4px 8px 2px;
+  font-size: 11px;
+  color: var(--muted);
+}
+.org-menu-items button:disabled {
+  cursor: default;
+}
+.org-menu-items button[aria-current] {
+  background: var(--surface-2);
+}
+.org-menu-org {
+  display: flex;
+  flex-direction: column;
+  gap: 1px;
+  flex: 1;
+  min-width: 0;
+}
+.org-menu-org span {
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+.org-menu-org small {
+  font-size: 11px;
+  font-weight: 500;
+  color: var(--muted);
+}
 .org-pill {
   border: 1px solid var(--line);
   background: var(--surface);

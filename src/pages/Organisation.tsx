@@ -3,6 +3,8 @@ import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query';
 import { AlertTriangle, Settings2, UserCog, Users } from 'lucide-react';
 import { errorMessage, orgApi } from '../lib/api';
 import { useSession } from '../lib/session';
+import { useSwitchOrganisation } from '../lib/useSwitchOrganisation';
+import type { Organisation as Org } from '../types/api';
 import type { Member } from '../types/api';
 import {
   AddButton,
@@ -55,6 +57,8 @@ export default function Organisation() {
   const [err, setErr] = useState('');
   const [orgName, setOrgName] = useState('');
   const [newOrg, setNewOrg] = useState({ name: '', slug: '', plan: 'free' });
+  const [createdOrg, setCreatedOrg] = useState<Org | null>(null);
+  const switchOrg = useSwitchOrganisation();
   const [ownerId, setOwnerId] = useState('');
   const [limitForm, setLimitForm] = useState({
     requests_per_minute: '',
@@ -73,6 +77,7 @@ export default function Organisation() {
   }, [limits.data]);
   const close = () => {
     setDrawer(null);
+    setCreatedOrg(null);
     setEditMember(null);
     setErr('');
   };
@@ -97,10 +102,8 @@ export default function Organisation() {
     mutationFn: () => orgApi.create(newOrg),
     onSuccess: (o) => {
       qc.invalidateQueries({ queryKey: ['organisations'] });
-      close();
-      alert(
-        `Organisation ${o.name} created. The active organisation remains the one embedded in the current JWT.`,
-      );
+      setNewOrg({ name: '', slug: '', plan: 'free' });
+      setCreatedOrg(o);
     },
     onError: (e) => setErr(errorMessage(e)),
   });
@@ -322,16 +325,20 @@ export default function Organisation() {
                   {o.slug} · {o.plan} · {o.role}
                 </span>
               </div>
-              <StatusToggle
-                checked={o.id === id}
-                onChange={() => {}}
-                disabled
-                title={
-                  o.id === id
-                    ? 'Current organisation'
-                    : 'Sign in with a token scoped to this organisation to switch'
-                }
-              />
+              {o.id === id ? (
+                <span className="badge good">
+                  <span />
+                  Current
+                </span>
+              ) : (
+                <button
+                  className="btn"
+                  disabled={switchOrg.isPending}
+                  onClick={() => switchOrg.mutate(o.id)}
+                >
+                  Switch
+                </button>
+              )}
             </div>
           ))}
         </div>
@@ -403,52 +410,76 @@ export default function Organisation() {
         onClose={close}
         title="Create organisation"
       >
-        <form
-          className="form-stack"
-          onSubmit={(e) => {
-            e.preventDefault();
-            setErr('');
-            createOrg.mutate();
-          }}
-        >
-          <ErrorBox message={err} />
-          <Field label="Name">
-            <input
-              required
-              value={newOrg.name}
-              onChange={(e) =>
-                setNewOrg((f) => ({ ...f, name: e.target.value }))
-              }
-            />
-          </Field>
-          <Field
-            label="Slug"
-            hint="Lowercase letters, digits and hyphens; 3–50 characters"
+        {createdOrg ? (
+          <div className="form-stack">
+            <div className="success-box" role="status">
+              {createdOrg.name} is ready. You're still managing {org.data?.name}
+              .
+            </div>
+            <div className="button-row">
+              <button
+                className="btn primary"
+                disabled={switchOrg.isPending}
+                onClick={() => switchOrg.mutate(createdOrg.id)}
+              >
+                Switch to {createdOrg.name}
+              </button>
+              <button className="btn" onClick={close}>
+                Stay here
+              </button>
+            </div>
+          </div>
+        ) : (
+          <form
+            className="form-stack"
+            onSubmit={(e) => {
+              e.preventDefault();
+              setErr('');
+              createOrg.mutate();
+            }}
           >
-            <input
-              required
-              pattern="[a-z0-9-]{3,50}"
-              value={newOrg.slug}
-              onChange={(e) =>
-                setNewOrg((f) => ({ ...f, slug: e.target.value.toLowerCase() }))
-              }
-            />
-          </Field>
-          <Field label="Plan">
-            <select
-              value={newOrg.plan}
-              onChange={(e) =>
-                setNewOrg((f) => ({ ...f, plan: e.target.value }))
-              }
+            <ErrorBox message={err} />
+            <Field label="Name">
+              <input
+                required
+                value={newOrg.name}
+                onChange={(e) =>
+                  setNewOrg((f) => ({ ...f, name: e.target.value }))
+                }
+              />
+            </Field>
+            <Field
+              label="Slug"
+              hint="Lowercase letters, digits and hyphens; 3–50 characters"
             >
-              <option value="free">Free</option>
-              <option value="pro">Pro</option>
-              <option value="enterprise">Enterprise</option>
-              <option value="custom">Custom</option>
-            </select>
-          </Field>
-          <button className="btn primary">Create organisation</button>
-        </form>
+              <input
+                required
+                pattern="[a-z0-9\-]{3,50}"
+                value={newOrg.slug}
+                onChange={(e) =>
+                  setNewOrg((f) => ({
+                    ...f,
+                    slug: e.target.value.toLowerCase(),
+                  }))
+                }
+              />
+            </Field>
+            <Field label="Plan">
+              <select
+                value={newOrg.plan}
+                onChange={(e) =>
+                  setNewOrg((f) => ({ ...f, plan: e.target.value }))
+                }
+              >
+                <option value="free">Free</option>
+                <option value="pro">Pro</option>
+                <option value="enterprise">Enterprise</option>
+                <option value="custom">Custom</option>
+              </select>
+            </Field>
+            <button className="btn primary">Create organisation</button>
+          </form>
+        )}
       </Drawer>
       <Drawer
         open={drawer === 'org-edit'}
