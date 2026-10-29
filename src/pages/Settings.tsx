@@ -8,6 +8,12 @@ export default function Settings() {
   const qc = useQueryClient();
   const [name, setName] = useState(session?.user.name || '');
   const [pass, setPass] = useState({ current_password: '', new_password: '' });
+  const [email, setEmail] = useState({
+    new_email: session?.user.email || '',
+    current_password: '',
+  });
+  const [emailErr, setEmailErr] = useState('');
+  const [emailOk, setEmailOk] = useState('');
   const [err, setErr] = useState('');
   const [ok, setOk] = useState('');
   const profile = useMutation({
@@ -17,6 +23,15 @@ export default function Settings() {
       setOk('Profile updated');
     },
     onError: (e) => setErr(errorMessage(e)),
+  });
+  const changeEmail = useMutation({
+    mutationFn: () => authApi.changeEmail(email),
+    onSuccess: (u) => {
+      setSession({ ...session!, user: { ...session!.user, email: u.email } });
+      setEmail({ new_email: u.email, current_password: '' });
+      setEmailOk('Email updated. Use it the next time you sign in.');
+    },
+    onError: (e) => setEmailErr(errorMessage(e)),
   });
   const password = useMutation({
     mutationFn: () => authApi.changePassword(pass),
@@ -53,10 +68,62 @@ export default function Settings() {
             <Field label="Name">
               <input value={name} onChange={(e) => setName(e.target.value)} />
             </Field>
-            <Field label="Email">
-              <input disabled value={session?.user.email || ''} />
-            </Field>
             <button className="btn primary">Save profile</button>
+          </form>
+        </Card>
+        <Card>
+          <div className="card-title">
+            <div>
+              <span className="eyebrow">Sign-in</span>
+              <h2>Change email</h2>
+            </div>
+          </div>
+          <form
+            className="form-stack"
+            onSubmit={(e) => {
+              e.preventDefault();
+              setEmailErr('');
+              setEmailOk('');
+              changeEmail.mutate();
+            }}
+          >
+            <ErrorBox message={emailErr} />
+            {emailOk && (
+              <div className="success-box" role="status">
+                {emailOk}
+              </div>
+            )}
+            <Field label="Email" hint="You sign in with this address.">
+              <input
+                required
+                type="email"
+                autoComplete="email"
+                value={email.new_email}
+                onChange={(e) =>
+                  setEmail((v) => ({ ...v, new_email: e.target.value }))
+                }
+              />
+            </Field>
+            <Field label="Current password">
+              <input
+                required
+                type="password"
+                autoComplete="current-password"
+                value={email.current_password}
+                onChange={(e) =>
+                  setEmail((v) => ({ ...v, current_password: e.target.value }))
+                }
+              />
+            </Field>
+            <button
+              className="btn primary"
+              disabled={
+                changeEmail.isPending ||
+                email.new_email.trim().toLowerCase() === session?.user.email
+              }
+            >
+              Save email
+            </button>
           </form>
         </Card>
         <Card>
