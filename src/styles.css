@@ -1584,7 +1584,6 @@ tbody tr:last-child td {
 }
 .inspector-head h2 {
   margin: 4px 0;
-  text-transform: capitalize;
 }
 .branch-section {
   display: flex;

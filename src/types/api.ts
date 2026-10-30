@@ -181,6 +181,15 @@ export type VerbHangup = {
   reason?: string;
   headers?: Record<string, string>;
 };
+export type VerbAmd = {
+  verb: 'amd';
+  initialSilence?: number;
+  greeting?: number;
+  afterGreetingSilence?: number;
+  totalAnalysisTime?: number;
+  maxWords?: number;
+  branches?: { human?: Verb[]; machine?: Verb[]; unknown?: Verb[] };
+};
 export type VerbQueue = {
   verb: 'queue';
   queue_id: string;
@@ -197,6 +206,7 @@ export type VerbRespond = {
 export type Verb =
   | VerbPlay
   | VerbGather
+  | VerbAmd
   | VerbDial
   | VerbListen
   | VerbPause
@@ -237,7 +247,8 @@ export interface Queue {
   active: boolean;
   created_at: string;
 }
-export type AgentState = 'idle' | 'waiting' | 'receiving' | 'in_call' | 'reserved';
+export type AgentState =
+  'idle' | 'waiting' | 'receiving' | 'in_call' | 'reserved';
 export interface Agent {
   id: string;
   organisation_id: string;
@@ -361,12 +372,7 @@ export interface CallCenterMember {
   cid_number: string | null;
   status: 'waiting' | 'bridged' | 'completed' | 'abandoned';
   leaving_reason:
-    | 'timeout'
-    | 'no_agents'
-    | 'exit_key'
-    | 'caller_left'
-    | 'other'
-    | null;
+    'timeout' | 'no_agents' | 'exit_key' | 'caller_left' | 'other' | null;
   joined_at: string;
   bridged_at: string | null;
   left_at: string | null;

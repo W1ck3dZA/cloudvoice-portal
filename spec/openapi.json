@@ -1494,7 +1494,7 @@
       },
       "FlowDefinition": {
         "type": "array",
-        "description": "An ordered list of verbs (Jambonz-style). Executed top-to-bottom. Only `gather` branches; all other verbs are sequential. See docs/APPLICATIONS.md for fully worked examples.\n",
+        "description": "An ordered list of verbs (Jambonz-style). Executed top-to-bottom. Only `gather` and `amd` branch; all other verbs are sequential. See docs/APPLICATIONS.md for fully worked examples.\n",
         "items": {
           "oneOf": [
             {
@@ -1502,6 +1502,9 @@
             },
             {
               "$ref": "#/components/schemas/VerbGather"
+            },
+            {
+              "$ref": "#/components/schemas/VerbAmd"
             },
             {
               "$ref": "#/components/schemas/VerbDial"
@@ -1530,6 +1533,7 @@
             "mapping": {
               "play": "#/components/schemas/VerbPlay",
               "gather": "#/components/schemas/VerbGather",
+              "amd": "#/components/schemas/VerbAmd",
               "dial": "#/components/schemas/VerbDial",
               "listen": "#/components/schemas/VerbListen",
               "pause": "#/components/schemas/VerbPause",
@@ -1587,6 +1591,75 @@
           "earlyMedia": {
             "type": "boolean",
             "default": false
+          }
+        }
+      },
+      "VerbAmd": {
+        "type": "object",
+        "required": [
+          "verb"
+        ],
+        "description": "Detect whether a person or an answering machine picked up, then run the matching branch. Use it at the start of outbound call flows, e.g. to leave a message for machines and connect people to an agent. The result is also stored on the call (`amd_result`) and sent as a `call.amd` event. After the branch, the flow continues with the next verb. Timings are in milliseconds.\n",
+        "properties": {
+          "verb": {
+            "type": "string",
+            "enum": [
+              "amd"
+            ]
+          },
+          "initialSilence": {
+            "type": "integer",
+            "minimum": 100,
+            "maximum": 30000,
+            "description": "Longest silence before the greeting starts"
+          },
+          "greeting": {
+            "type": "integer",
+            "minimum": 100,
+            "maximum": 30000,
+            "description": "Longest greeting a person would give"
+          },
+          "afterGreetingSilence": {
+            "type": "integer",
+            "minimum": 100,
+            "maximum": 30000,
+            "description": "Silence after the greeting that marks a person"
+          },
+          "totalAnalysisTime": {
+            "type": "integer",
+            "minimum": 1000,
+            "maximum": 30000,
+            "description": "Longest time to spend deciding"
+          },
+          "maxWords": {
+            "type": "integer",
+            "minimum": 1,
+            "maximum": 100,
+            "description": "More words than this means a machine"
+          },
+          "branches": {
+            "type": "object",
+            "description": "Verbs to run for each result. `unknown` covers not sure, too long and failed detection.",
+            "properties": {
+              "human": {
+                "type": "array",
+                "items": {
+                  "$ref": "#/components/schemas/FlowDefinition"
+                }
+              },
+              "machine": {
+                "type": "array",
+                "items": {
+                  "$ref": "#/components/schemas/FlowDefinition"
+                }
+              },
+              "unknown": {
+                "type": "array",
+                "items": {
+                  "$ref": "#/components/schemas/FlowDefinition"
+                }
+              }
+            }
           }
         }
       },
