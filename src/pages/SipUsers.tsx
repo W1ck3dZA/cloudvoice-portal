@@ -14,9 +14,20 @@ import {
   RowActions,
   SecretReveal,
   Spinner,
+  Status,
   StatusToggle,
   Toggle,
 } from '../components/UI';
+import {
+  CopyValue,
+  DetailRow,
+  DetailRows,
+  DetailSection,
+  DetailSummary,
+  DetailView,
+  DrawerActions,
+  FormSection,
+} from '../components/Details';
 const blank = {
   extension: '',
   realm: '',
@@ -178,43 +189,83 @@ export default function SipUsers() {
             ? 'Add SIP user'
             : mode === 'edit'
               ? 'Edit SIP user'
-              : selected?.extension || 'SIP user'
+              : 'SIP user details'
         }
       >
         {mode === 'view' && selected ? (
-          <>
-            <div className="detail-grid">
-              <div className="detail-item">
-                <span>Extension</span>
-                <strong>{selected.extension}</strong>
-              </div>
-              <div className="detail-item">
-                <span>Realm</span>
-                <strong>{selected.realm}</strong>
-              </div>
-              <div className="detail-item">
-                <span>Display name</span>
-                <strong>{selected.display_name || '—'}</strong>
-              </div>
-              <div className="detail-item">
-                <span>Voicemail</span>
-                <strong>
-                  {selected.voicemail_enabled ? 'Enabled' : 'Disabled'}
-                </strong>
-              </div>
-            </div>
-            <div className="button-row">
+          <DetailView>
+            <DetailSummary
+              kind="SIP user"
+              title={selected.display_name || selected.extension}
+              subtitle={`${selected.extension}@${selected.realm}`}
+              facts={
+                <>
+                  <Status value={selected.active ? 'active' : 'inactive'} />
+                  <span>
+                    {selected.voicemail_enabled
+                      ? 'Voicemail on'
+                      : 'Voicemail off'}
+                  </span>
+                </>
+              }
+            >
               <button className="btn primary" onClick={() => edit(selected)}>
-                Edit
+                Edit SIP user
               </button>
               <button
                 className="btn"
-                onClick={() => rotate.mutate(selected.id)}
+                disabled={rotate.isPending}
+                onClick={() =>
+                  confirm(
+                    `Rotate the password for ${selected.extension}? Phones using the old password stop registering until you update them.`,
+                  ) && rotate.mutate(selected.id)
+                }
               >
-                Rotate password
+                {rotate.isPending ? 'Rotating…' : 'Rotate password'}
               </button>
-            </div>
-          </>
+              <p className="dv-note">
+                Rotating sets a new password. Phones using the old one stop
+                registering until you update them.
+              </p>
+            </DetailSummary>
+            <DetailSection title="Registration">
+              <DetailRows>
+                <DetailRow label="SIP username">
+                  <CopyValue
+                    value={`${selected.extension}@${selected.realm}`}
+                    label="SIP username"
+                  />
+                </DetailRow>
+                <DetailRow label="Extension">{selected.extension}</DetailRow>
+                <DetailRow label="Realm">{selected.realm}</DetailRow>
+                <DetailRow label="Password">Saved</DetailRow>
+              </DetailRows>
+            </DetailSection>
+            <DetailSection title="Calling">
+              <DetailRows>
+                <DetailRow label="Default application">
+                  {apps.data?.find((a) => a.id === selected.application_id)
+                    ?.name || 'None'}
+                </DetailRow>
+                <DetailRow label="Voicemail">
+                  {selected.voicemail_enabled ? 'On' : 'Off'}
+                </DetailRow>
+              </DetailRows>
+            </DetailSection>
+            <DetailSection title="Details">
+              <DetailRows>
+                <DetailRow label="SIP user ID">
+                  <CopyValue value={selected.id} label="SIP user ID" />
+                </DetailRow>
+                <DetailRow label="Created">
+                  {new Date(selected.created_at).toLocaleString()}
+                </DetailRow>
+                <DetailRow label="Last updated">
+                  {new Date(selected.updated_at).toLocaleString()}
+                </DetailRow>
+              </DetailRows>
+            </DetailSection>
+          </DetailView>
         ) : (
           <form
             className="form-stack"
@@ -224,78 +275,126 @@ export default function SipUsers() {
             }}
           >
             <ErrorBox message={err} />
-            <Field label="Extension">
-              <input
-                value={form.extension}
-                disabled={mode === 'edit'}
-                required
-                onChange={(e) =>
-                  setForm((f) => ({ ...f, extension: e.target.value }))
-                }
-              />
-            </Field>
-            {mode === 'add' && (
-              <>
-                <Field
-                  label="Realm"
-                  hint="Leave blank to use the platform default"
-                >
-                  <input
-                    value={form.realm}
-                    onChange={(e) =>
-                      setForm((f) => ({ ...f, realm: e.target.value }))
-                    }
-                  />
-                </Field>
-                <Field label="Password" hint="Leave blank to auto-generate">
-                  <input
-                    type="password"
-                    value={form.password}
-                    onChange={(e) =>
-                      setForm((f) => ({ ...f, password: e.target.value }))
-                    }
-                  />
-                </Field>
-              </>
-            )}
-            <Field label="Display name">
-              <input
-                value={form.display_name}
-                onChange={(e) =>
-                  setForm((f) => ({ ...f, display_name: e.target.value }))
-                }
-              />
-            </Field>
-            <Field label="Default application">
-              <select
-                value={form.application_id}
-                onChange={(e) =>
-                  setForm((f) => ({ ...f, application_id: e.target.value }))
+            <FormSection title="Account">
+              <Field
+                label="Extension"
+                hint={
+                  mode === 'edit'
+                    ? "Can't be changed once created"
+                    : 'The number phones register with, e.g. 1001'
                 }
               >
-                <option value="">None</option>
-                {(apps.data || []).map((a) => (
-                  <option key={a.id} value={a.id}>
-                    {a.name}
-                  </option>
-                ))}
-              </select>
-            </Field>
-            <Toggle
-              checked={form.voicemail_enabled}
-              onChange={(v) => setForm((f) => ({ ...f, voicemail_enabled: v }))}
-              label="Voicemail enabled"
-            />
-            {mode === 'edit' && (
+                <input
+                  value={form.extension}
+                  disabled={mode === 'edit'}
+                  required
+                  inputMode="numeric"
+                  onChange={(e) =>
+                    setForm((f) => ({ ...f, extension: e.target.value }))
+                  }
+                />
+              </Field>
+              {mode === 'add' && (
+                <>
+                  <Field
+                    label="Realm"
+                    hint="Leave blank to use the platform default"
+                  >
+                    <input
+                      value={form.realm}
+                      onChange={(e) =>
+                        setForm((f) => ({ ...f, realm: e.target.value }))
+                      }
+                    />
+                  </Field>
+                  <Field
+                    label="Password"
+                    hint="Leave blank to generate a strong one. It's shown once after saving."
+                  >
+                    <input
+                      type="password"
+                      autoComplete="new-password"
+                      value={form.password}
+                      onChange={(e) =>
+                        setForm((f) => ({ ...f, password: e.target.value }))
+                      }
+                    />
+                  </Field>
+                </>
+              )}
+            </FormSection>
+            <FormSection title="Profile">
+              <Field
+                label="Display name"
+                hint="Shown as the caller name on internal calls"
+              >
+                <input
+                  value={form.display_name}
+                  onChange={(e) =>
+                    setForm((f) => ({ ...f, display_name: e.target.value }))
+                  }
+                />
+              </Field>
+            </FormSection>
+            <FormSection title="Calling">
+              <Field
+                label="Default application"
+                hint="Runs for calls this user makes"
+              >
+                <select
+                  value={form.application_id}
+                  onChange={(e) =>
+                    setForm((f) => ({ ...f, application_id: e.target.value }))
+                  }
+                >
+                  <option value="">None</option>
+                  {(apps.data || []).map((a) => (
+                    <option key={a.id} value={a.id}>
+                      {a.name}
+                    </option>
+                  ))}
+                </select>
+              </Field>
               <Toggle
-                checked={form.active}
-                onChange={(v) => setForm((f) => ({ ...f, active: v }))}
-                label="SIP user active"
+                checked={form.voicemail_enabled}
+                onChange={(v) =>
+                  setForm((f) => ({ ...f, voicemail_enabled: v }))
+                }
+                label="Voicemail"
               />
-            )}
-            <button className="btn primary" disabled={save.isPending}>
-              Save SIP user
-            </button>
+              {mode === 'edit' && (
+                <Toggle
+                  checked={form.active}
+                  onChange={(v) => setForm((f) => ({ ...f, active: v }))}
+                  label="Allow this user to register and make calls"
+                />
+              )}
+            </FormSection>
+            <DrawerActions>
+              <button className="btn primary" disabled={save.isPending}>
+                {save.isPending
+                  ? 'Saving…'
+                  : mode === 'add'
+                    ? 'Add SIP user'
+                    : 'Save changes'}
+              </button>
+              <button type="button" className="btn" onClick={close}>
+                Cancel
+              </button>
+              {mode === 'edit' && selected && (
+                <button
+                  type="button"
+                  className="btn danger"
+                  onClick={() =>
+                    confirm(
+                      `Delete SIP user ${selected.extension}? Phones using it stop working, and this can't be undone.`,
+                    ) && del.mutate(selected.id)
+                  }
+                >
+                  Delete
+                </button>
+              )}
+            </DrawerActions>
           </form>
         )}
       </Drawer>
