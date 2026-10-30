@@ -613,6 +613,7 @@ export default function FlowBuilder() {
           )}
           {node ? (
             <Inspector
+              key={sel!.join('.')}
               node={node}
               patch={patch}
               drill={focusBranch}
@@ -880,23 +881,18 @@ function Inspector({
       )}
       {node.verb === 'hangup' && (
         <>
-          <Field label="Reason / SIP cause">
-            <input
-              value={node.reason || ''}
-              onChange={(e) => patch({ reason: e.target.value })}
-            />
-          </Field>
-          <Field label="Headers (JSON)">
-            <textarea
-              rows={6}
-              value={JSON.stringify(node.headers || {}, null, 2)}
-              onChange={(e) => {
-                try {
-                  patch({ headers: JSON.parse(e.target.value) });
-                } catch {}
-              }}
-            />
-          </Field>
+          <HangupReason
+            value={node.reason || ''}
+            onChange={(reason) => patch({ reason })}
+          />
+          <HeaderRows
+            value={node.headers || {}}
+            onChange={(headers) =>
+              patch({
+                headers: Object.keys(headers).length ? headers : undefined,
+              })
+            }
+          />
         </>
       )}
       {node.verb === 'respond' && (
@@ -1141,6 +1137,137 @@ function Inspector({
           </div>
         </>
       )}
+    </div>
+  );
+}
+// How a Hang up step ends the call. A known cause is sent as the hangup cause; any other text goes to the far end
+// as an X-Reason header on the BYE, with a normal hangup.
+const HANGUP_CAUSES = [
+  ['NORMAL_CLEARING', 'Normal hang up'],
+  ['USER_BUSY', 'Busy'],
+  ['CALL_REJECTED', 'Rejected'],
+  ['NO_ANSWER', 'No answer'],
+  ['UNALLOCATED_NUMBER', "Number doesn't exist"],
+  ['NORMAL_TEMPORARY_FAILURE', 'Temporary failure'],
+] as const;
+const CAUSE_CODE = /^[A-Z][A-Z0-9_]{2,49}$/;
+function HangupReason({
+  value,
+  onChange,
+}: {
+  value: string;
+  onChange: (v: string) => void;
+}) {
+  const known = HANGUP_CAUSES.some(([code]) => code === value);
+  const otherCode = !known && CAUSE_CODE.test(value);
+  const [custom, setCustom] = useState(!!value && !known && !otherCode);
+  const choice = !value ? 'NORMAL_CLEARING' : custom ? 'custom' : value;
+  return (
+    <>
+      <Field
+        label="How the call ends"
+        hint="What the other side is told when the call is cleared"
+      >
+        <select
+          value={choice}
+          onChange={(e) => {
+            if (e.target.value === 'custom') {
+              setCustom(true);
+              onChange('');
+            } else {
+              setCustom(false);
+              onChange(e.target.value);
+            }
+          }}
+        >
+          {HANGUP_CAUSES.map(([code, text]) => (
+            <option key={code} value={code}>
+              {text}
+            </option>
+          ))}
+          {otherCode && <option value={value}>Cause {value}</option>}
+          <option value="custom">Custom message</option>
+        </select>
+      </Field>
+      {custom && (
+        <Field
+          label="Message"
+          hint="Sent to the other side as an X-Reason header, with a normal hang up"
+        >
+          <input
+            value={value}
+            placeholder="Campaign finished"
+            onChange={(e) => onChange(e.target.value)}
+          />
+        </Field>
+      )}
+    </>
+  );
+}
+/** SIP headers as name and value rows. Rows without a name are left out of the step. */
+function HeaderRows({
+  value,
+  onChange,
+}: {
+  value: Record<string, string>;
+  onChange: (v: Record<string, string>) => void;
+}) {
+  const [rows, setRows] = useState<[string, string][]>(() =>
+    Object.entries(value),
+  );
+  const update = (next: [string, string][]) => {
+    setRows(next);
+    onChange(
+      Object.fromEntries(
+        next
+          .map(([k, v]) => [k.trim(), v] as [string, string])
+          .filter(([k]) => k),
+      ),
+    );
+  };
+  return (
+    <div className="kv">
+      <div className="field-label">Extra headers</div>
+      <p className="fs-hint">
+        Optional. Sent on the hang-up (BYE). Start names with X-, e.g.
+        X-Campaign, so every system passes them on.
+      </p>
+      {rows.map(([k, v], i) => (
+        <div className="kv-row" key={i}>
+          <input
+            aria-label={`Header ${i + 1} name`}
+            placeholder="X-Campaign"
+            value={k}
+            onChange={(e) =>
+              update(rows.map((r, x) => (x === i ? [e.target.value, r[1]] : r)))
+            }
+          />
+          <input
+            aria-label={`Header ${i + 1} value`}
+            placeholder="Value"
+            value={v}
+            onChange={(e) =>
+              update(rows.map((r, x) => (x === i ? [r[0], e.target.value] : r)))
+            }
+          />
+          <button
+            type="button"
+            className="icon-btn"
+            aria-label={`Remove header ${k || i + 1}`}
+            title="Remove"
+            onClick={() => update(rows.filter((_, x) => x !== i))}
+          >
+            <X size={16} />
+          </button>
+        </div>
+      ))}
+      <button
+        type="button"
+        className="btn"
+        onClick={() => setRows([...rows, ['', '']])}
+      >
+        <Plus size={15} aria-hidden="true" /> Add header
+      </button>
     </div>
   );
 }
