@@ -2191,6 +2191,12 @@ html:has(dialog[open]) {
   }
   .builder-shell {
     grid-template-columns: 1fr;
+    /* The palette strip keeps its own height; the canvas takes the rest. */
+    grid-template-rows: auto 1fr;
+    align-items: start;
+  }
+  .builder-canvas {
+    align-self: stretch;
   }
   .verb-palette {
     display: flex;
