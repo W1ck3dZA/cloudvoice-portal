@@ -17,6 +17,7 @@ import {
   Save,
   Trash2,
   UsersRound,
+  Voicemail,
   Volume2,
 } from 'lucide-react';
 import {
@@ -32,6 +33,7 @@ type Path = (string | number)[];
 const catalog = [
   ['play', 'Play audio', Play],
   ['gather', 'Gather digits', GitBranch],
+  ['amd', 'Detect machine', Voicemail],
   ['dial', 'Dial', PhoneForwarded],
   ['listen', 'Record / Listen', Headphones],
   ['pause', 'Pause', Pause],
@@ -50,6 +52,10 @@ const defaults: Record<string, () => Verb> = {
     finishOnKey: '#',
     branches: {},
     defaultVerbs: [],
+  }),
+  amd: () => ({
+    verb: 'amd',
+    branches: { human: [], machine: [], unknown: [] },
   }),
   dial: () => ({
     verb: 'dial',
@@ -76,6 +82,39 @@ const defaults: Record<string, () => Verb> = {
     abandonVerbs: [],
   }),
 };
+const AMD_BRANCH_LABEL: Record<string, string> = {
+  human: 'Human',
+  machine: 'Machine',
+  unknown: 'Not sure',
+};
+// Blank means the platform default, shown as the placeholder.
+const AMD_FIELDS = [
+  [
+    'initialSilence',
+    'Initial silence',
+    2500,
+    'Milliseconds. Longest silence before someone speaks',
+  ],
+  [
+    'greeting',
+    'Greeting length',
+    1500,
+    'Milliseconds. Longest greeting a person gives',
+  ],
+  [
+    'afterGreetingSilence',
+    'Silence after greeting',
+    800,
+    'Milliseconds. A pause this long after the greeting means a person',
+  ],
+  [
+    'totalAnalysisTime',
+    'Total analysis time',
+    5000,
+    'Milliseconds. Longest time to spend deciding',
+  ],
+  ['maxWords', 'Maximum words', 3, 'More words than this means a machine'],
+] as const;
 function getFlow(root: Verb[], path: Path): Verb[] {
   let cur: any = root;
   for (const p of path) {
@@ -109,6 +148,8 @@ function label(v: Verb) {
       return String(v.url || 'Choose audio URL');
     case 'gather':
       return `Collect ${v.numDigits || v.maxDigits || 'DTMF'} digit(s)`;
+    case 'amd':
+      return 'Person or answering machine';
     case 'dial':
       return dialLabel(v.to);
     case 'listen':
@@ -120,7 +161,7 @@ function label(v: Verb) {
     case 'queue':
       return v.queue_id || 'Choose queue';
     case 'hangup':
-      return v.reason || 'NORMAL_CLEARING';
+      return v.reason || 'Normal hangup';
     case 'respond':
       return `${v.code} ${v.reason}`.trim() || 'Set response code';
   }
@@ -192,8 +233,10 @@ export default function FlowBuilder() {
     updateCurrent(next);
     setSelected(n);
   }
+  // Branches live on the selected node, so its index goes in the path.
   function drill(childPath: Path) {
-    setPath([...path, ...childPath]);
+    if (selected == null) return;
+    setPath([...path, selected, ...childPath]);
     setSelected(null);
   }
   const crumbs = useMemo(() => {
@@ -209,7 +252,10 @@ export default function FlowBuilder() {
       )
         out.push({ label: String(path[i]).replace('Verbs', ''), path: [...p] });
       if (i > 0 && path[i - 1] === 'branches')
-        out.push({ label: `DTMF ${path[i]}`, path: [...p] });
+        out.push({
+          label: AMD_BRANCH_LABEL[String(path[i])] ?? `DTMF ${path[i]}`,
+          path: [...p],
+        });
     }
     return out;
   }, [path]);
@@ -388,7 +434,7 @@ function Inspector({
     <div className="inspector-form">
       <div className="inspector-head">
         <span className="eyebrow">Configure node</span>
-        <h2>{node.verb}</h2>
+        <h2>{catalog.find(([v]) => v === node.verb)?.[1] ?? node.verb}</h2>
       </div>
       {node.verb === 'play' && (
         <>
@@ -786,6 +832,45 @@ function Inspector({
               <span>{node.defaultVerbs?.length || 0} nodes</span>
               <ChevronRight size={14} />
             </button>
+          </div>
+        </>
+      )}
+      {node.verb === 'amd' && (
+        <>
+          <p className="muted">
+            Listens to how the call is answered and runs the matching branch,
+            then carries on with the next node. Use it on outbound calls, for
+            example to leave a voicemail for machines and connect people to an
+            agent.
+          </p>
+          {AMD_FIELDS.map(([key, text, def, hint]) => (
+            <Field key={key} label={text} hint={hint}>
+              <input
+                type="number"
+                min="1"
+                placeholder={String(def)}
+                value={node[key] ?? ''}
+                onChange={(e) =>
+                  patch({
+                    [key]: e.target.value === '' ? undefined : +e.target.value,
+                  })
+                }
+              />
+            </Field>
+          ))}
+          <div className="branch-section">
+            <strong>Result branches</strong>
+            {(['human', 'machine', 'unknown'] as const).map((b) => (
+              <button
+                key={b}
+                className="branch-link"
+                onClick={() => drill(['branches', b])}
+              >
+                {AMD_BRANCH_LABEL[b]}{' '}
+                <span>{node.branches?.[b]?.length || 0} nodes</span>
+                <ChevronRight size={14} />
+              </button>
+            ))}
           </div>
         </>
       )}
