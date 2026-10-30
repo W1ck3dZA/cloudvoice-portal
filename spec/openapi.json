@@ -1173,6 +1173,21 @@
             "type": "integer",
             "nullable": true
           },
+          "amd_enabled": {
+            "type": "boolean",
+            "description": "Whether answering machine detection ran before the flow (the per-call amd option)"
+          },
+          "amd_result": {
+            "type": "string",
+            "nullable": true,
+            "enum": [
+              "human",
+              "machine",
+              "notsure",
+              "toolong"
+            ],
+            "description": "Answering machine detection result, from the per-call amd option or an amd step in the flow (the last one wins). Null when detection didn't run.\n"
+          },
           "initiated_at": {
             "type": "string",
             "format": "date-time"

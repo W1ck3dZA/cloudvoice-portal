@@ -19,6 +19,13 @@ import {
   Toggle,
 } from '../components/UI';
 const PAGE_SIZE = 25;
+// Answering machine detection result, when it ran on the call.
+const ANSWERED_BY = {
+  human: 'Person',
+  machine: 'Answering machine',
+  notsure: 'Not sure',
+  toolong: 'Not sure',
+} as const;
 
 const blank = {
   type: 'phone',
@@ -234,6 +241,10 @@ export default function Calls() {
               ['To', view.to_number],
               ['Status', humanize(view.status)],
               ['Hangup cause', humanize(view.hangup_cause)],
+              [
+                'Answered by',
+                view.amd_result ? ANSWERED_BY[view.amd_result] : '—',
+              ],
               [
                 'Duration',
                 view.duration_seconds == null
