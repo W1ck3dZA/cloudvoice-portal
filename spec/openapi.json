@@ -1175,7 +1175,18 @@
           },
           "amd_enabled": {
             "type": "boolean",
-            "description": "Whether answering machine detection ran before the flow (the per-call amd option)"
+            "description": "Whether answering machine detection ran on the call, from the per-call amd option or an amd step in the flow"
+          },
+          "amd_params": {
+            "type": "object",
+            "nullable": true,
+            "description": "The AMD settings used (defaults filled in), from the per-call amd option or an amd step in the flow (the last one wins). Null when detection didn't run.\n"
+          },
+          "recording_id": {
+            "type": "string",
+            "format": "uuid",
+            "nullable": true,
+            "description": "Latest recording of this call (play it via GET /v1/recordings/{id}/download), or null."
           },
           "amd_result": {
             "type": "string",
