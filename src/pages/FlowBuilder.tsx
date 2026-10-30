@@ -113,7 +113,12 @@ const AMD_FIELDS = [
     5000,
     'Milliseconds. Longest time to spend deciding',
   ],
-  ['maxWords', 'Maximum words', 3, 'More words than this means a machine'],
+  [
+    'maxWords',
+    'Maximum words',
+    3,
+    'Hearing this many words before a pause means a machine',
+  ],
 ] as const;
 function getFlow(root: Verb[], path: Path): Verb[] {
   let cur: any = root;

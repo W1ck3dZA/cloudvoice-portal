@@ -1339,7 +1339,7 @@
       },
       "AmdConfig": {
         "type": "object",
-        "description": "Answering Machine Detection configuration. When present with `enabled: true`, the platform runs answering machine detection on the answered call before executing the application flow. Detection result is stored on the call record (`amd_result`) and a `call.amd` webhook event is fired with `result` and `cause` fields.\n**Results:** `human` | `machine` | `notsure` | `toolong`\n**Causes:** `connect` (human answered) | `longgreeting` | `maxwords` | `initialsilence` | `maxwordlength` | `toolong` (analysis timed out)\n**Tuning tips:**\n  - Increase `maximum_number_of_words` (default 3) if real people are being\n    misclassified as machines — 3 words is very aggressive.\n  - Increase `after_greeting_silence` to wait longer for silence after a\n    greeting before deciding the call is human.\n  - `total_analysis_time` is a hard cap — AMD returns as soon as it reaches\n    any decision, so the actual wait is usually much shorter.\n",
+        "description": "Answering Machine Detection configuration. When present with `enabled: true`, the platform runs answering machine detection on the answered call before executing the application flow. Detection result is stored on the call record (`amd_result`) and a `call.amd` webhook event is fired with `result` and `cause` fields.\n**Results:** `human` | `machine` | `notsure`\n**Causes:** `human` (spoke, then paused) | `initialsilence` | `longgreeting` | `maxwords` | `maxwordlength` | `toolong` (analysis timed out) | `hangup` (call ended before a decision)\n**Tuning tips:**\n  - Increase `maximum_number_of_words` (default 3) if real people are being\n    misclassified as machines — 3 words is very aggressive.\n  - Increase `after_greeting_silence` to wait longer for silence after a\n    greeting before deciding the call is human.\n  - `total_analysis_time` is a hard cap — AMD returns as soon as it reaches\n    any decision, so the actual wait is usually much shorter.\n",
         "required": [
           "enabled"
         ],
@@ -1410,7 +1410,7 @@
             "default": 3,
             "minimum": 1,
             "maximum": 100,
-            "description": "Maximum number of words allowed before classifying as machine. If exceeded, result is `machine` / cause `maxwords`. **Increase this (e.g. to 6) if real people are being misclassified.**\n"
+            "description": "Number of words (counting the first) that classifies the call as a machine when heard before a pause: result `machine` / cause `maxwords`. **Increase this (e.g. to 6) if real people are being misclassified.**\n"
           }
         }
       },
@@ -1650,7 +1650,7 @@
             "type": "integer",
             "minimum": 1,
             "maximum": 100,
-            "description": "More words than this means a machine"
+            "description": "Hearing this many words before a pause means a machine"
           },
           "branches": {
             "type": "object",

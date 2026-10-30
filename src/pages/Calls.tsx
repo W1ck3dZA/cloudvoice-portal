@@ -551,7 +551,10 @@ export default function Calls() {
                     }
                   />
                 </Field>
-                <Field label="Maximum words">
+                <Field
+                  label="Maximum words"
+                  hint="Hearing this many words before a pause means a machine"
+                >
                   <input
                     type="number"
                     value={form.amd_max_words}
