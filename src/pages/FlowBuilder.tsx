@@ -1,4 +1,10 @@
-import { useEffect, useRef, useState, type ReactNode } from 'react';
+import {
+  useEffect,
+  useLayoutEffect,
+  useRef,
+  useState,
+  type ReactNode,
+} from 'react';
 import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query';
 import { useNavigate, useParams } from 'react-router-dom';
 import {
@@ -197,6 +203,9 @@ function outputsOf(v: Verb): { key: Path; label: string }[] {
     ];
   return [];
 }
+/** A list that ends the call itself: its last step hangs up or responds. */
+const endsCall = (items: Verb[]) =>
+  ['hangup', 'respond'].includes(items[items.length - 1]?.verb);
 const samePath = (a: Path | null, b: Path | null) =>
   !!a && !!b && a.length === b.length && a.every((x, i) => x === b[i]);
 const verbName = (v: Verb) =>
@@ -242,6 +251,32 @@ export default function FlowBuilder() {
     const c = canvasRef.current;
     if (c && app.data) c.scrollLeft = (c.scrollWidth - c.clientWidth) / 2;
   }, [app.data]);
+  useLayoutEffect(() => {
+    const c = canvasRef.current;
+    if (!c) return;
+    const draw = () =>
+      c.querySelectorAll<HTMLElement>('.fc-outputs').forEach((o) => {
+        const bar = o.querySelector<HTMLElement>(':scope > .fc-join');
+        if (!bar) return;
+        const xs = [
+          ...o.querySelectorAll<HTMLElement>(':scope > .fc-branch.joins'),
+        ].map((b) => b.offsetLeft + b.offsetWidth / 2);
+        if (!xs.length) {
+          bar.style.display = 'none';
+          return;
+        }
+        xs.push(o.clientWidth / 2);
+        const from = Math.min(...xs);
+        const to = Math.max(...xs);
+        bar.style.display = to - from < 2 ? 'none' : '';
+        bar.style.left = `${from - 1}px`;
+        bar.style.width = `${to - from + 2}px`;
+      });
+    draw();
+    const ro = new ResizeObserver(draw);
+    ro.observe(c);
+    return () => ro.disconnect();
+  });
   const node = sel
     ? getFlow(root, sel.slice(0, -1))[sel[sel.length - 1] as number]
     : null;
@@ -345,15 +380,27 @@ export default function FlowBuilder() {
       ? `after ${verbName(node)}`
       : `to ${describe(active)}`;
 
-  function renderList(list: Path): ReactNode {
+  // `after`: a step runs once this list finishes (the next step in an enclosing list). Without one the call ends.
+  function renderList(list: Path, after: boolean): ReactNode {
     const items = getFlow(root, list);
     const isTarget = samePath(active, list);
+    const last = items[items.length - 1];
+    // The trailing Add step only connects up if something flows down to it.
+    const lastOuts = last ? outputsOf(last) : [];
+    const lastJoins =
+      !lastOuts.length ||
+      (after &&
+        lastOuts.some(
+          (o) =>
+            !endsCall(getFlow(root, [...list, items.length - 1, ...o.key])),
+        ));
     return (
       <div className="fc-list">
         {items.map((v, i) => {
           const p = [...list, i];
           const outs = outputsOf(v);
           const Icon = verbIcon(v);
+          const next = i < items.length - 1 || after;
           return (
             <div className="fc-step" key={`${v.verb}-${i}`}>
               <div
@@ -421,21 +468,31 @@ export default function FlowBuilder() {
                 <div className="fc-outputs">
                   {outs.map((o) => {
                     const bp = [...p, ...o.key];
+                    const kids = getFlow(root, bp);
+                    const stops = endsCall(kids);
+                    const joins = next && !stops;
                     return (
-                      <div className="fc-branch" key={o.key.join('.')}>
+                      <div
+                        className={'fc-branch' + (joins ? ' joins' : '')}
+                        key={o.key.join('.')}
+                      >
                         <span className="fc-out">{o.label}</span>
-                        {renderList(bp)}
-                        <span className="fc-fill" aria-hidden="true" />
-                        <span className="fc-foot" aria-hidden="true" />
+                        {renderList(bp, next)}
+                        {joins ? (
+                          <span className="fc-fill" aria-hidden="true" />
+                        ) : (
+                          !stops && <span className="fc-stop">End</span>
+                        )}
                       </div>
                     );
                   })}
+                  <span className="fc-join" aria-hidden="true" />
                 </div>
               )}
             </div>
           );
         })}
-        <div className="fc-add-wrap">
+        <div className={'fc-add-wrap' + (lastJoins ? '' : ' detached')}>
           <button
             type="button"
             className={
@@ -536,8 +593,10 @@ export default function FlowBuilder() {
         >
           <div className="fc">
             <div className="canvas-entry">Incoming call</div>
-            {renderList([])}
-            <div className="canvas-exit">End</div>
+            {renderList([], false)}
+            {!(root.length && outputsOf(root[root.length - 1]).length) && (
+              <div className="canvas-exit">End</div>
+            )}
           </div>
         </section>
         <aside className={'node-inspector ' + (node ? 'is-open' : 'is-empty')}>
