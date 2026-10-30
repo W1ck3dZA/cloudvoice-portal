@@ -7,6 +7,7 @@ import {
   type ReactNode,
 } from 'react';
 import { HoldButton } from './HoldButton';
+import { panelResize } from './panelResize';
 import {
   AlertTriangle,
   ChevronLeft,
@@ -151,11 +152,15 @@ export function Drawer({
   const titleId = useId();
   useEffect(() => {
     const d = ref.current;
-    if (open && d && !d.open) {
+    if (!open || !d) return;
+    if (!d.open) {
       d.showModal();
       titleRef.current?.focus();
     }
-  }, [open]);
+    // Drag the grip: the left edge sets the width on desktop; on phones the handle snaps the sheet to 50, 70 or
+    // 90% of the screen, and dragging it low closes the sheet.
+    return panelResize(d, { key: `drawer-${size}` });
+  }, [open, size]);
   if (!open) return null;
   return (
     <dialog
@@ -166,10 +171,15 @@ export function Drawer({
         e.preventDefault();
         onClose();
       }}
+      onClose={() => {
+        // Closed by dragging the sheet down.
+        if (open) onClose();
+      }}
       onClick={(e) => {
         if (e.target === e.currentTarget) onClose();
       }}
     >
+      <div className="panel-grip" />
       <div className="drawer-head">
         <div>
           <h2 id={titleId} ref={titleRef} tabIndex={-1}>
