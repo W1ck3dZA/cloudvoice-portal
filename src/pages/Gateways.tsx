@@ -143,7 +143,6 @@ export default function Gateways() {
   return (
     <>
       <PageHeader
-        eyebrow="Voice"
         title="SIP Gateways"
         description="Outbound trunks to your carriers: where calls go, how they authenticate, the caller ID and codecs."
         action={

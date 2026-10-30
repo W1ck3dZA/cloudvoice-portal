@@ -51,7 +51,6 @@ export default function Login() {
           <div className="mobile login-mobile-brand">
             <Brand />
           </div>
-          <div className="eyebrow">Welcome back</div>
           <h2>Sign in to Cloudvoice</h2>
           <p>Use your Cloudvoice account credentials.</p>
           {error && <div className="alert">{error}</div>}

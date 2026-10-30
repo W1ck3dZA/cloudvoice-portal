@@ -78,7 +78,6 @@ export default function Applications() {
   return (
     <>
       <PageHeader
-        eyebrow="Routing"
         title="Applications"
         description="Build and manage call-flow applications. Every flow change creates a new application version."
         action={

@@ -149,7 +149,6 @@ export default function Calls() {
   return (
     <>
       <PageHeader
-        eyebrow="Voice"
         title="Calls"
         description="Inspect call lifecycle records or originate calls through a gateway, SIP URI or registered user."
         action={<AddButton onClick={() => setOpen(true)}>Make call</AddButton>}

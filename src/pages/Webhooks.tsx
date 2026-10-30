@@ -300,7 +300,6 @@ export default function Webhooks() {
   return (
     <>
       <PageHeader
-        eyebrow="Developers"
         title="Webhooks"
         description="Get an HTTPS POST to your own server whenever something happens in your account, like a call being answered or an SMS arriving."
         action={<AddButton onClick={openAdd}>Add webhook</AddButton>}

@@ -135,14 +135,12 @@ export default function WebSocketPage() {
   return (
     <>
       <PageHeader
-        eyebrow="Developers"
         title="WebSocket"
         description="Receive this organisation's events the moment they happen, without polling."
       />
       <Card className="ws-live">
         <div className="card-title">
           <div>
-            <span className="eyebrow">Try it</span>
             <h2>Live connection</h2>
           </div>
           <span className={`ws-state ws-state-${state}`} role="status">
@@ -214,7 +212,6 @@ export default function WebSocketPage() {
         <Card>
           <div className="card-title">
             <div>
-              <span className="eyebrow">Guide</span>
               <h2>How it works</h2>
             </div>
           </div>
@@ -254,7 +251,6 @@ export default function WebSocketPage() {
         <Card>
           <div className="card-title">
             <div>
-              <span className="eyebrow">Reference</span>
               <h2>Event types</h2>
             </div>
           </div>

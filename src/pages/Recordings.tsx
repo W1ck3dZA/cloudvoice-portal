@@ -42,7 +42,6 @@ export default function Recordings() {
   return (
     <>
       <PageHeader
-        eyebrow="Voice"
         title="Recordings"
         description="Listen to, download and delete call recordings."
       />

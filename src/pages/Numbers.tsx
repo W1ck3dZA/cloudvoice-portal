@@ -125,7 +125,6 @@ export default function Numbers() {
   return (
     <>
       <PageHeader
-        eyebrow="Voice"
         title="Numbers"
         description="Provision numbers, assign voice applications and control capabilities."
         action={<AddButton onClick={openAdd}>Add number</AddButton>}

@@ -273,7 +273,6 @@ export default function FlowBuilder() {
           <ArrowLeft size={15} /> Applications
         </button>
         <div>
-          <span className="eyebrow">Application flow</span>
           <h1>{app.data.name}</h1>
         </div>
         <div className="builder-save">
@@ -438,7 +437,6 @@ function Inspector({
   return (
     <div className="inspector-form">
       <div className="inspector-head">
-        <span className="eyebrow">Configure node</span>
         <h2>{catalog.find(([v]) => v === node.verb)?.[1] ?? node.verb}</h2>
       </div>
       {node.verb === 'play' && (

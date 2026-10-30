@@ -107,7 +107,6 @@ export default function SipUsers() {
   return (
     <>
       <PageHeader
-        eyebrow="Voice"
         title="SIP Users"
         description="Manage registered extensions, voicemail and default inbound applications."
         action={

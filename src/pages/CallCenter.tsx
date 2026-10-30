@@ -147,7 +147,6 @@ export default function CallCenter() {
   return (
     <>
       <PageHeader
-        eyebrow="Operations"
         title="Call Center"
         description="Manage call queues and the agents who answer them."
         action={

@@ -75,7 +75,6 @@ export default function AudioFiles() {
         <AudioLibrary key={orgId} orgId={orgId} role={role} />
       ) : (
         <PageHeader
-          eyebrow="Voice"
           title="Audio files"
           description="Select an organisation to manage its prompts, greetings, and hold music."
         />
@@ -136,7 +135,6 @@ function AudioLibrary({ orgId, role }: { orgId: string; role?: Role | null }) {
   return (
     <>
       <PageHeader
-        eyebrow="Voice"
         title="Audio files"
         description="Reusable prompts, greetings and hold music. Copy a file's playback URL into an application audio step or a call-center sound field."
         action={

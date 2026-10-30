@@ -137,7 +137,6 @@ export default function Messaging() {
   return (
     <>
       <PageHeader
-        eyebrow="Messaging"
         title="SMS"
         description="Send messages, check delivery and manage the SMS gateway credential your organisation sends with."
         action={

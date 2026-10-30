@@ -58,7 +58,6 @@ export default function Register() {
           <div className="mobile login-mobile-brand">
             <Brand />
           </div>
-          <div className="eyebrow">Get started</div>
           <h2>Create your account</h2>
           <p>Set up your account and your organisation in one step.</p>
           {error && <div className="alert">{error}</div>}

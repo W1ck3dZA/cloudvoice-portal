@@ -94,7 +94,6 @@ export default function Dashboard() {
   return (
     <>
       <PageHeader
-        eyebrow="Overview"
         title={`Good day${session?.user?.name ? ' ' + session.user.name.split(' ')[0] : ''}.`}
         description="Here’s what’s happening across your Cloudvoice account."
       />
@@ -119,7 +118,7 @@ export default function Dashboard() {
         />
       </div>
       <div className="section-headbar">
-        <span className="eyebrow">Activity</span>
+        <h2 className="section-title">Activity</h2>
         <div className="range-toggle">
           {ranges.map((r) => (
             <button
@@ -136,7 +135,6 @@ export default function Dashboard() {
         <Card className="chart-card">
           <div className="card-title">
             <div>
-              <span className="eyebrow">Traffic</span>
               <h2>Call activity</h2>
             </div>
           </div>
@@ -166,13 +164,13 @@ export default function Dashboard() {
                 />
                 <Tooltip
                   contentStyle={{
-                    background: 'var(--surface)',
+                    background: 'var(--card)',
                     border: '1px solid var(--line)',
                     borderRadius: 10,
-                    color: 'var(--text)',
+                    color: 'var(--fg)',
                   }}
-                  labelStyle={{ color: 'var(--text)' }}
-                  itemStyle={{ color: 'var(--text)' }}
+                  labelStyle={{ color: 'var(--fg)' }}
+                  itemStyle={{ color: 'var(--fg)' }}
                   cursor={{ stroke: 'var(--line)' }}
                 />
                 <Area
@@ -189,7 +187,6 @@ export default function Dashboard() {
         <Card className="chart-card">
           <div className="card-title">
             <div>
-              <span className="eyebrow">Messaging</span>
               <h2>Message activity</h2>
             </div>
           </div>
@@ -219,13 +216,13 @@ export default function Dashboard() {
                 />
                 <Tooltip
                   contentStyle={{
-                    background: 'var(--surface)',
+                    background: 'var(--card)',
                     border: '1px solid var(--line)',
                     borderRadius: 10,
-                    color: 'var(--text)',
+                    color: 'var(--fg)',
                   }}
-                  labelStyle={{ color: 'var(--text)' }}
-                  itemStyle={{ color: 'var(--text)' }}
+                  labelStyle={{ color: 'var(--fg)' }}
+                  itemStyle={{ color: 'var(--fg)' }}
                   cursor={{ stroke: 'var(--line)' }}
                 />
                 <Area
@@ -243,7 +240,6 @@ export default function Dashboard() {
       <Card>
         <div className="card-title">
           <div>
-            <span className="eyebrow">Latest activity</span>
             <h2>Recent calls</h2>
           </div>
         </div>

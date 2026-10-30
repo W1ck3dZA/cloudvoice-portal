@@ -14,7 +14,8 @@ type Ctx = {
   /** What the user chose; 'system' follows the device. */
   preference: ThemePreference;
   setPreference: (p: ThemePreference) => void;
-  toggleTheme: () => void;
+  /** The header button: system, then light, then dark. */
+  cycleTheme: () => void;
 };
 const ThemeContext = createContext<Ctx | null>(null);
 const query = '(prefers-color-scheme: dark)';
@@ -41,9 +42,12 @@ export function ThemeProvider({ children }: { children: ReactNode }) {
     return () => mq.removeEventListener('change', onChange);
   }, []);
   const theme = preference === 'system' ? system : preference;
+  // "system" removes data-theme so the stylesheet's prefers-color-scheme block applies.
   useEffect(() => {
-    document.documentElement.setAttribute('data-theme', theme);
-  }, [theme]);
+    const root = document.documentElement;
+    if (preference === 'system') root.removeAttribute('data-theme');
+    else root.setAttribute('data-theme', preference);
+  }, [preference]);
   useEffect(() => {
     try {
       localStorage.setItem('cv_theme', preference);
@@ -56,7 +60,14 @@ export function ThemeProvider({ children }: { children: ReactNode }) {
       theme,
       preference,
       setPreference,
-      toggleTheme: () => setPreference(theme === 'dark' ? 'light' : 'dark'),
+      cycleTheme: () =>
+        setPreference(
+          preference === 'system'
+            ? 'light'
+            : preference === 'light'
+              ? 'dark'
+              : 'system',
+        ),
     }),
     [theme, preference],
   );

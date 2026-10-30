@@ -116,7 +116,6 @@ export default function Settings() {
   return (
     <>
       <PageHeader
-        eyebrow="Account"
         title="Settings"
         description="Your profile, how you sign in, and how the portal looks."
       />

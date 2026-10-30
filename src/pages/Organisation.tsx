@@ -144,7 +144,6 @@ export default function Organisation() {
   return (
     <>
       <PageHeader
-        eyebrow="Account"
         title={org.data?.name || 'Organisation'}
         description="Manage organisation identity, members, access roles and owner-level limits."
         action={
@@ -175,7 +174,6 @@ export default function Organisation() {
         <Card>
           <div className="card-title">
             <div>
-              <span className="eyebrow">Organisation</span>
               <h2>Account details</h2>
             </div>
             {canManage && (
@@ -212,7 +210,6 @@ export default function Organisation() {
         <Card>
           <div className="card-title">
             <div>
-              <span className="eyebrow">Access</span>
               <h2>{members.data?.length || 0} members</h2>
             </div>
           </div>
@@ -235,7 +232,6 @@ export default function Organisation() {
       <Card>
         <div className="card-title">
           <div>
-            <span className="eyebrow">Team</span>
             <h2>Members</h2>
           </div>
         </div>
@@ -298,7 +294,6 @@ export default function Organisation() {
       <Card className="org-memberships">
         <div className="card-title">
           <div>
-            <span className="eyebrow">Memberships</span>
             <h2>My organisations</h2>
           </div>
         </div>
@@ -332,7 +327,6 @@ export default function Organisation() {
       {isOwner && (
         <Card className="danger-card">
           <div>
-            <span className="eyebrow">Danger zone</span>
             <h2>Delete organisation</h2>
             <p>
               Soft-delete this organisation and prevent normal use of its

@@ -18,12 +18,10 @@ export const Card = ({
   className?: string;
 }) => <section className={'card ' + className}>{children}</section>;
 export function PageHeader({
-  eyebrow,
   title,
   description,
   action,
 }: {
-  eyebrow?: string;
   title: string;
   description?: string;
   action?: ReactNode;
@@ -31,7 +29,6 @@ export function PageHeader({
   return (
     <div className="page-header">
       <div>
-        {eyebrow && <div className="eyebrow">{eyebrow}</div>}
         <h1>{title}</h1>
         {description && <p>{description}</p>}
       </div>
@@ -144,7 +141,6 @@ export function Drawer({
       <aside className={`drawer drawer-${size}`}>
         <div className="drawer-head">
           <div>
-            <span className="eyebrow">Cloudvoice</span>
             <h2>{title}</h2>
             {subtitle && <p>{subtitle}</p>}
           </div>
@@ -403,7 +399,6 @@ export function SecretReveal({
   return (
     <div className="secret-card">
       <div>
-        <span className="eyebrow">Shown once</span>
         <h3>{title}</h3>
         <p>Copy this value now. The API may not return it again.</p>
       </div>

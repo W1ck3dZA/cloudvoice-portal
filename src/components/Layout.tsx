@@ -15,7 +15,6 @@ import {
   LogOut,
   Menu,
   MessageSquare,
-  Moon,
   Music,
   PhoneCall,
   RadioTower,
@@ -76,7 +75,7 @@ export function Layout() {
   const [menuOpen, setMenuOpen] = useState(false);
   const menuRef = useRef<HTMLDivElement>(null);
   const { session, logout } = useSession();
-  const { theme, toggleTheme } = useTheme();
+  const { preference, cycleTheme } = useTheme();
   const organisations = useQuery({
     queryKey: ['organisations'],
     queryFn: orgApi.list,
@@ -154,14 +153,11 @@ export function Layout() {
           <div className="top-actions">
             <button
               className="icon-btn theme-toggle"
-              onClick={toggleTheme}
-              title={
-                theme === 'dark'
-                  ? 'Switch to light mode'
-                  : 'Switch to dark mode'
-              }
+              onClick={cycleTheme}
+              aria-label={`Theme: ${preference}. Change theme`}
+              title={`Theme: ${preference}`}
             >
-              {theme === 'dark' ? <Sun size={18} /> : <Moon size={18} />}
+              <Sun size={18} />
             </button>
             <div className="org-menu" ref={menuRef}>
               <button

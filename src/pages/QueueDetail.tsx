@@ -91,7 +91,6 @@ export default function QueueDetail() {
   return (
     <>
       <PageHeader
-        eyebrow="Call Center / Queue"
         title={queue.data.name}
         description={queue.data.strategy}
         action={
@@ -135,7 +134,6 @@ export default function QueueDetail() {
         <Card>
           <div className="card-title">
             <div>
-              <span className="eyebrow">Live statistics</span>
               <h2>Queue performance</h2>
             </div>
             <StatusToggle
@@ -174,7 +172,6 @@ export default function QueueDetail() {
         <Card>
           <div className="card-title">
             <div>
-              <span className="eyebrow">Configuration</span>
               <h2>Routing</h2>
             </div>
           </div>
@@ -201,10 +198,11 @@ export default function QueueDetail() {
       <Card>
         <div className="card-title">
           <div>
-            <span className="eyebrow">Caller history</span>
             <h2>Queue callers</h2>
           </div>
-          <span className="muted">Live and historical · refreshes every 5 seconds</span>
+          <span className="muted">
+            Live and historical · refreshes every 5 seconds
+          </span>
         </div>
         {members.isLoading ? (
           <Spinner />
@@ -249,7 +247,6 @@ export default function QueueDetail() {
       <Card className="tier-card">
         <div className="card-title">
           <div>
-            <span className="eyebrow">Agent routing</span>
             <h2>Tier assignments</h2>
           </div>
           <button className="btn primary" onClick={() => setOpen(true)}>
