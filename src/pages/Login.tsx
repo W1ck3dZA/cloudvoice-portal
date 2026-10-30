@@ -40,11 +40,6 @@ export default function Login() {
             one workspace.
           </p>
         </div>
-        <div className="signal-grid">
-          {Array.from({ length: 30 }).map((_, i) => (
-            <i key={i} />
-          ))}
-        </div>
       </div>
       <div className="login-panel">
         <form className="login-card" onSubmit={submit}>

@@ -1,77 +1,95 @@
-import { useEffect, useRef, useState } from 'react';
+import { useEffect, useRef, useState, type ReactElement } from 'react';
 import { useQuery } from '@tanstack/react-query';
 import { NavLink, Outlet, useLocation, useNavigate } from 'react-router-dom';
-import { PlayerProvider } from './AudioPlayer';
 import {
-  Activity,
-  AppWindow,
   Building2,
   Check,
   ChevronDown,
-  Code2,
-  FileAudio,
-  KeyRound,
-  LayoutDashboard,
   LogOut,
-  Menu,
-  MessageSquare,
-  Music,
-  PhoneCall,
-  RadioTower,
-  Router,
   Settings,
   Sun,
-  Users,
-  UsersRound,
-  Webhook,
-  X,
 } from 'lucide-react';
+import { PlayerProvider } from './AudioPlayer';
+import { AnimatedIcon } from './AnimatedIcon';
+import {
+  ChatIcon,
+  ChevronIcon,
+  CodeIcon,
+  HashIcon,
+  HeadsetIcon,
+  HomeIcon,
+  PhoneIcon,
+} from './Icons';
 import { Brand } from './Brand';
 import { orgApi } from '../lib/api';
 import { useSession } from '../lib/session';
 import { useSwitchOrganisation } from '../lib/useSwitchOrganisation';
 import NoOrganisation from '../pages/NoOrganisation';
 import { useTheme } from '../lib/theme';
-const groups = [
-  { label: 'Overview', items: [['/', 'Dashboard', LayoutDashboard]] },
+
+type NavLeaf = { to: string; label: string; icon: ReactElement };
+type NavGroupDef = NavLeaf & { items: { to: string; label: string }[] };
+type NavEntry = NavLeaf | NavGroupDef;
+const isGroup = (e: NavEntry): e is NavGroupDef => 'items' in e;
+
+// Six entries; related pages sit in groups. On phones each entry is one icon in the bottom bar and a group's
+// pages show as a tab row under the header.
+const nav: NavEntry[] = [
+  { to: '/', label: 'Dashboard', icon: <HomeIcon /> },
   {
-    label: 'Voice',
+    to: '/calls',
+    label: 'Calls',
+    icon: <PhoneIcon />,
     items: [
-      ['/numbers', 'Numbers', RadioTower],
-      ['/sip-users', 'SIP Users', Users],
-      ['/gateways', 'SIP Gateways', Router],
-      ['/calls', 'Calls', PhoneCall],
-      ['/recordings', 'Recordings', FileAudio],
-      ['/audio-files', 'Audio files', Music],
-      ['/applications', 'Applications', AppWindow],
+      { to: '/calls', label: 'Calls' },
+      { to: '/recordings', label: 'Recordings' },
+      { to: '/call-center', label: 'Call center' },
     ],
   },
   {
-    label: 'Operations',
+    to: '/numbers',
+    label: 'Numbers',
+    icon: <HashIcon />,
     items: [
-      ['/call-center', 'Call Center', UsersRound],
-      ['/messaging', 'Messaging', MessageSquare],
+      { to: '/numbers', label: 'Numbers' },
+      { to: '/applications', label: 'Applications' },
+      { to: '/audio-files', label: 'Audio files' },
     ],
   },
   {
+    to: '/sip-users',
+    label: 'SIP',
+    icon: <HeadsetIcon />,
+    items: [
+      { to: '/sip-users', label: 'SIP users' },
+      { to: '/gateways', label: 'SIP gateways' },
+    ],
+  },
+  { to: '/messaging', label: 'Messaging', icon: <ChatIcon /> },
+  {
+    to: '/api-keys',
     label: 'Developers',
+    icon: <CodeIcon />,
     items: [
-      ['/webhooks', 'Webhooks', Webhook],
-      ['/websocket', 'WebSocket', Activity],
-      ['/events', 'Event Publisher', Code2],
-      ['/api-keys', 'API Keys', KeyRound],
+      { to: '/api-keys', label: 'API keys' },
+      { to: '/webhooks', label: 'Webhooks' },
+      { to: '/websocket', label: 'WebSocket' },
+      { to: '/events', label: 'Event publisher' },
     ],
   },
-  {
-    label: 'Account',
-    items: [
-      ['/organisation', 'Organisation', Building2],
-      ['/settings', 'Settings', Settings],
-    ],
-  },
-] as const;
+];
+const account = [
+  { to: '/organisation', label: 'Organisation' },
+  { to: '/settings', label: 'Settings' },
+];
+
+const within = (path: string, to: string) =>
+  to === '/' ? path === '/' : path === to || path.startsWith(`${to}/`);
+const groupOf = (path: string) =>
+  nav.find((e) => isGroup(e) && e.items.some((i) => within(path, i.to))) as
+    NavGroupDef | undefined;
+
 export function Layout() {
-  const [open, setOpen] = useState(false);
   const [menuOpen, setMenuOpen] = useState(false);
   const menuRef = useRef<HTMLDivElement>(null);
   const { session, logout } = useSession();
@@ -83,9 +101,24 @@ export function Layout() {
   });
   const switchOrg = useSwitchOrganisation();
   const orgs = organisations.data || [];
+  const currentOrg = orgs.find((o) => o.id === session?.orgId);
   const navigate = useNavigate();
   const location = useLocation();
-  const isFullBleed = /\/applications\/[^/]+\/builder/.test(location.pathname);
+  const path = location.pathname.replace(/(.)\/$/, '$1');
+  const isFullBleed = /\/applications\/[^/]+\/builder/.test(path);
+  const group = groupOf(path);
+  const page =
+    group?.items.find((i) => within(path, i.to)) ??
+    account.find((a) => within(path, a.to)) ??
+    nav.find((e) => !isGroup(e) && within(path, e.to));
+  const name = session?.user?.name || 'Cloudvoice user';
+  const initials = name
+    .split(/\s+/)
+    .map((p) => p[0])
+    .slice(0, 2)
+    .join('')
+    .toUpperCase();
+
   useEffect(() => {
     if (!menuOpen) return;
     const onClick = (e: MouseEvent) => {
@@ -101,76 +134,102 @@ export function Layout() {
       document.removeEventListener('keydown', onKey);
     };
   }, [menuOpen]);
+
   return (
-    <div className="app-shell">
-      <aside className={'sidebar ' + (open ? 'open' : '')}>
-        <div className="side-head">
+    <div className="shell">
+      <aside className="side">
+        <div className="side-brand">
           <Brand />
-          <button className="icon-btn mobile" onClick={() => setOpen(false)}>
-            <X size={20} />
-          </button>
         </div>
-        <nav>
-          {groups.map((g) => (
-            <div className="nav-group" key={g.label}>
-              <div className="nav-label">{g.label}</div>
-              {g.items.map(([to, label, Icon]) => (
-                <NavLink
-                  onClick={() => setOpen(false)}
-                  className={({ isActive }) =>
-                    'nav-item ' + (isActive ? 'active' : '')
-                  }
-                  to={to}
-                  end={to === '/'}
-                  key={to}
-                >
-                  <Icon size={18} />
-                  <span>{label}</span>
-                </NavLink>
-              ))}
-            </div>
-          ))}
+        <nav className="nav" aria-label="Main">
+          {nav.map((e) =>
+            isGroup(e) ? (
+              <NavGroup key={e.to} {...e} path={path} />
+            ) : (
+              <NavLink
+                key={e.to}
+                to={e.to}
+                end={e.to === '/'}
+                title={e.label}
+                className={({ isActive }) => (isActive ? 'active' : '')}
+              >
+                <span className="ni">{e.icon}</span>
+                <span className="nl">{e.label}</span>
+              </NavLink>
+            ),
+          )}
         </nav>
-        <div className="sidebar-user">
-          <div className="avatar">
-            {session?.user?.name?.[0]?.toUpperCase() || 'C'}
-          </div>
-          <div className="user-copy">
-            <strong>{session?.user?.name || 'Cloudvoice user'}</strong>
-            <span>{session?.role || 'user'}</span>
-          </div>
-          <button className="icon-btn" onClick={logout} title="Sign out">
-            <LogOut size={18} />
-          </button>
+        <div className="side-foot">
+          {currentOrg && (
+            <NavLink
+              to="/organisation"
+              className={({ isActive }) =>
+                `side-org${isActive ? ' active' : ''}`
+              }
+            >
+              <span className="me-name">{currentOrg.name}</span>
+              <span>Organisation</span>
+            </NavLink>
+          )}
+          <NavLink
+            to="/settings"
+            className={({ isActive }) => `me-link${isActive ? ' active' : ''}`}
+          >
+            <span className="me-av" aria-hidden="true">
+              {initials}
+            </span>
+            <span className="me-text">
+              <span className="me-name">{name}</span>
+              <span>My account</span>
+            </span>
+          </NavLink>
         </div>
       </aside>
       <div className="main">
-        <header className="topbar">
-          <button className="icon-btn mobile" onClick={() => setOpen(true)}>
-            <Menu size={21} />
-          </button>
-          <div className="crumb">Customer Portal</div>
+        <header className="hdr">
+          <div className="hdr-brand mobile-only">
+            <Brand compact />
+          </div>
+          <div className="crumb desktop-only">
+            {group && group.label !== page?.label && (
+              <>
+                <span>{group.label}</span>
+                <ChevronIcon />
+              </>
+            )}
+            <span className="crumb-here">{page?.label ?? 'Cloudvoice'}</span>
+          </div>
           <div className="top-actions">
             <button
-              className="icon-btn theme-toggle"
+              className="icon-btn"
               onClick={cycleTheme}
               aria-label={`Theme: ${preference}. Change theme`}
               title={`Theme: ${preference}`}
             >
-              <Sun size={18} />
+              <AnimatedIcon
+                icon={Sun}
+                size={20}
+                animation="turn"
+                trigger="click"
+              />
             </button>
             <div className="org-menu" ref={menuRef}>
               <button
                 className="org-pill"
+                aria-expanded={menuOpen}
+                aria-haspopup="menu"
                 onClick={() => setMenuOpen((v) => !v)}
               >
-                <span className="status-dot" />{' '}
-                {session?.user?.name || 'Account'} <ChevronDown size={14} />
+                <span className="me-av sm" aria-hidden="true">
+                  {initials}
+                </span>
+                <span className="org-pill-name">{name}</span>
+                <ChevronDown size={16} strokeWidth={1.8} aria-hidden="true" />
               </button>
               {menuOpen && (
                 <div className="org-menu-panel">
                   <div className="org-menu-head">
-                    <strong>{session?.user?.name || 'Cloudvoice user'}</strong>
+                    <strong>{name}</strong>
                     <span>{session?.user?.email}</span>
                     <span className="caps">{session?.role || 'user'}</span>
                   </div>
@@ -191,7 +250,11 @@ export function Layout() {
                               <small className="caps">{o.role}</small>
                             </span>
                             {current && (
-                              <Check size={15} aria-label="Current" />
+                              <Check
+                                size={16}
+                                strokeWidth={1.8}
+                                aria-label="Current"
+                              />
                             )}
                           </button>
                         );
@@ -205,7 +268,7 @@ export function Layout() {
                         navigate('/settings');
                       }}
                     >
-                      <Settings size={15} /> Settings
+                      <Settings size={16} strokeWidth={1.8} /> Settings
                     </button>
                     <button
                       onClick={() => {
@@ -213,10 +276,10 @@ export function Layout() {
                         navigate('/organisation');
                       }}
                     >
-                      <Building2 size={15} /> Organisation
+                      <Building2 size={16} strokeWidth={1.8} /> Organisation
                     </button>
                     <button onClick={logout}>
-                      <LogOut size={15} /> Sign out
+                      <LogOut size={16} strokeWidth={1.8} /> Sign out
                     </button>
                   </div>
                 </div>
@@ -224,9 +287,22 @@ export function Layout() {
             </div>
           </div>
         </header>
-        <main className={'page' + (isFullBleed ? ' page-full' : '')}>
+        {group && group.items.length > 1 && !isFullBleed && (
+          <nav className="subnav mobile-only" aria-label={group.label}>
+            {group.items.map((i) => (
+              <NavLink
+                key={i.to}
+                to={i.to}
+                className={() => (within(path, i.to) ? 'active' : '')}
+              >
+                {i.label}
+              </NavLink>
+            ))}
+          </nav>
+        )}
+        <main className={isFullBleed ? 'content-full' : 'content'}>
           <PlayerProvider>
-            {session && !session.orgId && location.pathname !== '/settings' ? (
+            {session && !session.orgId && path !== '/settings' ? (
               <NoOrganisation />
             ) : (
               <Outlet />
@@ -234,7 +310,63 @@ export function Layout() {
           </PlayerProvider>
         </main>
       </div>
-      {open && <div className="scrim" onClick={() => setOpen(false)} />}
     </div>
+  );
+}
+
+/**
+ * A sidebar entry with pages under it. It opens by itself while you are on one of its pages, and its heading
+ * opens and closes it. On phones it is one icon in the bottom bar that opens the group's first page.
+ */
+function NavGroup({
+  to,
+  label,
+  icon,
+  items,
+  path,
+}: NavGroupDef & { path: string }) {
+  const inside = items.some((i) => within(path, i.to));
+  const [open, setOpen] = useState(inside);
+  useEffect(() => {
+    if (inside) setOpen(true);
+  }, [inside]);
+  const id = `nav-${label.toLowerCase().replace(/\s+/g, '-')}`;
+  return (
+    <>
+      <NavLink
+        to={to}
+        title={label}
+        className={() => `mobile-only${inside ? ' active' : ''}`}
+      >
+        <span className="ni">{icon}</span>
+        <span className="nl">{label}</span>
+      </NavLink>
+      <button
+        type="button"
+        className={`nav-grp desktop-only${inside ? ' here' : ''}`}
+        aria-expanded={open}
+        aria-controls={id}
+        onClick={() => setOpen(!open)}
+      >
+        <span className="ni">{icon}</span>
+        <span className="nl">{label}</span>
+        <span className="nav-chev">
+          <ChevronIcon />
+        </span>
+      </button>
+      {open && (
+        <div id={id} className="nav-sub desktop-only">
+          {items.map((i) => (
+            <NavLink
+              key={i.to}
+              to={i.to}
+              className={() => (within(path, i.to) ? 'active' : '')}
+            >
+              <span className="nl">{i.label}</span>
+            </NavLink>
+          ))}
+        </div>
+      )}
+    </>
   );
 }
