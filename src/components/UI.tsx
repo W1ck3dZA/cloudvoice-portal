@@ -10,6 +10,7 @@ import {
   Plus,
   X,
 } from 'lucide-react';
+import { AnimatedIcon } from './AnimatedIcon';
 export const Card = ({
   children,
   className = '',
@@ -176,7 +177,7 @@ export function Drawer({
           aria-label="Close"
           title="Close"
         >
-          <X size={20} strokeWidth={1.8} />
+          <AnimatedIcon icon={X} size={20} animation="press" trigger="click" />
         </button>
       </div>
       <div className="drawer-body">{children}</div>
@@ -278,7 +279,7 @@ export function Pagination({
           disabled={page >= totalPages}
           onClick={() => onPageChange(page + 1)}
         >
-          Next <ChevronRight size={14} />
+          Next <AnimatedIcon icon={ChevronRight} size={14} animation="nudge" />
         </button>
       </div>
     </div>
@@ -315,7 +316,7 @@ export function AddButton({
 }) {
   return (
     <PrimaryButton onClick={onClick}>
-      <Plus size={16} />
+      <AnimatedIcon icon={Plus} size={16} animation="press" trigger="click" />
       {children}
     </PrimaryButton>
   );
@@ -333,7 +334,7 @@ export function CopyButton({
       type="button"
       onClick={() => navigator.clipboard.writeText(value)}
     >
-      <Copy size={14} />
+      <AnimatedIcon icon={Copy} size={14} animation="press" trigger="click" />
       {label}
     </button>
   );
@@ -341,7 +342,12 @@ export function CopyButton({
 export function ErrorBox({ message }: { message?: string }) {
   return message ? (
     <div className="alert">
-      <AlertTriangle size={15} />
+      <AnimatedIcon
+        icon={AlertTriangle}
+        size={15}
+        animation="shake"
+        trigger="always"
+      />
       {message}
     </div>
   ) : null;
@@ -362,7 +368,7 @@ export function RowActions({
     <div className="row-actions">
       {onView && (
         <button className="table-action" onClick={onView}>
-          View <ChevronRight size={14} />
+          View <AnimatedIcon icon={ChevronRight} size={14} animation="nudge" />
         </button>
       )}
       {onEdit && (

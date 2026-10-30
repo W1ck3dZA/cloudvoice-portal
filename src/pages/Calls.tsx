@@ -1,6 +1,7 @@
 import { useState } from 'react';
 import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query';
 import { PhoneCall, PhoneOutgoing, PlayCircle, Search } from 'lucide-react';
+import { AnimatedIcon } from '../components/AnimatedIcon';
 import { usePlayer } from '../components/AudioPlayer';
 import { CallDetails } from '../components/CallDetails';
 import { appsApi, callsApi, errorMessage, gatewaysApi } from '../lib/api';
@@ -555,7 +556,7 @@ export default function Calls() {
             )}
           </div>
           <button className="btn primary" disabled={originate.isPending}>
-            <PhoneOutgoing size={15} />{' '}
+            <AnimatedIcon icon={PhoneOutgoing} size={15} animation="wiggle" />{' '}
             {originate.isPending ? 'Calling…' : 'Place call'}
           </button>
         </form>

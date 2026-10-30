@@ -1,5 +1,6 @@
 import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query';
 import { Download, FileAudio, PlayCircle } from 'lucide-react';
+import { AnimatedIcon } from '../components/AnimatedIcon';
 import { api, recordingsApi } from '../lib/api';
 import type { Recording } from '../types/api';
 import { usePlayer } from '../components/AudioPlayer';
@@ -80,13 +81,25 @@ export default function Recordings() {
                           className="table-action"
                           onClick={() => play(r)}
                         >
-                          <PlayCircle size={14} /> Play
+                          <AnimatedIcon
+                            icon={PlayCircle}
+                            size={14}
+                            animation="press"
+                            trigger="click"
+                          />{' '}
+                          Play
                         </button>
                         <button
                           className="table-action"
                           onClick={() => download(r)}
                         >
-                          <Download size={14} /> Download
+                          <AnimatedIcon
+                            icon={Download}
+                            size={14}
+                            animation="press"
+                            trigger="click"
+                          />{' '}
+                          Download
                         </button>
                         <HoldButton
                           iconOnly

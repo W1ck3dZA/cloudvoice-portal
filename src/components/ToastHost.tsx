@@ -1,5 +1,6 @@
 import { useEffect, useRef, useState } from 'react';
 import { AlertTriangle, CheckCircle2, Info, X } from 'lucide-react';
+import { AnimatedIcon } from './AnimatedIcon';
 import { onToast, type ToastKind } from '../lib/toast';
 interface ToastItem {
   id: number;
@@ -40,7 +41,12 @@ export default function ToastHost() {
               aria-label="Dismiss"
               onClick={() => setToasts((ts) => ts.filter((x) => x.id !== t.id))}
             >
-              <X size={14} />
+              <AnimatedIcon
+                icon={X}
+                size={14}
+                animation="press"
+                trigger="click"
+              />
             </button>
           </div>
         );

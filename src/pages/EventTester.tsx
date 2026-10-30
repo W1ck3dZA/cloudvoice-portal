@@ -1,6 +1,7 @@
 import { useMemo, useState, type FormEvent } from 'react';
 import { Link } from 'react-router-dom';
 import { Send } from 'lucide-react';
+import { AnimatedIcon } from '../components/AnimatedIcon';
 import { eventsApi, errorMessage } from '../lib/api';
 import { useSession } from '../lib/session';
 import { showToast } from '../lib/toast';
@@ -209,7 +210,7 @@ export default function EventTester() {
                 className="btn primary"
                 disabled={busy || !parsed.ok || !type.trim()}
               >
-                <Send size={15} />
+                <AnimatedIcon icon={Send} size={15} animation="nudge" />
                 {busy ? 'Publishing…' : 'Publish event'}
               </button>
             </DrawerActions>

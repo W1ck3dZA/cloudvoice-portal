@@ -279,7 +279,8 @@ export function Layout() {
                       <Building2 size={16} strokeWidth={1.8} /> Organisation
                     </button>
                     <button onClick={logout}>
-                      <LogOut size={16} strokeWidth={1.8} /> Sign out
+                      <AnimatedIcon icon={LogOut} size={16} animation="nudge" />{' '}
+                      Sign out
                     </button>
                   </div>
                 </div>

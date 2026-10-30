@@ -1,5 +1,6 @@
 import { useState, type ReactNode } from 'react';
 import { Check, Copy } from 'lucide-react';
+import { AnimatedIcon } from './AnimatedIcon';
 // Building blocks for drawers: a summary header, sections of label / value
 // rows for viewing a record, and grouped sections for editing one.
 
@@ -77,7 +78,16 @@ export function CopyValue({ value, label }: { value: string; label: string }) {
           })
         }
       >
-        {copied ? <Check size={15} /> : <Copy size={15} />}
+        {copied ? (
+          <Check size={15} />
+        ) : (
+          <AnimatedIcon
+            icon={Copy}
+            size={15}
+            animation="press"
+            trigger="click"
+          />
+        )}
       </button>
       <span className="sr-only" role="status">
         {copied ? `${label} copied` : ''}

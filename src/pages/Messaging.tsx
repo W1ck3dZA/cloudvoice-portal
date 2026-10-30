@@ -1,6 +1,7 @@
 import { useState } from 'react';
 import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query';
 import { ArrowRight, KeyRound, MessageSquare, Send } from 'lucide-react';
+import { AnimatedIcon } from '../components/AnimatedIcon';
 import { errorMessage, smsApi, smsCredentialsApi } from '../lib/api';
 import type { SmsMessage } from '../types/api';
 import { humanize } from '../lib/labels';
@@ -339,7 +340,7 @@ export default function Messaging() {
           </FormSection>
           <DrawerActions>
             <button className="btn primary" disabled={send.isPending}>
-              <Send size={15} />
+              <AnimatedIcon icon={Send} size={15} animation="nudge" />
               {send.isPending ? 'Sending…' : 'Send message'}
             </button>
             <button
@@ -471,7 +472,7 @@ export default function Messaging() {
                     compose({ to: view.from_number!, from: view.to_number })
                   }
                 >
-                  <Send size={15} /> Reply
+                  <AnimatedIcon icon={Send} size={15} animation="nudge" /> Reply
                 </button>
               ) : (
                 <button
@@ -483,7 +484,8 @@ export default function Messaging() {
                     })
                   }
                 >
-                  <Send size={15} /> Message again
+                  <AnimatedIcon icon={Send} size={15} animation="nudge" />{' '}
+                  Message again
                 </button>
               )}
             </DetailSummary>

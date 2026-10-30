@@ -8,6 +8,7 @@ import Dashboard from './pages/Dashboard';
 import Numbers from './pages/Numbers';
 import SipUsers from './pages/SipUsers';
 import Gateways from './pages/Gateways';
+import GatewayEdit from './pages/GatewayEdit';
 import Calls from './pages/Calls';
 import Recordings from './pages/Recordings';
 import AudioFiles from './pages/AudioFiles';
@@ -17,6 +18,7 @@ import CallCenter from './pages/CallCenter';
 import QueueDetail from './pages/QueueDetail';
 import Messaging from './pages/Messaging';
 import Webhooks from './pages/Webhooks';
+import WebhookEdit from './pages/WebhookEdit';
 import EventTester from './pages/EventTester';
 import WebSocketPage from './pages/WebSocket';
 import ApiKeys from './pages/ApiKeys';
@@ -42,6 +44,8 @@ export default function App() {
           <Route path="/numbers" element={<Numbers />} />
           <Route path="/sip-users" element={<SipUsers />} />
           <Route path="/gateways" element={<Gateways />} />
+          <Route path="/gateways/new" element={<GatewayEdit />} />
+          <Route path="/gateways/:id/edit" element={<GatewayEdit />} />
           <Route path="/calls" element={<Calls />} />
           <Route path="/recordings" element={<Recordings />} />
           <Route path="/audio-files" element={<AudioFiles />} />
@@ -51,6 +55,8 @@ export default function App() {
           <Route path="/call-center/queues/:id" element={<QueueDetail />} />
           <Route path="/messaging" element={<Messaging />} />
           <Route path="/webhooks" element={<Webhooks />} />
+          <Route path="/webhooks/new" element={<WebhookEdit />} />
+          <Route path="/webhooks/:id/edit" element={<WebhookEdit />} />
           <Route path="/events" element={<EventTester />} />
           <Route path="/websocket" element={<WebSocketPage />} />
           <Route path="/api-keys" element={<ApiKeys />} />

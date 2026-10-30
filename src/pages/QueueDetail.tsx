@@ -1,8 +1,8 @@
 import { useState } from 'react';
 import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query';
-import { useNavigate, useParams } from 'react-router-dom';
+import { Link, useParams } from 'react-router-dom';
 import {
-  ArrowLeft,
+  ChevronLeft,
   PhoneCall,
   Plus,
   RefreshCw,
@@ -23,10 +23,10 @@ import {
   StatusToggle,
 } from '../components/UI';
 import { HoldButton } from '../components/HoldButton';
+import { AnimatedIcon } from '../components/AnimatedIcon';
 import { humanize } from '../lib/labels';
 export default function QueueDetail() {
   const { id } = useParams();
-  const nav = useNavigate();
   const qc = useQueryClient();
   const { session } = useSession();
   const orgId = session?.orgId || '';
@@ -90,46 +90,34 @@ export default function QueueDetail() {
   const s = stats.data;
   return (
     <>
+      <Link className="dp-back queue-back" to="/call-center">
+        <ChevronLeft size={16} aria-hidden="true" />
+        Call center
+      </Link>
       <PageHeader
         title={queue.data.name}
         description={queue.data.strategy}
         action={
-          <>
-            <button className="btn" onClick={refreshAll}>
-              <RefreshCw size={15} /> Refresh
-            </button>
-            <button className="btn" onClick={() => nav('/call-center')}>
-              <ArrowLeft size={15} /> Back
-            </button>
-          </>
+          <button className="btn" onClick={refreshAll}>
+            <AnimatedIcon
+              icon={RefreshCw}
+              size={16}
+              animation="spin"
+              active={queue.isFetching || stats.isFetching}
+            />
+            Refresh
+          </button>
         }
       />
-      <div className="metric-grid">
-        <Card className="metric">
-          <div>
-            <span>Waiting</span>
-            <strong>{s?.currently_waiting ?? '—'}</strong>
-          </div>
-        </Card>
-        <Card className="metric">
-          <div>
-            <span>Available agents</span>
-            <strong>{s?.available_agents ?? '—'}</strong>
-          </div>
-        </Card>
-        <Card className="metric">
-          <div>
-            <span>Answered</span>
-            <strong>{s?.total_answered ?? queue.data.calls_answered}</strong>
-          </div>
-        </Card>
-        <Card className="metric">
-          <div>
-            <span>Abandoned</span>
-            <strong>{s?.total_abandoned ?? queue.data.calls_abandoned}</strong>
-          </div>
-        </Card>
-      </div>
+      <section className="hero dash-hero" aria-label="Live queue">
+        <div className="lbl">Waiting now</div>
+        <div className="big">{s?.currently_waiting ?? '—'}</div>
+        <div className="hero-facts">
+          {s?.available_agents ?? '—'} available agents ·{' '}
+          {s?.total_answered ?? queue.data.calls_answered} answered ·{' '}
+          {s?.total_abandoned ?? queue.data.calls_abandoned} abandoned
+        </div>
+      </section>
       <div className="dash-grid">
         <Card>
           <div className="card-title">
@@ -250,7 +238,13 @@ export default function QueueDetail() {
             <h2>Tier assignments</h2>
           </div>
           <button className="btn primary" onClick={() => setOpen(true)}>
-            <Plus size={15} /> Add agent
+            <AnimatedIcon
+              icon={Plus}
+              size={15}
+              animation="press"
+              trigger="click"
+            />{' '}
+            Add agent
           </button>
         </div>
         {tiers.isLoading ? (

@@ -1,4 +1,5 @@
 import { useState } from 'react';
+import { useNavigate } from 'react-router-dom';
 import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query';
 import { Router } from 'lucide-react';
 import { showToast } from '../lib/toast';
@@ -9,40 +10,21 @@ import {
   Card,
   Drawer,
   Empty,
-  ErrorBox,
-  Field,
   PageHeader,
   RowActions,
   Spinner,
   Status,
   StatusToggle,
-  Toggle,
-  HoldToDelete,
 } from '../components/UI';
 import {
-  ChoiceChips,
   CopyValue,
   DetailRow,
   DetailRows,
   DetailSection,
   DetailSummary,
   DetailView,
-  DrawerActions,
-  FormSection,
   ValuePills,
 } from '../components/Details';
-const CODEC_OPTIONS = ['OPUS', 'PCMU', 'PCMA', 'G729', 'G722'];
-const blank = {
-  name: '',
-  realm: '',
-  proxy: '',
-  username: '',
-  password: '',
-  caller_id_number: '',
-  caller_id_name: '',
-  codecs: ['PCMU', 'PCMA'] as string[],
-  active: true,
-};
 const GATEWAY_STATUS: Record<string, string> = {
   registered: 'Gateway is registered with the carrier',
   up: 'Gateway is reachable',
@@ -57,37 +39,11 @@ type TestResult = { connected: boolean; status: string; at: Date };
 export default function Gateways() {
   const qc = useQueryClient();
   const data = useQuery({ queryKey: ['gateways'], queryFn: gatewaysApi.list });
-  const [mode, setMode] = useState<'add' | 'edit' | 'view' | null>(null);
+  const navigate = useNavigate();
   const [selected, setSelected] = useState<SipGateway | null>(null);
-  const [form, setForm] = useState(blank);
-  const [err, setErr] = useState('');
   // Latest connection test per gateway, shown in its drawer.
   const [tests, setTests] = useState<Record<string, TestResult>>({});
-  const close = () => {
-    setMode(null);
-    setSelected(null);
-    setErr('');
-  };
-  function body() {
-    return {
-      ...form,
-      proxy: form.proxy || null,
-      password: form.password || undefined,
-      caller_id_number: form.caller_id_number || null,
-      caller_id_name: form.caller_id_name || null,
-    };
-  }
-  const save = useMutation({
-    mutationFn: () =>
-      mode === 'add'
-        ? gatewaysApi.create(body())
-        : gatewaysApi.update(selected!.id, body()),
-    onSuccess: () => {
-      qc.invalidateQueries({ queryKey: ['gateways'] });
-      close();
-    },
-    onError: (e) => setErr(errorMessage(e)),
-  });
+  const close = () => setSelected(null);
   const del = useMutation({
     mutationFn: gatewaysApi.remove,
     onSuccess: () => {
@@ -111,26 +67,8 @@ export default function Gateways() {
       gatewaysApi.update(g.id, { active: !g.active }),
     onSuccess: () => qc.invalidateQueries({ queryKey: ['gateways'] }),
   });
-  function view(g: SipGateway) {
-    setSelected(g);
-    setMode('view');
-  }
-  function edit(g: SipGateway) {
-    setSelected(g);
-    setErr('');
-    setForm({
-      name: g.name,
-      realm: g.realm,
-      proxy: g.proxy || '',
-      username: g.username,
-      password: '',
-      caller_id_number: g.caller_id_number || '',
-      caller_id_name: g.caller_id_name || '',
-      codecs: g.codecs || [],
-      active: g.active,
-    });
-    setMode('edit');
-  }
+  const view = (g: SipGateway) => setSelected(g);
+  const edit = (g: SipGateway) => navigate(`/gateways/${g.id}/edit`);
   function remove(g: SipGateway) {
     del.mutate(g.id);
   }
@@ -142,13 +80,7 @@ export default function Gateways() {
         title="SIP gateways"
         description="Outbound trunks to your carriers: where calls go, how they authenticate, the caller ID and codecs."
         action={
-          <AddButton
-            onClick={() => {
-              setForm(blank);
-              setErr('');
-              setMode('add');
-            }}
-          >
+          <AddButton onClick={() => navigate('/gateways/new')}>
             Add gateway
           </AddButton>
         }
@@ -225,18 +157,8 @@ export default function Gateways() {
           />
         )}
       </Card>
-      <Drawer
-        open={!!mode}
-        onClose={close}
-        title={
-          mode === 'add'
-            ? 'Add SIP gateway'
-            : mode === 'edit'
-              ? 'Edit SIP gateway'
-              : 'Gateway details'
-        }
-      >
-        {mode === 'view' && selected ? (
+      <Drawer open={!!selected} onClose={close} title="Gateway details">
+        {selected && (
           <DetailView>
             <DetailSummary
               title={selected.name}
@@ -325,158 +247,6 @@ export default function Gateways() {
               </DetailRows>
             </DetailSection>
           </DetailView>
-        ) : (
-          <form
-            className="form-stack"
-            onSubmit={(e) => {
-              e.preventDefault();
-              save.mutate();
-            }}
-          >
-            <ErrorBox message={err} />
-            <FormSection title="Gateway">
-              <Field
-                label="Name"
-                hint="Shown in the portal and when you pick a gateway for a call"
-              >
-                <input
-                  required
-                  value={form.name}
-                  placeholder="Main carrier"
-                  onChange={(e) =>
-                    setForm((f) => ({ ...f, name: e.target.value }))
-                  }
-                />
-              </Field>
-              <Field
-                label="Realm"
-                hint="Your carrier's SIP domain or IP address"
-              >
-                <input
-                  required
-                  value={form.realm}
-                  placeholder="sip.carrier.com"
-                  onChange={(e) =>
-                    setForm((f) => ({ ...f, realm: e.target.value }))
-                  }
-                />
-              </Field>
-              <Field
-                label="Outbound proxy"
-                hint="Optional. Leave blank to send calls straight to the realm"
-              >
-                <input
-                  value={form.proxy}
-                  placeholder="proxy.carrier.com:5060"
-                  onChange={(e) =>
-                    setForm((f) => ({ ...f, proxy: e.target.value }))
-                  }
-                />
-              </Field>
-            </FormSection>
-            <FormSection
-              title="Authentication"
-              hint="The SIP credentials your carrier gave you."
-            >
-              <Field label="Username">
-                <input
-                  required
-                  value={form.username}
-                  autoComplete="off"
-                  onChange={(e) =>
-                    setForm((f) => ({ ...f, username: e.target.value }))
-                  }
-                />
-              </Field>
-              <Field
-                label="Password"
-                hint={
-                  mode === 'edit'
-                    ? 'Leave blank to keep the current password'
-                    : undefined
-                }
-              >
-                <input
-                  type="password"
-                  autoComplete="new-password"
-                  value={form.password}
-                  onChange={(e) =>
-                    setForm((f) => ({ ...f, password: e.target.value }))
-                  }
-                />
-              </Field>
-            </FormSection>
-            <FormSection
-              title="Caller ID"
-              hint="Optional. Leave blank to use the caller ID set on each call."
-            >
-              <Field
-                label="Number"
-                hint="International format, e.g. +27100562194"
-              >
-                <input
-                  value={form.caller_id_number}
-                  inputMode="tel"
-                  onChange={(e) =>
-                    setForm((f) => ({ ...f, caller_id_number: e.target.value }))
-                  }
-                />
-              </Field>
-              <Field label="Name">
-                <input
-                  value={form.caller_id_name}
-                  onChange={(e) =>
-                    setForm((f) => ({ ...f, caller_id_name: e.target.value }))
-                  }
-                />
-              </Field>
-            </FormSection>
-            <FormSection
-              title="Codecs"
-              hint="Audio formats offered to the carrier. Most carriers accept PCMU and PCMA."
-            >
-              <ChoiceChips
-                label="Codecs"
-                options={CODEC_OPTIONS.map((c) => ({ value: c, label: c }))}
-                value={form.codecs}
-                onChange={(codecs) => setForm((f) => ({ ...f, codecs }))}
-              />
-              {!form.codecs.length && (
-                <p className="fs-hint" role="alert">
-                  Choose at least one codec.
-                </p>
-              )}
-            </FormSection>
-            <FormSection title="Status">
-              <Toggle
-                checked={form.active}
-                onChange={(v) => setForm((f) => ({ ...f, active: v }))}
-                label="Use this gateway for calls"
-              />
-            </FormSection>
-            <DrawerActions>
-              <button
-                className="btn primary"
-                disabled={save.isPending || !form.codecs.length}
-              >
-                {save.isPending
-                  ? 'Saving…'
-                  : mode === 'add'
-                    ? 'Add gateway'
-                    : 'Save changes'}
-              </button>
-              <button type="button" className="btn" onClick={close}>
-                Cancel
-              </button>
-            </DrawerActions>
-            {mode === 'edit' && selected && (
-              <HoldToDelete
-                label="Hold to delete gateway"
-                consequence={`Calls that use ${selected.name} will fail. This can't be undone.`}
-                onHold={() => remove(selected)}
-              />
-            )}
-          </form>
         )}
       </Drawer>
     </>

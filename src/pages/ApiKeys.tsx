@@ -1,6 +1,7 @@
 import { useState } from 'react';
 import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query';
 import { ChevronRight, KeyRound } from 'lucide-react';
+import { AnimatedIcon } from '../components/AnimatedIcon';
 import { apiKeysApi, errorMessage } from '../lib/api';
 import { useSession } from '../lib/session';
 import { showToast } from '../lib/toast';
@@ -171,7 +172,12 @@ export default function ApiKeys() {
                           className="table-action"
                           onClick={() => setView(k)}
                         >
-                          View <ChevronRight size={14} />
+                          View{' '}
+                          <AnimatedIcon
+                            icon={ChevronRight}
+                            size={14}
+                            animation="nudge"
+                          />
                         </button>
                         {k.status === 'active' && (
                           <>
