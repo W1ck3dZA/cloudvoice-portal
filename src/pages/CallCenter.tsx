@@ -147,8 +147,7 @@ export default function CallCenter() {
   return (
     <>
       <PageHeader
-        eyebrow="Operations"
-        title="Call Center"
+        title="Call center"
         description="Manage call queues and the agents who answer them."
         action={
           <AddButton
@@ -234,8 +233,8 @@ export default function CallCenter() {
                             });
                             setDrawer('qedit');
                           }}
+                          deleteLabel={`Delete queue ${q.name}`}
                           onDelete={() =>
-                            confirm(`Delete ${q.name}?`) &&
                             queuesApi
                               .remove(q.id)
                               .then(() =>
@@ -311,8 +310,8 @@ export default function CallCenter() {
                             });
                             setDrawer('aedit');
                           }}
+                          deleteLabel={`Delete agent ${a.name}`}
                           onDelete={() =>
-                            confirm(`Delete ${a.name}?`) &&
                             agentsApi
                               .remove(a.id)
                               .then(() =>

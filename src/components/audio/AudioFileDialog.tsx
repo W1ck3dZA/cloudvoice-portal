@@ -1,6 +1,7 @@
 import { useEffect, useRef, useState } from 'react';
 import { useMutation } from '@tanstack/react-query';
 import { X } from 'lucide-react';
+import { AnimatedIcon } from '../AnimatedIcon';
 import { audioFilesApi, errorMessage } from '../../lib/api';
 import type { AudioFile } from '../../types/api';
 import { ErrorBox, Field } from '../UI';
@@ -66,7 +67,7 @@ export default function AudioFileDialog({
           disabled={save.isPending}
           onClick={onClose}
         >
-          <X size={20} />
+          <AnimatedIcon icon={X} size={20} animation="press" trigger="click" />
         </button>
       </div>
       <form

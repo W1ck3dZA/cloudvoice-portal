@@ -1,9 +1,11 @@
 import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query';
 import { Download, FileAudio, PlayCircle } from 'lucide-react';
+import { AnimatedIcon } from '../components/AnimatedIcon';
 import { api, recordingsApi } from '../lib/api';
 import type { Recording } from '../types/api';
 import { usePlayer } from '../components/AudioPlayer';
-import { Card, Empty, PageHeader, RowActions, Spinner } from '../components/UI';
+import { Card, Empty, PageHeader, Spinner } from '../components/UI';
+import { HoldButton } from '../components/HoldButton';
 export default function Recordings() {
   const qc = useQueryClient();
   const data = useQuery({
@@ -42,7 +44,6 @@ export default function Recordings() {
   return (
     <>
       <PageHeader
-        eyebrow="Voice"
         title="Recordings"
         description="Listen to, download and delete call recordings."
       />
@@ -80,23 +81,31 @@ export default function Recordings() {
                           className="table-action"
                           onClick={() => play(r)}
                         >
-                          <PlayCircle size={14} /> Play
+                          <AnimatedIcon
+                            icon={PlayCircle}
+                            size={14}
+                            animation="press"
+                            trigger="click"
+                          />{' '}
+                          Play
                         </button>
                         <button
                           className="table-action"
                           onClick={() => download(r)}
                         >
-                          <Download size={14} /> Download
+                          <AnimatedIcon
+                            icon={Download}
+                            size={14}
+                            animation="press"
+                            trigger="click"
+                          />{' '}
+                          Download
                         </button>
-                        <button
-                          className="table-action danger-text"
-                          onClick={() =>
-                            confirm('Delete this recording?') &&
-                            del.mutate(r.id)
-                          }
-                        >
-                          Delete
-                        </button>
+                        <HoldButton
+                          iconOnly
+                          aria-label={`Delete the recording of call ${r.call_id}`}
+                          onHold={() => del.mutate(r.id)}
+                        />
                       </div>
                     </td>
                   </tr>

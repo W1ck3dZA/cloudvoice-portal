@@ -28,7 +28,6 @@ export default function NoOrganisation() {
   return (
     <>
       <PageHeader
-        eyebrow="Get started"
         title="Set up your organisation"
         description="Your account isn't part of an organisation yet. Numbers, calls and everything else in Cloudvoice belong to an organisation."
       />
@@ -36,7 +35,6 @@ export default function NoOrganisation() {
         <Card>
           <div className="card-title">
             <div>
-              <span className="eyebrow">New</span>
               <h2>Create an organisation</h2>
             </div>
           </div>
@@ -67,7 +65,6 @@ export default function NoOrganisation() {
         <Card>
           <div className="card-title">
             <div>
-              <span className="eyebrow">Existing team</span>
               <h2>Join your team's organisation</h2>
             </div>
           </div>

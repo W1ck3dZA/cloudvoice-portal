@@ -1,13 +1,12 @@
 import { useState } from 'react';
 import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query';
-import { useNavigate, useParams } from 'react-router-dom';
+import { Link, useParams } from 'react-router-dom';
 import {
-  ArrowLeft,
+  ChevronLeft,
   PhoneCall,
   Plus,
   RefreshCw,
   Search,
-  Trash2,
   Users,
 } from 'lucide-react';
 import { agentsApi, audioFilesApi, errorMessage, queuesApi } from '../lib/api';
@@ -23,10 +22,11 @@ import {
   Status,
   StatusToggle,
 } from '../components/UI';
+import { HoldButton } from '../components/HoldButton';
+import { AnimatedIcon } from '../components/AnimatedIcon';
 import { humanize } from '../lib/labels';
 export default function QueueDetail() {
   const { id } = useParams();
-  const nav = useNavigate();
   const qc = useQueryClient();
   const { session } = useSession();
   const orgId = session?.orgId || '';
@@ -90,52 +90,38 @@ export default function QueueDetail() {
   const s = stats.data;
   return (
     <>
+      <Link className="dp-back queue-back" to="/call-center">
+        <ChevronLeft size={16} aria-hidden="true" />
+        Call center
+      </Link>
       <PageHeader
-        eyebrow="Call Center / Queue"
         title={queue.data.name}
         description={queue.data.strategy}
         action={
-          <>
-            <button className="btn" onClick={refreshAll}>
-              <RefreshCw size={15} /> Refresh
-            </button>
-            <button className="btn" onClick={() => nav('/call-center')}>
-              <ArrowLeft size={15} /> Back
-            </button>
-          </>
+          <button className="btn" onClick={refreshAll}>
+            <AnimatedIcon
+              icon={RefreshCw}
+              size={16}
+              animation="spin"
+              active={queue.isFetching || stats.isFetching}
+            />
+            Refresh
+          </button>
         }
       />
-      <div className="metric-grid">
-        <Card className="metric">
-          <div>
-            <span>Waiting</span>
-            <strong>{s?.currently_waiting ?? '—'}</strong>
-          </div>
-        </Card>
-        <Card className="metric">
-          <div>
-            <span>Available agents</span>
-            <strong>{s?.available_agents ?? '—'}</strong>
-          </div>
-        </Card>
-        <Card className="metric">
-          <div>
-            <span>Answered</span>
-            <strong>{s?.total_answered ?? queue.data.calls_answered}</strong>
-          </div>
-        </Card>
-        <Card className="metric">
-          <div>
-            <span>Abandoned</span>
-            <strong>{s?.total_abandoned ?? queue.data.calls_abandoned}</strong>
-          </div>
-        </Card>
-      </div>
+      <section className="hero dash-hero" aria-label="Live queue">
+        <div className="lbl">Waiting now</div>
+        <div className="big">{s?.currently_waiting ?? '—'}</div>
+        <div className="hero-facts">
+          {s?.available_agents ?? '—'} available agents ·{' '}
+          {s?.total_answered ?? queue.data.calls_answered} answered ·{' '}
+          {s?.total_abandoned ?? queue.data.calls_abandoned} abandoned
+        </div>
+      </section>
       <div className="dash-grid">
         <Card>
           <div className="card-title">
             <div>
-              <span className="eyebrow">Live statistics</span>
               <h2>Queue performance</h2>
             </div>
             <StatusToggle
@@ -174,7 +160,6 @@ export default function QueueDetail() {
         <Card>
           <div className="card-title">
             <div>
-              <span className="eyebrow">Configuration</span>
               <h2>Routing</h2>
             </div>
           </div>
@@ -201,10 +186,11 @@ export default function QueueDetail() {
       <Card>
         <div className="card-title">
           <div>
-            <span className="eyebrow">Caller history</span>
             <h2>Queue callers</h2>
           </div>
-          <span className="muted">Live and historical · refreshes every 5 seconds</span>
+          <span className="muted">
+            Live and historical · refreshes every 5 seconds
+          </span>
         </div>
         {members.isLoading ? (
           <Spinner />
@@ -249,11 +235,16 @@ export default function QueueDetail() {
       <Card className="tier-card">
         <div className="card-title">
           <div>
-            <span className="eyebrow">Agent routing</span>
             <h2>Tier assignments</h2>
           </div>
           <button className="btn primary" onClick={() => setOpen(true)}>
-            <Plus size={15} /> Add agent
+            <AnimatedIcon
+              icon={Plus}
+              size={15}
+              animation="press"
+              trigger="click"
+            />{' '}
+            Add agent
           </button>
         </div>
         {tiers.isLoading ? (
@@ -318,19 +309,17 @@ export default function QueueDetail() {
                       />
                     </td>
                     <td>
-                      <button
-                        className="table-action danger-text"
-                        onClick={() =>
-                          confirm(`Remove ${t.agent_name} from queue?`) &&
+                      <HoldButton
+                        iconOnly
+                        aria-label={`Remove ${t.agent_name} from this queue`}
+                        onHold={() =>
                           queuesApi.removeTier(id!, t.agent_id).then(() =>
                             qc.invalidateQueries({
                               queryKey: ['queue-tiers', id],
                             }),
                           )
                         }
-                      >
-                        <Trash2 size={14} /> Remove
-                      </button>
+                      />
                     </td>
                   </tr>
                 ))}

@@ -1,0 +1,181 @@
+/*
+ * UI standard: hold to delete. Load after app.css and admin.css.
+ * EVERY delete in a product is a hold: press and keep holding, a line runs around the button's own edge (a circle
+ * around an icon-only button) and the bin lid lifts. Release early and nothing happens. There is no tap-to-delete and
+ * no "Are you sure?" dialog in front of it. Rules: references/hold-to-delete.md.
+ * Timing is --hold-ms (default 1000ms); useHold.ts reads the same value, so the line and the action stay in step.
+ */
+.hold {
+  --hold-ms: 1000ms;
+  --hold-c: var(--bdf);
+  --hold-r: 10px;
+  position: relative;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  gap: 8px;
+  height: 40px;
+  padding: 0 16px 0 12px;
+  border-radius: var(--hold-r);
+  border: 1px solid color-mix(in srgb, var(--hold-c) 32%, transparent);
+  background: var(--card);
+  color: var(--hold-c);
+  font: inherit;
+  font-size: 14px;
+  font-weight: 600;
+  cursor: pointer;
+  isolation: isolate;
+  user-select: none;
+  -webkit-user-select: none;
+  touch-action: manipulation;
+  -webkit-touch-callout: none;
+  -webkit-tap-highlight-color: transparent;
+  transition:
+    transform 140ms var(--ease-out),
+    background-color 120ms var(--ease-out);
+}
+.hold:hover {
+  background: color-mix(in srgb, var(--hold-c) 8%, var(--card));
+}
+.hold[disabled] {
+  opacity: 0.5;
+  cursor: not-allowed;
+}
+.hold-ico {
+  flex: none;
+  width: 20px;
+  height: 20px;
+  overflow: visible;
+}
+.hold-ico .lid {
+  transform-origin: 4px 6px;
+  transition: transform 200ms var(--ease-out);
+}
+.hold-lbl {
+  white-space: nowrap;
+}
+
+/* A wash that fills left to right while held. */
+.hold::before {
+  content: '';
+  position: absolute;
+  inset: 0;
+  z-index: -1;
+  border-radius: inherit;
+  background: color-mix(in srgb, var(--hold-c) 16%, transparent);
+  clip-path: inset(0 100% 0 0 round var(--hold-r));
+}
+/* The progress line: it runs clockwise around the button's own border, which is its track. */
+.hold-edge {
+  position: absolute;
+  inset: -1px;
+  width: calc(100% + 2px);
+  height: calc(100% + 2px);
+  overflow: visible;
+  pointer-events: none;
+  fill: none;
+}
+.hold-edge rect {
+  x: 1.5px;
+  y: 1.5px;
+  width: calc(100% - 3px);
+  height: calc(100% - 3px);
+  rx: calc(var(--hold-r) - 1.5px);
+  stroke: var(--hold-c);
+  stroke-width: 3;
+  stroke-dasharray: 100;
+  stroke-dashoffset: 100;
+  opacity: 0;
+}
+
+.hold.holding {
+  transform: scale(0.97);
+}
+.hold.holding::before {
+  animation: hold-wash var(--hold-ms) linear forwards;
+}
+.hold.holding .hold-edge rect {
+  opacity: 1;
+  animation: hold-edge var(--hold-ms) linear forwards;
+}
+.hold.holding .lid {
+  transform: translate(-1px, -3px) rotate(-16deg);
+}
+@keyframes hold-wash {
+  to {
+    clip-path: inset(0 0 0 0 round var(--hold-r));
+  }
+}
+@keyframes hold-edge {
+  to {
+    stroke-dashoffset: 0;
+  }
+}
+
+/* Done: the line closes, the lid drops and the label confirms. */
+.hold.done {
+  transform: none;
+}
+.hold.done::before {
+  clip-path: inset(0 0 0 0 round var(--hold-r));
+  animation: none;
+}
+.hold.done .hold-edge rect {
+  opacity: 1;
+  stroke-dashoffset: 0;
+  animation: none;
+}
+
+/* Icon-only, for a table row: a 44px circle with the line running around it. Name it with aria-label. */
+.hold-icon {
+  --hold-r: 22px;
+  width: 44px;
+  height: 44px;
+  padding: 0;
+  gap: 0;
+}
+.hold-icon .hold-lbl {
+  display: none;
+}
+
+/* Inside the inverted bulk bar, and inside its danger state. */
+.bulk .hold {
+  --hold-c: var(--bg);
+  background: transparent;
+  border-color: color-mix(in srgb, var(--bg) 35%, transparent);
+}
+.bulk .hold:hover {
+  background: color-mix(in srgb, var(--bg) 12%, transparent);
+}
+.bulk.danger .hold {
+  --hold-c: var(--bdf);
+  border-color: color-mix(in srgb, var(--bdf) 40%, transparent);
+}
+.bulk.danger .hold:hover {
+  background: color-mix(in srgb, var(--bdf) 10%, transparent);
+}
+
+.hold:focus-visible {
+  outline: 3px solid var(--hold-c);
+  outline-offset: 3px;
+}
+
+/* Reduced motion: no sweep, no running line, no lifting lid. The hold still lasts --hold-ms (the timer is in code);
+   the line simply shows half drawn while held, and the label says "Keep holding". */
+@media (prefers-reduced-motion: reduce) {
+  .hold.holding {
+    transform: none;
+  }
+  .hold.holding::before {
+    animation: none;
+    clip-path: inset(0 50% 0 0 round var(--hold-r));
+  }
+  .hold.holding .hold-edge rect {
+    animation: none;
+    stroke-dashoffset: 50;
+  }
+  .hold.holding .lid,
+  .hold-ico .lid {
+    transition: none;
+  }
+}

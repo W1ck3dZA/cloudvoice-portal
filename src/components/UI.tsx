@@ -1,4 +1,5 @@
-import type { ReactNode } from 'react';
+import { useEffect, useId, useRef, useState, type ReactNode } from 'react';
+import { HoldButton } from './HoldButton';
 import {
   AlertTriangle,
   ChevronLeft,
@@ -7,9 +8,9 @@ import {
   Inbox,
   MoreHorizontal,
   Plus,
-  Trash2,
   X,
 } from 'lucide-react';
+import { AnimatedIcon } from './AnimatedIcon';
 export const Card = ({
   children,
   className = '',
@@ -18,12 +19,10 @@ export const Card = ({
   className?: string;
 }) => <section className={'card ' + className}>{children}</section>;
 export function PageHeader({
-  eyebrow,
   title,
   description,
   action,
 }: {
-  eyebrow?: string;
   title: string;
   description?: string;
   action?: ReactNode;
@@ -31,7 +30,6 @@ export function PageHeader({
   return (
     <div className="page-header">
       <div>
-        {eyebrow && <div className="eyebrow">{eyebrow}</div>}
         <h1>{title}</h1>
         {description && <p>{description}</p>}
       </div>
@@ -122,6 +120,10 @@ export function StatusToggle({
     </button>
   );
 }
+/**
+ * A native <dialog> side panel for quick edits; a bottom sheet on phones. Escape, the close button and a click on
+ * the backdrop all call onClose. The title takes focus when it opens.
+ */
 export function Drawer({
   open,
   onClose,
@@ -137,24 +139,49 @@ export function Drawer({
   children: ReactNode;
   size?: 'md' | 'lg' | 'xl';
 }) {
+  const ref = useRef<HTMLDialogElement>(null);
+  const titleRef = useRef<HTMLHeadingElement>(null);
+  const titleId = useId();
+  useEffect(() => {
+    const d = ref.current;
+    if (open && d && !d.open) {
+      d.showModal();
+      titleRef.current?.focus();
+    }
+  }, [open]);
   if (!open) return null;
   return (
-    <>
-      <div className="drawer-scrim" onClick={onClose} />
-      <aside className={`drawer drawer-${size}`}>
-        <div className="drawer-head">
-          <div>
-            <span className="eyebrow">Cloudvoice</span>
-            <h2>{title}</h2>
-            {subtitle && <p>{subtitle}</p>}
-          </div>
-          <button className="icon-btn" onClick={onClose}>
-            <X size={20} />
-          </button>
+    <dialog
+      ref={ref}
+      className={`drawer drawer-${size}`}
+      aria-labelledby={titleId}
+      onCancel={(e) => {
+        e.preventDefault();
+        onClose();
+      }}
+      onClick={(e) => {
+        if (e.target === e.currentTarget) onClose();
+      }}
+    >
+      <div className="drawer-head">
+        <div>
+          <h2 id={titleId} ref={titleRef} tabIndex={-1}>
+            {title}
+          </h2>
+          {subtitle && <p>{subtitle}</p>}
         </div>
-        <div className="drawer-body">{children}</div>
-      </aside>
-    </>
+        <button
+          type="button"
+          className="icon-btn"
+          onClick={onClose}
+          aria-label="Close"
+          title="Close"
+        >
+          <AnimatedIcon icon={X} size={20} animation="press" trigger="click" />
+        </button>
+      </div>
+      <div className="drawer-body">{children}</div>
+    </dialog>
   );
 }
 export function Field({
@@ -252,7 +279,7 @@ export function Pagination({
           disabled={page >= totalPages}
           onClick={() => onPageChange(page + 1)}
         >
-          Next <ChevronRight size={14} />
+          Next <AnimatedIcon icon={ChevronRight} size={14} animation="nudge" />
         </button>
       </div>
     </div>
@@ -289,30 +316,9 @@ export function AddButton({
 }) {
   return (
     <PrimaryButton onClick={onClick}>
-      <Plus size={16} />
+      <AnimatedIcon icon={Plus} size={16} animation="press" trigger="click" />
       {children}
     </PrimaryButton>
-  );
-}
-export function DangerButton({
-  children,
-  onClick,
-  disabled = false,
-}: {
-  children: ReactNode;
-  onClick: () => void;
-  disabled?: boolean;
-}) {
-  return (
-    <button
-      className="btn danger"
-      type="button"
-      onClick={onClick}
-      disabled={disabled}
-    >
-      <Trash2 size={15} />
-      {children}
-    </button>
   );
 }
 export function CopyButton({
@@ -328,7 +334,7 @@ export function CopyButton({
       type="button"
       onClick={() => navigator.clipboard.writeText(value)}
     >
-      <Copy size={14} />
+      <AnimatedIcon icon={Copy} size={14} animation="press" trigger="click" />
       {label}
     </button>
   );
@@ -336,46 +342,33 @@ export function CopyButton({
 export function ErrorBox({ message }: { message?: string }) {
   return message ? (
     <div className="alert">
-      <AlertTriangle size={15} />
+      <AnimatedIcon
+        icon={AlertTriangle}
+        size={15}
+        animation="shake"
+        trigger="always"
+      />
       {message}
     </div>
   ) : null;
-}
-export function ConfirmBar({
-  text,
-  onConfirm,
-  busy = false,
-}: {
-  text: string;
-  onConfirm: () => void;
-  busy?: boolean;
-}) {
-  return (
-    <div className="danger-zone">
-      <div>
-        <strong>Danger zone</strong>
-        <span>{text}</span>
-      </div>
-      <DangerButton onClick={onConfirm} disabled={busy}>
-        Delete
-      </DangerButton>
-    </div>
-  );
 }
 export function RowActions({
   onView,
   onEdit,
   onDelete,
+  deleteLabel = 'Delete',
 }: {
   onView?: () => void;
   onEdit?: () => void;
   onDelete?: () => void;
+  /** Names what goes, e.g. "Delete SIP user 1001"; it is the hold button's accessible name. */
+  deleteLabel?: string;
 }) {
   return (
     <div className="row-actions">
       {onView && (
         <button className="table-action" onClick={onView}>
-          View <ChevronRight size={14} />
+          View <AnimatedIcon icon={ChevronRight} size={14} animation="nudge" />
         </button>
       )}
       {onEdit && (
@@ -384,11 +377,97 @@ export function RowActions({
         </button>
       )}
       {onDelete && (
-        <button className="table-action danger-text" onClick={onDelete}>
-          Delete
-        </button>
+        <HoldButton iconOnly aria-label={deleteLabel} onHold={onDelete} />
       )}
     </div>
+  );
+}
+/** A delete in a drawer or danger zone: the consequence in words, then the hold button. */
+export function HoldToDelete({
+  label,
+  consequence,
+  onHold,
+  ms,
+}: {
+  /** Starts with "Hold to", e.g. "Hold to delete gateway". */
+  label: string;
+  consequence: string;
+  onHold: () => void;
+  ms?: number;
+}) {
+  return (
+    <div className="hold-zone">
+      <p>{consequence}</p>
+      <HoldButton label={label} onHold={onHold} ms={ms} />
+    </div>
+  );
+}
+/**
+ * A risky action that is not a delete (rotate a secret, hang up a call): the first press shows the consequence
+ * inline with a button that names the action, next to Cancel.
+ */
+export function ConfirmAction({
+  label,
+  confirmLabel,
+  consequence,
+  onConfirm,
+  busy = false,
+  compact = false,
+}: {
+  label: ReactNode;
+  /** Names the consequence, e.g. "Yes, rotate secret". */
+  confirmLabel: string;
+  consequence?: string;
+  onConfirm: () => void;
+  busy?: boolean;
+  /** In a table row: plain text buttons, no explanation box. */
+  compact?: boolean;
+}) {
+  const [asking, setAsking] = useState(false);
+  const yes = () => {
+    setAsking(false);
+    onConfirm();
+  };
+  if (compact)
+    return asking ? (
+      <span className="confirm-inline" role="group">
+        <button className="table-action danger-text" onClick={yes}>
+          {confirmLabel}
+        </button>
+        <button className="table-action" onClick={() => setAsking(false)}>
+          Cancel
+        </button>
+      </span>
+    ) : (
+      <button
+        className="table-action"
+        disabled={busy}
+        onClick={() => setAsking(true)}
+      >
+        {label}
+      </button>
+    );
+  return asking ? (
+    <div className="confirm" role="group">
+      {consequence && <p>{consequence}</p>}
+      <div className="confirm-act">
+        <button type="button" className="btn primary" onClick={yes}>
+          {confirmLabel}
+        </button>
+        <button type="button" className="btn" onClick={() => setAsking(false)}>
+          Cancel
+        </button>
+      </div>
+    </div>
+  ) : (
+    <button
+      type="button"
+      className="btn"
+      disabled={busy}
+      onClick={() => setAsking(true)}
+    >
+      {label}
+    </button>
   );
 }
 export function SecretReveal({
@@ -403,7 +482,6 @@ export function SecretReveal({
   return (
     <div className="secret-card">
       <div>
-        <span className="eyebrow">Shown once</span>
         <h3>{title}</h3>
         <p>Copy this value now. The API may not return it again.</p>
       </div>

@@ -1,17 +1,16 @@
 import { useState, type ReactNode } from 'react';
 import { Check, Copy } from 'lucide-react';
+import { AnimatedIcon } from './AnimatedIcon';
 // Building blocks for drawers: a summary header, sections of label / value
 // rows for viewing a record, and grouped sections for editing one.
 
 /** Top of a view drawer: what it is, its name, a few facts and actions. */
 export function DetailSummary({
-  kind,
   title,
   subtitle,
   facts,
   children,
 }: {
-  kind: string;
   title: ReactNode;
   subtitle?: ReactNode;
   facts?: ReactNode;
@@ -19,7 +18,6 @@ export function DetailSummary({
 }) {
   return (
     <section className="dv-summary">
-      <span className="dv-kind">{kind}</span>
       <div className="dv-title">{title}</div>
       {subtitle && <div className="dv-subtitle">{subtitle}</div>}
       {facts && <div className="dv-facts">{facts}</div>}
@@ -80,7 +78,16 @@ export function CopyValue({ value, label }: { value: string; label: string }) {
           })
         }
       >
-        {copied ? <Check size={15} /> : <Copy size={15} />}
+        {copied ? (
+          <Check size={15} />
+        ) : (
+          <AnimatedIcon
+            icon={Copy}
+            size={15}
+            animation="press"
+            trigger="click"
+          />
+        )}
       </button>
       <span className="sr-only" role="status">
         {copied ? `${label} copied` : ''}

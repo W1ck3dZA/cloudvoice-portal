@@ -1,7 +1,13 @@
 import { useState } from 'react';
 import { useQuery } from '@tanstack/react-query';
-import { Activity, AppWindow, PhoneCall, RadioTower } from 'lucide-react';
-import { Area, AreaChart, ResponsiveContainer, Tooltip, XAxis } from 'recharts';
+import {
+  Area,
+  AreaChart,
+  CartesianGrid,
+  ResponsiveContainer,
+  Tooltip,
+  XAxis,
+} from 'recharts';
 import { callsApi, numbersApi, appsApi, smsApi } from '../lib/api';
 import { answeredBy } from '../lib/labels';
 import { useSession } from '../lib/session';
@@ -94,32 +100,24 @@ export default function Dashboard() {
   return (
     <>
       <PageHeader
-        eyebrow="Overview"
         title={`Good day${session?.user?.name ? ' ' + session.user.name.split(' ')[0] : ''}.`}
         description="Here’s what’s happening across your Cloudvoice account."
       />
-      <div className="metric-grid">
-        <Metric
-          icon={<RadioTower />}
-          label="Active numbers"
-          value={(numbers.data || []).filter((n) => n.active).length}
-        />
-        <Metric icon={<PhoneCall />} label="Calls" value={all.length} />
-        <Metric
-          icon={<Activity />}
-          label="Answered"
-          value={
-            all.length ? `${Math.round((answered / all.length) * 100)}%` : '—'
-          }
-        />
-        <Metric
-          icon={<AppWindow />}
-          label="Applications"
-          value={(apps.data || []).length}
-        />
-      </div>
+      <section className="hero dash-hero" aria-label="Calls">
+        <div className="lbl">Calls</div>
+        <div className="big">{all.length}</div>
+        <div className="hero-facts">
+          {all.length
+            ? `${Math.round((answered / all.length) * 100)}% answered`
+            : 'No calls yet'}
+          {' · '}
+          {(numbers.data || []).filter((n) => n.active).length} active numbers
+          {' · '}
+          {(apps.data || []).length} applications
+        </div>
+      </section>
       <div className="section-headbar">
-        <span className="eyebrow">Activity</span>
+        <h2 className="section-title">Activity</h2>
         <div className="range-toggle">
           {ranges.map((r) => (
             <button
@@ -136,51 +134,40 @@ export default function Dashboard() {
         <Card className="chart-card">
           <div className="card-title">
             <div>
-              <span className="eyebrow">Traffic</span>
               <h2>Call activity</h2>
             </div>
           </div>
           <div className="chart">
             <ResponsiveContainer width="100%" height="100%">
               <AreaChart data={chart}>
-                <defs>
-                  <linearGradient id="cv" x1="0" y1="0" x2="0" y2="1">
-                    <stop
-                      offset="5%"
-                      stopColor="currentColor"
-                      stopOpacity={0.22}
-                    />
-                    <stop
-                      offset="95%"
-                      stopColor="currentColor"
-                      stopOpacity={0}
-                    />
-                  </linearGradient>
-                </defs>
+                <CartesianGrid vertical={false} stroke="var(--line)" />
                 <XAxis
                   dataKey="name"
-                  axisLine={false}
+                  axisLine={{ stroke: 'var(--line2)' }}
                   tickLine={false}
                   interval={xAxisInterval}
                   fontSize={11}
+                  tick={{ fill: 'var(--mute)' }}
                 />
                 <Tooltip
                   contentStyle={{
-                    background: 'var(--surface)',
+                    background: 'var(--card)',
                     border: '1px solid var(--line)',
                     borderRadius: 10,
-                    color: 'var(--text)',
+                    color: 'var(--fg)',
                   }}
-                  labelStyle={{ color: 'var(--text)' }}
-                  itemStyle={{ color: 'var(--text)' }}
+                  labelStyle={{ color: 'var(--fg)' }}
+                  itemStyle={{ color: 'var(--fg)' }}
                   cursor={{ stroke: 'var(--line)' }}
                 />
                 <Area
                   type="monotone"
                   dataKey="calls"
-                  stroke="currentColor"
-                  strokeWidth={2.5}
-                  fill="url(#cv)"
+                  name={'Calls'}
+                  stroke="var(--s1)"
+                  strokeWidth={2}
+                  fill="var(--s1)"
+                  fillOpacity={0.1}
                 />
               </AreaChart>
             </ResponsiveContainer>
@@ -189,51 +176,40 @@ export default function Dashboard() {
         <Card className="chart-card">
           <div className="card-title">
             <div>
-              <span className="eyebrow">Messaging</span>
               <h2>Message activity</h2>
             </div>
           </div>
           <div className="chart">
             <ResponsiveContainer width="100%" height="100%">
               <AreaChart data={messageChart}>
-                <defs>
-                  <linearGradient id="cv-msg" x1="0" y1="0" x2="0" y2="1">
-                    <stop
-                      offset="5%"
-                      stopColor="currentColor"
-                      stopOpacity={0.22}
-                    />
-                    <stop
-                      offset="95%"
-                      stopColor="currentColor"
-                      stopOpacity={0}
-                    />
-                  </linearGradient>
-                </defs>
+                <CartesianGrid vertical={false} stroke="var(--line)" />
                 <XAxis
                   dataKey="name"
-                  axisLine={false}
+                  axisLine={{ stroke: 'var(--line2)' }}
                   tickLine={false}
                   interval={xAxisInterval}
                   fontSize={11}
+                  tick={{ fill: 'var(--mute)' }}
                 />
                 <Tooltip
                   contentStyle={{
-                    background: 'var(--surface)',
+                    background: 'var(--card)',
                     border: '1px solid var(--line)',
                     borderRadius: 10,
-                    color: 'var(--text)',
+                    color: 'var(--fg)',
                   }}
-                  labelStyle={{ color: 'var(--text)' }}
-                  itemStyle={{ color: 'var(--text)' }}
+                  labelStyle={{ color: 'var(--fg)' }}
+                  itemStyle={{ color: 'var(--fg)' }}
                   cursor={{ stroke: 'var(--line)' }}
                 />
                 <Area
                   type="monotone"
                   dataKey="messages"
-                  stroke="currentColor"
-                  strokeWidth={2.5}
-                  fill="url(#cv-msg)"
+                  name={'Messages'}
+                  stroke="var(--s1)"
+                  strokeWidth={2}
+                  fill="var(--s1)"
+                  fillOpacity={0.1}
                 />
               </AreaChart>
             </ResponsiveContainer>
@@ -243,7 +219,6 @@ export default function Dashboard() {
       <Card>
         <div className="card-title">
           <div>
-            <span className="eyebrow">Latest activity</span>
             <h2>Recent calls</h2>
           </div>
         </div>
@@ -283,24 +258,5 @@ export default function Dashboard() {
         </div>
       </Card>
     </>
-  );
-}
-function Metric({
-  icon,
-  label,
-  value,
-}: {
-  icon: any;
-  label: string;
-  value: string | number;
-}) {
-  return (
-    <Card className="metric">
-      <div className="metric-icon">{icon}</div>
-      <div>
-        <span>{label}</span>
-        <strong>{value}</strong>
-      </div>
-    </Card>
   );
 }

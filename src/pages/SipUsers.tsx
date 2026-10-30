@@ -17,6 +17,8 @@ import {
   Status,
   StatusToggle,
   Toggle,
+  ConfirmAction,
+  HoldToDelete,
 } from '../components/UI';
 import {
   CopyValue,
@@ -107,8 +109,7 @@ export default function SipUsers() {
   return (
     <>
       <PageHeader
-        eyebrow="Voice"
-        title="SIP Users"
+        title="SIP users"
         description="Manage registered extensions, voicemail and default inbound applications."
         action={
           <AddButton
@@ -163,10 +164,8 @@ export default function SipUsers() {
                           setMode('view');
                         }}
                         onEdit={() => edit(u)}
-                        onDelete={() =>
-                          confirm(`Delete SIP user ${u.extension}?`) &&
-                          del.mutate(u.id)
-                        }
+                        onDelete={() => del.mutate(u.id)}
+                        deleteLabel={`Delete SIP user ${u.extension}`}
                       />
                     </td>
                   </tr>
@@ -195,7 +194,6 @@ export default function SipUsers() {
         {mode === 'view' && selected ? (
           <DetailView>
             <DetailSummary
-              kind="SIP user"
               title={selected.display_name || selected.extension}
               subtitle={`${selected.extension}@${selected.realm}`}
               facts={
@@ -212,21 +210,13 @@ export default function SipUsers() {
               <button className="btn primary" onClick={() => edit(selected)}>
                 Edit SIP user
               </button>
-              <button
-                className="btn"
-                disabled={rotate.isPending}
-                onClick={() =>
-                  confirm(
-                    `Rotate the password for ${selected.extension}? Phones using the old password stop registering until you update them.`,
-                  ) && rotate.mutate(selected.id)
-                }
-              >
-                {rotate.isPending ? 'Rotating…' : 'Rotate password'}
-              </button>
-              <p className="dv-note">
-                Rotating sets a new password. Phones using the old one stop
-                registering until you update them.
-              </p>
+              <ConfirmAction
+                label={rotate.isPending ? 'Rotating…' : 'Rotate password'}
+                confirmLabel="Yes, rotate password"
+                consequence={`Sets a new password for ${selected.extension}. Phones using the old one stop registering until you update them.`}
+                busy={rotate.isPending}
+                onConfirm={() => rotate.mutate(selected.id)}
+              />
             </DetailSummary>
             <DetailSection title="Registration">
               <DetailRows>
@@ -381,20 +371,14 @@ export default function SipUsers() {
               <button type="button" className="btn" onClick={close}>
                 Cancel
               </button>
-              {mode === 'edit' && selected && (
-                <button
-                  type="button"
-                  className="btn danger"
-                  onClick={() =>
-                    confirm(
-                      `Delete SIP user ${selected.extension}? Phones using it stop working, and this can't be undone.`,
-                    ) && del.mutate(selected.id)
-                  }
-                >
-                  Delete
-                </button>
-              )}
             </DrawerActions>
+            {mode === 'edit' && selected && (
+              <HoldToDelete
+                label="Hold to delete SIP user"
+                consequence={`Phones using ${selected.extension} stop working. This can't be undone.`}
+                onHold={() => del.mutate(selected.id)}
+              />
+            )}
           </form>
         )}
       </Drawer>

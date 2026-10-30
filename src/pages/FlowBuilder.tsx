@@ -15,11 +15,11 @@ import {
   Play,
   Reply,
   Save,
-  Trash2,
   UsersRound,
   Voicemail,
   Volume2,
 } from 'lucide-react';
+import { AnimatedIcon } from '../components/AnimatedIcon';
 import {
   appsApi,
   errorMessage,
@@ -29,6 +29,7 @@ import {
 } from '../lib/api';
 import type { CallTarget, SipGateway, SipUser, Verb } from '../types/api';
 import { ErrorBox, Field, Spinner, Toggle } from '../components/UI';
+import { HoldButton } from '../components/HoldButton';
 type Path = (string | number)[];
 const catalog = [
   ['play', 'Play audio', Play],
@@ -273,7 +274,6 @@ export default function FlowBuilder() {
           <ArrowLeft size={15} /> Applications
         </button>
         <div>
-          <span className="eyebrow">Application flow</span>
           <h1>{app.data.name}</h1>
         </div>
         <div className="builder-save">
@@ -285,7 +285,12 @@ export default function FlowBuilder() {
             disabled={!dirty || save.isPending}
             onClick={() => save.mutate()}
           >
-            <Save size={15} />
+            <AnimatedIcon
+              icon={Save}
+              size={15}
+              animation="press"
+              trigger="click"
+            />
             {save.isPending ? 'Saving…' : 'Save flow'}
           </button>
         </div>
@@ -373,15 +378,15 @@ export default function FlowBuilder() {
                   >
                     <ArrowDown size={14} />
                   </button>
-                  <button
-                    className="danger-text"
-                    onClick={(e) => {
-                      e.stopPropagation();
-                      remove(i);
-                    }}
-                  >
-                    <Trash2 size={14} />
-                  </button>
+                  <span onClick={(e) => e.stopPropagation()}>
+                    <HoldButton
+                      iconOnly
+                      aria-label={`Remove step ${i + 1}, ${
+                        catalog.find((x) => x[0] === v.verb)?.[1] || v.verb
+                      }`}
+                      onHold={() => remove(i)}
+                    />
+                  </span>
                 </div>
               </div>
             ))}
@@ -438,7 +443,6 @@ function Inspector({
   return (
     <div className="inspector-form">
       <div className="inspector-head">
-        <span className="eyebrow">Configure node</span>
         <h2>{catalog.find(([v]) => v === node.verb)?.[1] ?? node.verb}</h2>
       </div>
       {node.verb === 'play' && (
@@ -792,18 +796,15 @@ function Inspector({
                   <span>{node.branches?.[k]?.length || 0} nodes</span>
                   <ChevronRight size={14} />
                 </button>
-                <button
-                  className="icon-btn danger-text"
-                  type="button"
-                  title="Delete branch"
-                  onClick={() => {
+                <HoldButton
+                  iconOnly
+                  aria-label={`Delete the branch for digits ${k}`}
+                  onHold={() => {
                     const b = { ...(node.branches || {}) };
                     delete b[k];
                     patch({ branches: b });
                   }}
-                >
-                  <Trash2 size={14} />
-                </button>
+                />
               </div>
             ))}
             <div className="inline-add">

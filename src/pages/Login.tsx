@@ -40,18 +40,12 @@ export default function Login() {
             one workspace.
           </p>
         </div>
-        <div className="signal-grid">
-          {Array.from({ length: 30 }).map((_, i) => (
-            <i key={i} />
-          ))}
-        </div>
       </div>
       <div className="login-panel">
         <form className="login-card" onSubmit={submit}>
           <div className="mobile login-mobile-brand">
             <Brand />
           </div>
-          <div className="eyebrow">Welcome back</div>
           <h2>Sign in to Cloudvoice</h2>
           <p>Use your Cloudvoice account credentials.</p>
           {error && <div className="alert">{error}</div>}

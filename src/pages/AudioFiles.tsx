@@ -1,6 +1,7 @@
 import { useState } from 'react';
 import { useQuery, useQueryClient } from '@tanstack/react-query';
 import { ChevronRight, Music, Play, PlayCircle, Upload } from 'lucide-react';
+import { AnimatedIcon } from '../components/AnimatedIcon';
 import { audioFilesApi, authApi, errorMessage } from '../lib/api';
 import { useSession } from '../lib/session';
 import { showToast } from '../lib/toast';
@@ -75,7 +76,6 @@ export default function AudioFiles() {
         <AudioLibrary key={orgId} orgId={orgId} role={role} />
       ) : (
         <PageHeader
-          eyebrow="Voice"
           title="Audio files"
           description="Select an organisation to manage its prompts, greetings, and hold music."
         />
@@ -136,7 +136,6 @@ function AudioLibrary({ orgId, role }: { orgId: string; role?: Role | null }) {
   return (
     <>
       <PageHeader
-        eyebrow="Voice"
         title="Audio files"
         description="Reusable prompts, greetings and hold music. Copy a file's playback URL into an application audio step or a call-center sound field."
         action={
@@ -145,7 +144,13 @@ function AudioLibrary({ orgId, role }: { orgId: string; role?: Role | null }) {
               className="btn primary"
               onClick={() => setAction({ mode: 'upload' })}
             >
-              <Upload size={16} /> Upload audio
+              <AnimatedIcon
+                icon={Upload}
+                size={16}
+                animation="press"
+                trigger="click"
+              />{' '}
+              Upload audio
             </button>
           )
         }
@@ -210,7 +215,12 @@ function AudioLibrary({ orgId, role }: { orgId: string; role?: Role | null }) {
                           className="table-action"
                           onClick={() => setViewing(file)}
                         >
-                          View <ChevronRight size={14} />
+                          View{' '}
+                          <AnimatedIcon
+                            icon={ChevronRight}
+                            size={14}
+                            animation="nudge"
+                          />
                         </button>
                         {canManage && (
                           <>
@@ -259,7 +269,6 @@ function AudioLibrary({ orgId, role }: { orgId: string; role?: Role | null }) {
         {viewing && (
           <DetailView>
             <DetailSummary
-              kind="Audio file"
               title={viewing.name}
               subtitle={viewing.original_filename}
               facts={

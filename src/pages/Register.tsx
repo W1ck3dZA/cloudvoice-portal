@@ -47,18 +47,12 @@ export default function Register() {
             infrastructure.
           </p>
         </div>
-        <div className="signal-grid">
-          {Array.from({ length: 30 }).map((_, i) => (
-            <i key={i} />
-          ))}
-        </div>
       </div>
       <div className="login-panel">
         <form className="login-card" onSubmit={submit}>
           <div className="mobile login-mobile-brand">
             <Brand />
           </div>
-          <div className="eyebrow">Get started</div>
           <h2>Create your account</h2>
           <p>Set up your account and your organisation in one step.</p>
           {error && <div className="alert">{error}</div>}

@@ -45,7 +45,6 @@ export function CallDetails({
   return (
     <DetailView>
       <DetailSummary
-        kind={call.direction === 'inbound' ? 'Inbound call' : 'Outbound call'}
         title={
           <span className="dv-route">
             {call.from_number}
@@ -56,6 +55,7 @@ export function CallDetails({
         facts={
           <>
             <Status value={call.status} />
+            <span>{call.direction === 'inbound' ? 'Inbound' : 'Outbound'}</span>
             {call.amd_result && <span>{answeredBy(call)}</span>}
             <span>{talk == null ? 'Not connected' : `${talk}s talk time`}</span>
           </>

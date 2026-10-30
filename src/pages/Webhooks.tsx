@@ -1,25 +1,24 @@
 import { useState } from 'react';
-import { Link } from 'react-router-dom';
+import { Link, useNavigate } from 'react-router-dom';
 import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query';
 import { ChevronRight, Webhook as WebhookIcon } from 'lucide-react';
+import { AnimatedIcon } from '../components/AnimatedIcon';
 import { errorMessage, webhooksApi } from '../lib/api';
 import { showToast } from '../lib/toast';
-import { EVENT_GROUPS, ALL_EVENT_TYPES } from '../lib/eventTypes';
 import type { WebhookDelivery, WebhookEndpoint } from '../types/api';
 import {
   AddButton,
   Card,
   Drawer,
   Empty,
-  ErrorBox,
-  Field,
   PageHeader,
   SecretReveal,
   Spinner,
   Status,
   StatusToggle,
-  Toggle,
+  ConfirmAction,
 } from '../components/UI';
+import { HoldButton } from '../components/HoldButton';
 import {
   CopyValue,
   DetailRow,
@@ -27,30 +26,8 @@ import {
   DetailSection,
   DetailSummary,
   DetailView,
-  DrawerActions,
-  FormSection,
   ValuePills,
 } from '../components/Details';
-const KNOWN = new Set([
-  ...ALL_EVENT_TYPES.map((t) => t.type),
-  ...EVENT_GROUPS.flatMap((g) => (g.wildcard ? [g.wildcard.pattern] : [])),
-]);
-type Form = {
-  url: string;
-  description: string;
-  scope: 'all' | 'some';
-  selected: string[];
-  custom: string;
-  active: boolean;
-};
-const blank: Form = {
-  url: '',
-  description: '',
-  scope: 'all',
-  selected: [],
-  custom: '',
-  active: true,
-};
 const host = (url: string) => {
   try {
     return new URL(url).host;
@@ -186,50 +163,16 @@ function DeliveryRow({
 export default function Webhooks() {
   const qc = useQueryClient();
   const data = useQuery({ queryKey: ['webhooks'], queryFn: webhooksApi.list });
-  const [mode, setMode] = useState<'add' | 'edit' | 'view' | null>(null);
+  const navigate = useNavigate();
   const [selected, setSelected] = useState<WebhookEndpoint | null>(null);
-  const [form, setForm] = useState<Form>(blank);
-  const [err, setErr] = useState('');
   const [secret, setSecret] = useState('');
   const deliveries = useQuery({
     queryKey: ['webhook-deliveries', selected?.id],
     queryFn: () => webhooksApi.deliveries(selected!.id),
-    enabled: mode === 'view' && !!selected,
-    refetchInterval: mode === 'view' ? 10000 : false,
+    enabled: !!selected,
+    refetchInterval: selected ? 10000 : false,
   });
-  const close = () => {
-    setMode(null);
-    setSelected(null);
-    setErr('');
-  };
-  function eventTypesFromForm() {
-    if (form.scope === 'all') return [];
-    const custom = form.custom
-      .split(',')
-      .map((x) => x.trim())
-      .filter(Boolean);
-    return [...new Set([...form.selected, ...custom])];
-  }
-  const save = useMutation({
-    mutationFn: () => {
-      const b = {
-        url: form.url.trim(),
-        description: form.description.trim(),
-        event_types: eventTypesFromForm(),
-        active: form.active,
-      };
-      return mode === 'add'
-        ? webhooksApi.create(b)
-        : webhooksApi.update(selected!.id, b);
-    },
-    onSuccess: (d: any) => {
-      qc.invalidateQueries({ queryKey: ['webhooks'] });
-      if (d?.secret) setSecret(d.secret);
-      else showToast({ kind: 'success', message: 'Webhook saved.' });
-      close();
-    },
-    onError: (e) => setErr(errorMessage(e)),
-  });
+  const close = () => setSelected(null);
   const del = useMutation({
     mutationFn: webhooksApi.remove,
     onSuccess: () => {
@@ -261,46 +204,15 @@ export default function Webhooks() {
       setSelected((s) => (s && s.id === updated.id ? updated : s));
     },
   });
-  function openAdd() {
-    setErr('');
-    setForm(blank);
-    setMode('add');
-  }
-  function edit(w: WebhookEndpoint) {
-    const types = w.event_types || [];
-    setErr('');
-    setSelected(w);
-    setForm({
-      url: w.url,
-      description: w.description || '',
-      scope: types.length ? 'some' : 'all',
-      selected: types.filter((t) => KNOWN.has(t)),
-      custom: types.filter((t) => !KNOWN.has(t)).join(', '),
-      active: w.active,
-    });
-    setMode('edit');
-  }
+  const openAdd = () => navigate('/webhooks/new');
+  const edit = (w: WebhookEndpoint) => navigate(`/webhooks/${w.id}/edit`);
   function remove(w: WebhookEndpoint) {
-    if (
-      confirm(
-        `Delete the webhook for ${host(w.url)}? It stops receiving events straight away.`,
-      )
-    )
-      del.mutate(w.id);
-  }
-  function toggleType(t: string, on: boolean) {
-    setForm((f) => ({
-      ...f,
-      selected: on ? [...f.selected, t] : f.selected.filter((x) => x !== t),
-    }));
+    del.mutate(w.id);
   }
   const list = data.data || [];
-  const noneChosen =
-    form.scope === 'some' && !form.selected.length && !form.custom.trim();
   return (
     <>
       <PageHeader
-        eyebrow="Developers"
         title="Webhooks"
         description="Get an HTTPS POST to your own server whenever something happens in your account, like a call being answered or an SMS arriving."
         action={<AddButton onClick={openAdd}>Add webhook</AddButton>}
@@ -349,12 +261,14 @@ export default function Webhooks() {
                       <div className="row-actions">
                         <button
                           className="table-action"
-                          onClick={() => {
-                            setSelected(w);
-                            setMode('view');
-                          }}
+                          onClick={() => setSelected(w)}
                         >
-                          View <ChevronRight size={14} />
+                          View{' '}
+                          <AnimatedIcon
+                            icon={ChevronRight}
+                            size={14}
+                            animation="nudge"
+                          />
                         </button>
                         <button
                           className="table-action"
@@ -362,12 +276,11 @@ export default function Webhooks() {
                         >
                           Edit
                         </button>
-                        <button
-                          className="table-action danger-text"
-                          onClick={() => remove(w)}
-                        >
-                          Delete
-                        </button>
+                        <HoldButton
+                          iconOnly
+                          aria-label={`Delete the webhook for ${host(w.url)}`}
+                          onHold={() => remove(w)}
+                        />
                       </div>
                     </td>
                   </tr>
@@ -385,21 +298,14 @@ export default function Webhooks() {
         )}
       </Card>
       <Drawer
-        open={!!mode}
+        open={!!selected}
         onClose={close}
-        title={
-          mode === 'add'
-            ? 'Add webhook'
-            : mode === 'edit'
-              ? 'Edit webhook'
-              : 'Webhook details'
-        }
+        title="Webhook details"
         size="lg"
       >
-        {mode === 'view' && selected ? (
+        {selected && (
           <DetailView>
             <DetailSummary
-              kind="Webhook"
               title={selected.description || host(selected.url)}
               subtitle={selected.url}
               facts={
@@ -447,21 +353,13 @@ export default function Webhooks() {
                 </DetailRow>
               </DetailRows>
               <div className="dv-actions wh-rotate">
-                <button
-                  className="btn"
-                  disabled={rotate.isPending}
-                  onClick={() =>
-                    confirm(
-                      'Rotate the signing secret? Deliveries are signed with the new secret straight away, so your server must switch to it or it will reject them.',
-                    ) && rotate.mutate(selected.id)
-                  }
-                >
-                  {rotate.isPending ? 'Rotating…' : 'Rotate secret'}
-                </button>
-                <p className="dv-note">
-                  The new secret is shown once. Update your server with it
-                  straight away.
-                </p>
+                <ConfirmAction
+                  label={rotate.isPending ? 'Rotating…' : 'Rotate secret'}
+                  confirmLabel="Yes, rotate secret"
+                  consequence="Deliveries are signed with the new secret straight away, so your server must switch to it or it will reject them. The new secret is shown once."
+                  busy={rotate.isPending}
+                  onConfirm={() => rotate.mutate(selected.id)}
+                />
               </div>
             </DetailSection>
             <DetailSection title="Recent deliveries">
@@ -499,184 +397,6 @@ export default function Webhooks() {
               </DetailRows>
             </DetailSection>
           </DetailView>
-        ) : (
-          <form
-            className="form-stack"
-            onSubmit={(e) => {
-              e.preventDefault();
-              setErr('');
-              save.mutate();
-            }}
-          >
-            <ErrorBox message={err} />
-            <FormSection title="Endpoint">
-              <Field
-                label="URL"
-                hint="An HTTPS address on your server that can be reached from the internet"
-              >
-                <input
-                  required
-                  type="url"
-                  inputMode="url"
-                  placeholder="https://example.com/webhooks/cloudvoice"
-                  value={form.url}
-                  onChange={(e) =>
-                    setForm((f) => ({ ...f, url: e.target.value }))
-                  }
-                />
-              </Field>
-              <Field
-                label="Description"
-                hint="Optional. So you can tell webhooks apart, e.g. CRM sync"
-              >
-                <input
-                  value={form.description}
-                  onChange={(e) =>
-                    setForm((f) => ({ ...f, description: e.target.value }))
-                  }
-                />
-              </Field>
-            </FormSection>
-            <FormSection
-              title="Events"
-              hint="Which events to send to this URL."
-            >
-              <div className="wh-scope" role="radiogroup" aria-label="Events">
-                <label className={form.scope === 'all' ? 'on' : ''}>
-                  <input
-                    type="radio"
-                    name="scope"
-                    checked={form.scope === 'all'}
-                    onChange={() => setForm((f) => ({ ...f, scope: 'all' }))}
-                  />
-                  <span>
-                    <strong>All events</strong>
-                    <small>Including new types added later</small>
-                  </span>
-                </label>
-                <label className={form.scope === 'some' ? 'on' : ''}>
-                  <input
-                    type="radio"
-                    name="scope"
-                    checked={form.scope === 'some'}
-                    onChange={() => setForm((f) => ({ ...f, scope: 'some' }))}
-                  />
-                  <span>
-                    <strong>Only the events I choose</strong>
-                    <small>Pick event types below</small>
-                  </span>
-                </label>
-              </div>
-              {form.scope === 'some' && (
-                <div className="wh-groups">
-                  {EVENT_GROUPS.map((g) => {
-                    const whole =
-                      !!g.wildcard &&
-                      form.selected.includes(g.wildcard.pattern);
-                    return (
-                      <fieldset className="wh-group" key={g.label}>
-                        <legend>{g.label}</legend>
-                        <div className="wh-type-grid">
-                          {g.wildcard && (
-                            <label className="wh-type wh-wild">
-                              <input
-                                type="checkbox"
-                                checked={whole}
-                                onChange={(e) =>
-                                  toggleType(
-                                    g.wildcard!.pattern,
-                                    e.target.checked,
-                                  )
-                                }
-                              />
-                              <span>
-                                <code>{g.wildcard.pattern}</code>
-                                <small>{g.wildcard.label}</small>
-                              </span>
-                            </label>
-                          )}
-                          {g.types.map((t) => (
-                            <label className="wh-type" key={t.type}>
-                              <input
-                                type="checkbox"
-                                disabled={whole}
-                                checked={
-                                  whole || form.selected.includes(t.type)
-                                }
-                                onChange={(e) =>
-                                  toggleType(t.type, e.target.checked)
-                                }
-                              />
-                              <span>
-                                <code>{t.type}</code>
-                                <small>{t.label}</small>
-                              </span>
-                            </label>
-                          ))}
-                        </div>
-                      </fieldset>
-                    );
-                  })}
-                  <Field
-                    label="Other event types"
-                    hint="Optional. Your own types from the Event Publisher, separated by commas. Use name.* to match a whole group."
-                  >
-                    <input
-                      value={form.custom}
-                      placeholder="test.ping, orders.*"
-                      onChange={(e) =>
-                        setForm((f) => ({ ...f, custom: e.target.value }))
-                      }
-                    />
-                  </Field>
-                  {noneChosen && (
-                    <p className="fs-hint" role="alert">
-                      Choose at least one event type, or send all events.
-                    </p>
-                  )}
-                </div>
-              )}
-            </FormSection>
-            {mode === 'edit' && (
-              <FormSection title="Status">
-                <Toggle
-                  checked={form.active}
-                  onChange={(v) => setForm((f) => ({ ...f, active: v }))}
-                  label="Deliver events to this URL"
-                />
-              </FormSection>
-            )}
-            {mode === 'add' && (
-              <p className="fs-hint">
-                After you add it, you'll see the signing secret once. Copy it to
-                your server to check signatures.
-              </p>
-            )}
-            <DrawerActions>
-              <button
-                className="btn primary"
-                disabled={save.isPending || noneChosen}
-              >
-                {save.isPending
-                  ? 'Saving…'
-                  : mode === 'add'
-                    ? 'Add webhook'
-                    : 'Save changes'}
-              </button>
-              <button type="button" className="btn" onClick={close}>
-                Cancel
-              </button>
-              {mode === 'edit' && selected && (
-                <button
-                  type="button"
-                  className="btn danger"
-                  onClick={() => remove(selected)}
-                >
-                  Delete
-                </button>
-              )}
-            </DrawerActions>
-          </form>
         )}
       </Drawer>
       <Drawer

@@ -1,6 +1,7 @@
 import { useState } from 'react';
 import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query';
 import { ArrowRight, KeyRound, MessageSquare, Send } from 'lucide-react';
+import { AnimatedIcon } from '../components/AnimatedIcon';
 import { errorMessage, smsApi, smsCredentialsApi } from '../lib/api';
 import type { SmsMessage } from '../types/api';
 import { humanize } from '../lib/labels';
@@ -17,6 +18,7 @@ import {
   Status,
   StatusToggle,
   Toggle,
+  HoldToDelete,
 } from '../components/UI';
 import {
   CopyValue,
@@ -137,7 +139,6 @@ export default function Messaging() {
   return (
     <>
       <PageHeader
-        eyebrow="Messaging"
         title="SMS"
         description="Send messages, check delivery and manage the SMS gateway credential your organisation sends with."
         action={
@@ -218,7 +219,6 @@ export default function Messaging() {
           ) : creds.data ? (
             <DetailView>
               <DetailSummary
-                kind="SMS gateway credential"
                 title={creds.data.username}
                 facts={
                   <>
@@ -260,19 +260,11 @@ export default function Messaging() {
                   </DetailRow>
                 </DetailRows>
               </DetailSection>
-              <DrawerActions>
-                <button
-                  className="btn danger"
-                  disabled={removeCred.isPending}
-                  onClick={() =>
-                    confirm(
-                      "Remove the SMS credential? Messages can't be sent until you add one again.",
-                    ) && removeCred.mutate()
-                  }
-                >
-                  Remove credential
-                </button>
-              </DrawerActions>
+              <HoldToDelete
+                label="Hold to remove credential"
+                consequence="Messages can't be sent until you add a credential again."
+                onHold={() => removeCred.mutate()}
+              />
             </DetailView>
           ) : (
             <Empty
@@ -348,7 +340,7 @@ export default function Messaging() {
           </FormSection>
           <DrawerActions>
             <button className="btn primary" disabled={send.isPending}>
-              <Send size={15} />
+              <AnimatedIcon icon={Send} size={15} animation="nudge" />
               {send.isPending ? 'Sending…' : 'Send message'}
             </button>
             <button
@@ -452,11 +444,6 @@ export default function Messaging() {
         {view && (
           <DetailView>
             <DetailSummary
-              kind={
-                view.direction === 'inbound'
-                  ? 'Inbound message'
-                  : 'Outbound message'
-              }
               title={
                 <span className="dv-route">
                   {view.from_number || 'Default sender'}
@@ -467,6 +454,9 @@ export default function Messaging() {
               facts={
                 <>
                   <Status value={view.status} />
+                  <span>
+                    {view.direction === 'inbound' ? 'Inbound' : 'Outbound'}
+                  </span>
                   <span>
                     {view.segments}{' '}
                     {view.segments === 1 ? 'segment' : 'segments'}
@@ -482,7 +472,7 @@ export default function Messaging() {
                     compose({ to: view.from_number!, from: view.to_number })
                   }
                 >
-                  <Send size={15} /> Reply
+                  <AnimatedIcon icon={Send} size={15} animation="nudge" /> Reply
                 </button>
               ) : (
                 <button
@@ -494,7 +484,8 @@ export default function Messaging() {
                     })
                   }
                 >
-                  <Send size={15} /> Message again
+                  <AnimatedIcon icon={Send} size={15} animation="nudge" />{' '}
+                  Message again
                 </button>
               )}
             </DetailSummary>

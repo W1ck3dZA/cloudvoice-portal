@@ -7,6 +7,7 @@ import {
   type ReactNode,
 } from 'react';
 import { AudioLines, Download, Pause, Play, X } from 'lucide-react';
+import { AnimatedIcon } from './AnimatedIcon';
 import { api } from '../lib/api';
 // A player docked to the bottom of the page. Mounted once in the layout, so
 // audio keeps playing while you move between pages. Call recordings need the
@@ -195,7 +196,12 @@ function PlayerBar({ track, onClose }: { track: Track; onClose: () => void }) {
           aria-label="Download"
           title="Download"
         >
-          <Download size={18} />
+          <AnimatedIcon
+            icon={Download}
+            size={18}
+            animation="press"
+            trigger="click"
+          />
         </button>
         <button
           className="icon-btn"
@@ -203,7 +209,7 @@ function PlayerBar({ track, onClose }: { track: Track; onClose: () => void }) {
           aria-label="Close player"
           title="Close player"
         >
-          <X size={18} />
+          <AnimatedIcon icon={X} size={18} animation="press" trigger="click" />
         </button>
       </div>
     </section>
