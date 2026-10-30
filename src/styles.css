@@ -1073,6 +1073,41 @@ tbody tr:last-child td {
   flex-direction: column;
   animation: panel-in 240ms var(--ease-out);
 }
+.drawer {
+  position: fixed;
+}
+/* The grip: a strip on the drawer's left edge on desktop, the handle at the top of the sheet on phones. */
+.panel-grip {
+  position: absolute;
+  z-index: 3;
+  inset: 0 auto 0 0;
+  width: 12px;
+  cursor: ew-resize;
+  touch-action: none;
+}
+.panel-grip::before {
+  content: '';
+  position: absolute;
+  inset: 0 auto 0 4px;
+  width: 3px;
+  border-radius: 2px;
+  background: transparent;
+  transition: background-color 120ms var(--ease-out);
+}
+.panel-grip:hover::before,
+.panel-grip.drag::before {
+  background: var(--line2);
+}
+.panel-grip:focus-visible {
+  outline: none;
+}
+.panel-grip:focus-visible::before {
+  background: var(--inf);
+}
+.drawer.resizing {
+  user-select: none;
+  transition: none;
+}
 .drawer::backdrop {
   background: var(--scrim);
   backdrop-filter: blur(2px);
@@ -1125,7 +1160,7 @@ html:has(dialog[open]) {
   outline: none;
 }
 .drawer-body {
-  flex: 1;
+  flex: 1 1 auto;
   min-height: 0;
   padding: 24px 24px calc(24px + env(safe-area-inset-bottom));
   overflow: auto;
@@ -1135,8 +1170,9 @@ html:has(dialog[open]) {
     --sheet-max: 70dvh;
     margin: auto 0 0;
     width: 100vw;
-    height: fit-content;
+    height: var(--sheet-h, fit-content);
     max-height: var(--sheet-max);
+    transition: height 180ms var(--ease-out);
     border: 0;
     border-top: 1px solid var(--line);
     border-radius: 20px 20px 0 0;
@@ -1149,20 +1185,33 @@ html:has(dialog[open]) {
     animation: sheet-in 260ms var(--ease-out);
   }
   .drawer-head {
-    position: relative;
-    padding: 24px 16px 12px;
+    padding: 4px 16px 12px;
   }
-  /* The sheet's handle. */
-  .drawer-head::before {
-    content: '';
-    position: absolute;
-    top: 8px;
-    left: 50%;
+  /* The sheet's handle: drag it to resize (snaps to 50, 70 and 90%), or down to close. */
+  .panel-grip {
+    position: relative;
+    inset: auto;
+    flex: none;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    width: 100%;
+    height: 28px;
+    cursor: grab;
+  }
+  .panel-grip::before {
+    position: static;
     width: 36px;
     height: 4px;
-    margin-left: -18px;
-    border-radius: 2px;
     background: var(--line2);
+  }
+  .panel-grip:hover::before,
+  .panel-grip.drag::before {
+    background: var(--mute);
+  }
+  .panel-grip:focus-visible::before {
+    background: var(--inf);
+    height: 5px;
   }
   .drawer-body {
     padding: 16px 16px calc(20px + env(safe-area-inset-bottom));
@@ -3882,5 +3931,11 @@ tr.tap:hover td {
   }
   tr.tap:hover {
     background: var(--soft);
+  }
+}
+/* Narrow phones: the account button shows initials only; the menu still names the account. */
+@media (max-width: 479px) {
+  .org-pill-name {
+    display: none;
   }
 }
