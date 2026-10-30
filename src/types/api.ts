@@ -127,6 +127,8 @@ export interface Call {
     | 'no_answer'
     | 'busy';
   hangup_cause: string | null;
+  amd_enabled?: boolean;
+  amd_result?: 'human' | 'machine' | 'notsure' | 'toolong' | null;
   duration_seconds: number | null;
   initiated_at: string;
   answered_at: string | null;
