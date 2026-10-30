@@ -175,7 +175,11 @@ function label(v: Verb) {
     case 'queue':
       return v.queue_id || 'Choose queue';
     case 'hangup':
-      return v.reason || 'Normal hangup';
+      return (
+        HANGUP_CAUSES.find(
+          ([code]) => code === (v.reason || 'NORMAL_CLEARING'),
+        )?.[1] ?? v.reason
+      );
     case 'respond':
       return `${v.code} ${v.reason}`.trim() || 'Set response code';
   }
