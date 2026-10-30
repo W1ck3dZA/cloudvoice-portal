@@ -7,6 +7,7 @@ export default function Register() {
   const [name, setName] = useState('');
   const [email, setEmail] = useState('');
   const [password, setPassword] = useState('');
+  const [organisation, setOrganisation] = useState('');
   const [error, setError] = useState('');
   const [busy, setBusy] = useState(false);
   const nav = useNavigate();
@@ -16,7 +17,12 @@ export default function Register() {
     setBusy(true);
     setError('');
     try {
-      const d = await authApi.register(email, name, password);
+      const d = await authApi.register(
+        email,
+        name,
+        password,
+        organisation.trim(),
+      );
       localStorage.setItem('cv_token', d.token);
       setSession({ user: d.user, orgId: d.orgId, role: d.role as any });
       nav('/');
@@ -54,7 +60,7 @@ export default function Register() {
           </div>
           <div className="eyebrow">Get started</div>
           <h2>Create your account</h2>
-          <p>Register a Cloudvoice user account.</p>
+          <p>Set up your account and your organisation in one step.</p>
           {error && <div className="alert">{error}</div>}
           <label>
             Full name
@@ -62,6 +68,15 @@ export default function Register() {
               required
               value={name}
               onChange={(e) => setName(e.target.value)}
+            />
+          </label>
+          <label>
+            Organisation name
+            <input
+              required
+              placeholder="Your company name"
+              value={organisation}
+              onChange={(e) => setOrganisation(e.target.value)}
             />
           </label>
           <label>

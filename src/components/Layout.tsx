@@ -30,6 +30,7 @@ import { Brand } from './Brand';
 import { orgApi } from '../lib/api';
 import { useSession } from '../lib/session';
 import { useSwitchOrganisation } from '../lib/useSwitchOrganisation';
+import NoOrganisation from '../pages/NoOrganisation';
 import { useTheme } from '../lib/theme';
 const groups = [
   { label: 'Overview', items: [['/', 'Dashboard', LayoutDashboard]] },
@@ -227,7 +228,11 @@ export function Layout() {
           </div>
         </header>
         <main className={'page' + (isFullBleed ? ' page-full' : '')}>
-          <Outlet />
+          {session && !session.orgId && location.pathname !== '/settings' ? (
+            <NoOrganisation />
+          ) : (
+            <Outlet />
+          )}
         </main>
       </div>
       {open && <div className="scrim" onClick={() => setOpen(false)} />}

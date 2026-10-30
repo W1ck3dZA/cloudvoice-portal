@@ -4065,8 +4065,7 @@
               "schema": {
                 "type": "object",
                 "required": [
-                  "name",
-                  "slug"
+                  "name"
                 ],
                 "properties": {
                   "name": {
@@ -4076,7 +4075,8 @@
                   "slug": {
                     "type": "string",
                     "pattern": "^[a-z0-9-]{3,50}$",
-                    "example": "acme-corp"
+                    "example": "acme-corp",
+                    "description": "Generated from the name when omitted."
                   },
                   "plan": {
                     "type": "string",
@@ -7632,6 +7632,11 @@
                     "type": "string",
                     "minLength": 8,
                     "example": "s3cur3P@ss"
+                  },
+                  "organisation_name": {
+                    "type": "string",
+                    "example": "Acme Corp",
+                    "description": "Creates an organisation with the new user as owner, and returns a token scoped to it. Without it the user has no organisation until they create or join one.\n"
                   }
                 }
               }
