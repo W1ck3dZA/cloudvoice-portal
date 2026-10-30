@@ -1,6 +1,7 @@
 import { useState } from 'react';
 import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query';
-import { PhoneCall, PhoneOutgoing, Search } from 'lucide-react';
+import { PhoneCall, PhoneOutgoing, PlayCircle, Search } from 'lucide-react';
+import { RecordingPlayer } from '../components/RecordingPlayer';
 import { appsApi, callsApi, errorMessage, gatewaysApi } from '../lib/api';
 import { answeredBy, humanize } from '../lib/labels';
 import type { Call } from '../types/api';
@@ -52,6 +53,7 @@ export default function Calls() {
   const [q, setQ] = useState('');
   const [page, setPage] = useState(1);
   const [view, setView] = useState<Call | null>(null);
+  const [playing, setPlaying] = useState<Call | null>(null);
   const [open, setOpen] = useState(false);
   const [form, setForm] = useState(blank);
   const [err, setErr] = useState('');
@@ -189,22 +191,34 @@ export default function Calls() {
                     </td>
                     <td>{new Date(c.initiated_at).toLocaleString()}</td>
                     <td>
-                      <RowActions
-                        onView={() => setView(c)}
-                        onDelete={
-                          ![
-                            'completed',
-                            'failed',
-                            'cancelled',
-                            'no_answer',
-                            'busy',
-                          ].includes(c.status)
-                            ? () =>
-                                confirm('Hang up this active call?') &&
-                                hangup.mutate(c.id)
-                            : undefined
-                        }
-                      />
+                      <div className="row-actions">
+                        {c.recording_id && (
+                          <button
+                            className="icon-btn"
+                            aria-label="Play recording"
+                            title="Play recording"
+                            onClick={() => setPlaying(c)}
+                          >
+                            <PlayCircle size={18} />
+                          </button>
+                        )}
+                        <RowActions
+                          onView={() => setView(c)}
+                          onDelete={
+                            ![
+                              'completed',
+                              'failed',
+                              'cancelled',
+                              'no_answer',
+                              'busy',
+                            ].includes(c.status)
+                              ? () =>
+                                  confirm('Hang up this active call?') &&
+                                  hangup.mutate(c.id)
+                              : undefined
+                          }
+                        />
+                      </div>
                     </td>
                   </tr>
                 ))}
@@ -226,6 +240,7 @@ export default function Calls() {
           />
         )}
       </Card>
+      <RecordingPlayer call={playing} onClose={() => setPlaying(null)} />
       <Drawer open={!!view} onClose={() => setView(null)} title="Call details">
         {view && (
           <div className="detail-grid">

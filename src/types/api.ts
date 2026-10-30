@@ -128,7 +128,9 @@ export interface Call {
     | 'busy';
   hangup_cause: string | null;
   amd_enabled?: boolean;
+  amd_params?: Record<string, unknown> | null;
   amd_result?: 'human' | 'machine' | 'notsure' | 'toolong' | null;
+  recording_id?: string | null;
   duration_seconds: number | null;
   initiated_at: string;
   answered_at: string | null;
