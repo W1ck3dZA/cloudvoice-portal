@@ -2128,6 +2128,25 @@ tbody tr:last-child td {
   color: var(--muted);
   flex-basis: 100%;
 }
+.dv-note-block {
+  margin-top: 12px;
+  line-height: 1.5;
+}
+.sms-body {
+  margin: 0;
+  padding: 14px 16px;
+  border-radius: 14px;
+  background: var(--surface-2);
+  border: 1px solid var(--line);
+  font-size: 14px;
+  line-height: 1.55;
+  white-space: pre-wrap;
+  overflow-wrap: anywhere;
+}
+.sms-count {
+  margin: -6px 0 0;
+  line-height: 1.5;
+}
 .dv-result {
   display: flex;
   flex-direction: column;
@@ -2301,6 +2320,7 @@ td .pills {
   font-weight: 600;
   text-align: right;
   min-width: 0;
+  overflow-wrap: anywhere;
   font-variant-numeric: tabular-nums;
 }
 .dv-more summary {
@@ -2341,6 +2361,7 @@ td .pills {
   align-items: center;
   gap: 2px;
   min-width: 0;
+  max-width: 100%;
 }
 .dv-copy code {
   font-family: inherit;
@@ -2348,6 +2369,10 @@ td .pills {
   overflow: hidden;
   text-overflow: ellipsis;
   white-space: nowrap;
+  min-width: 0;
+}
+a.btn {
+  text-decoration: none;
 }
 .dv-copy .icon-btn {
   width: 30px;
