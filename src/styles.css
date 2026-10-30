@@ -4188,3 +4188,117 @@ tr.tap:hover td {
     border-radius: 20px 20px 0 0;
   }
 }
+/* Phones: the flow runs down one spine on the left and branches stack under their step, indented, instead of
+   spreading sideways. */
+@media (max-width: 760px) {
+  .fc {
+    width: 100%;
+    min-width: 0;
+    align-items: stretch;
+    padding-bottom: 32px;
+  }
+  .fc-list {
+    align-items: stretch;
+  }
+  .fc-step,
+  .fc-add-wrap {
+    align-items: stretch;
+  }
+  .fc-step::before,
+  .fc-add-wrap::before,
+  .fc-outputs::before,
+  .fc > .canvas-exit::before {
+    left: 20px;
+  }
+  .fc > .canvas-entry,
+  .fc > .canvas-exit {
+    align-self: flex-start;
+    margin-left: 0;
+  }
+  .fc .canvas-node.fc-node {
+    width: 100%;
+  }
+  .fc-add-wrap {
+    align-items: flex-start;
+  }
+  .fc-picker {
+    left: 0;
+    transform: none;
+  }
+  .fc-outputs {
+    flex-direction: column;
+    align-items: stretch;
+    margin-left: 19px;
+    padding: 12px 0 0;
+    border-left: 2px solid var(--line2);
+  }
+  .fc-outputs::before {
+    display: none;
+  }
+  .fc-branch {
+    align-items: stretch;
+    padding: 12px 0 4px 18px;
+  }
+  .fc-branch::before {
+    top: 24px;
+    left: 0;
+    width: 14px;
+    height: 0;
+    border-left: 0;
+    border-top: 2px solid var(--line2);
+    transform: none;
+  }
+  .fc-branch::after,
+  .fc-fill,
+  .fc-foot {
+    display: none;
+  }
+  .fc-out {
+    align-self: flex-start;
+  }
+  .fc-branch .fc-list > .fc-step:first-child::before,
+  .fc-branch .fc-list > .fc-add-wrap:first-child::before {
+    left: 20px;
+  }
+  /* A compact palette strip. */
+  .verb-palette {
+    gap: 6px;
+    padding: 10px 12px;
+  }
+  .verb-palette > button {
+    width: auto;
+    min-width: 0;
+    flex: none;
+    padding: 6px 10px 6px 6px;
+    border: 1px solid var(--line);
+    border-radius: 12px;
+  }
+  /* The builder header: back arrow only, so the title and Save fit. */
+  .builder-top {
+    gap: 10px;
+  }
+  .builder-top > .btn {
+    width: 40px;
+    padding: 0;
+  }
+  .builder-top > .btn .bt-label {
+    display: none;
+  }
+  .builder-top > div:not(.builder-save) {
+    flex: 1;
+    min-width: 0;
+  }
+  .builder-top h1 {
+    font-size: 16px;
+    overflow: hidden;
+    text-overflow: ellipsis;
+    white-space: nowrap;
+  }
+  .verb-palette > button small,
+  .verb-palette > button > svg {
+    display: none;
+  }
+  .verb-palette strong {
+    white-space: nowrap;
+  }
+}
