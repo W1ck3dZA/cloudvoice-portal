@@ -2,7 +2,7 @@ import { useState } from 'react';
 import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query';
 import { PhoneCall, PhoneOutgoing, Search } from 'lucide-react';
 import { appsApi, callsApi, errorMessage, gatewaysApi } from '../lib/api';
-import { humanize } from '../lib/labels';
+import { answeredBy, humanize } from '../lib/labels';
 import type { Call } from '../types/api';
 import {
   AddButton,
@@ -19,13 +19,6 @@ import {
   Toggle,
 } from '../components/UI';
 const PAGE_SIZE = 25;
-// Answering machine detection result, when it ran on the call.
-const ANSWERED_BY = {
-  human: 'Person',
-  machine: 'Answering machine',
-  notsure: 'Not sure',
-  toolong: 'Not sure',
-} as const;
 
 const blank = {
   type: 'phone',
@@ -132,7 +125,7 @@ export default function Calls() {
     onSuccess: () => qc.invalidateQueries({ queryKey: ['calls'] }),
   });
   const rows = (data.data?.items || []).filter((c) =>
-    `${c.from_number} ${c.to_number} ${c.status} ${c.hangup_cause}`
+    `${c.from_number} ${c.to_number} ${c.status} ${c.hangup_cause} ${answeredBy(c)}`
       .toLowerCase()
       .includes(q.toLowerCase()),
   );
@@ -172,6 +165,7 @@ export default function Calls() {
                   <th>To</th>
                   <th>Status</th>
                   <th>Hangup cause</th>
+                  <th>Answered by</th>
                   <th>Duration</th>
                   <th>Initiated</th>
                   <th />
@@ -187,6 +181,7 @@ export default function Calls() {
                       <Status value={c.status} />
                     </td>
                     <td>{humanize(c.hangup_cause)}</td>
+                    <td>{answeredBy(c)}</td>
                     <td>
                       {c.duration_seconds == null
                         ? '—'
@@ -241,10 +236,7 @@ export default function Calls() {
               ['To', view.to_number],
               ['Status', humanize(view.status)],
               ['Hangup cause', humanize(view.hangup_cause)],
-              [
-                'Answered by',
-                view.amd_result ? ANSWERED_BY[view.amd_result] : '—',
-              ],
+              ['Answered by', answeredBy(view)],
               [
                 'Duration',
                 view.duration_seconds == null
