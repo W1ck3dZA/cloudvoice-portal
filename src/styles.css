@@ -2006,24 +2006,6 @@ html:has(dialog[open]) {
   background-image: radial-gradient(var(--line) 1px, transparent 1px);
   background-size: 22px 22px;
 }
-.flow-breadcrumbs {
-  display: flex;
-  gap: 2px;
-  align-items: center;
-  margin-bottom: 20px;
-}
-.flow-breadcrumbs button {
-  border: none;
-  background: var(--card);
-  color: var(--mute);
-  font-size: 11px;
-  padding: 6px 9px;
-  border-radius: 7px;
-  display: flex;
-  align-items: center;
-  gap: 4px;
-  box-shadow: 0 0 0 1px var(--line);
-}
 .canvas-flow {
   max-width: 650px;
   margin: 0 auto;
@@ -3937,5 +3919,272 @@ tr.tap:hover td {
 @media (max-width: 479px) {
   .org-pill-name {
     display: none;
+  }
+}
+/* Flow canvas: one tree. Steps run top to bottom; a step with outcomes splits into branch columns that join again
+   below and carry on to the next step. Connectors are 2px --line2 lines. */
+.fc {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  width: max-content;
+  min-width: 100%;
+  margin: 0 auto;
+  padding: 8px 0 60px;
+}
+.fc-list {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+}
+.fc-step,
+.fc-add-wrap {
+  position: relative;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  padding-top: 24px;
+}
+.fc-step::before,
+.fc-add-wrap::before {
+  content: '';
+  position: absolute;
+  top: 0;
+  left: 50%;
+  height: 24px;
+  border-left: 2px solid var(--line2);
+  transform: translateX(-1px);
+}
+.fc > .canvas-exit {
+  position: relative;
+  margin-top: 24px;
+}
+.fc > .canvas-exit::before {
+  content: '';
+  position: absolute;
+  bottom: 100%;
+  left: 50%;
+  height: 24px;
+  border-left: 2px solid var(--line2);
+  transform: translateX(-1px);
+}
+.fc .canvas-node.fc-node {
+  width: 280px;
+  min-height: 64px;
+  margin: 0;
+  border-radius: 14px;
+}
+.fc .canvas-node.fc-node::before,
+.fc .canvas-node.fc-node::after {
+  display: none;
+}
+.fc .canvas-node.fc-node.selected {
+  outline: 2px solid var(--accent);
+  outline-offset: 2px;
+}
+.fc-icon {
+  flex: none;
+  display: grid;
+  place-items: center;
+  width: 32px;
+  height: 32px;
+  border-radius: 10px;
+  background: var(--soft);
+  border: 1px solid var(--line);
+  color: var(--fg);
+}
+.fc .node-copy strong {
+  font-size: 13px;
+}
+.fc .node-copy span {
+  font-size: 11px;
+}
+.fc .node-buttons {
+  align-items: center;
+  gap: 2px;
+  padding: 0 8px 0 0;
+}
+.fc .node-buttons button:disabled {
+  opacity: 0.35;
+  cursor: default;
+}
+/* Branches: columns joined by a bar above and below. */
+.fc-outputs {
+  position: relative;
+  display: flex;
+  align-items: stretch;
+  padding-top: 24px;
+}
+.fc-outputs::before {
+  content: '';
+  position: absolute;
+  top: 0;
+  left: 50%;
+  height: 24px;
+  border-left: 2px solid var(--line2);
+  transform: translateX(-1px);
+}
+.fc-branch {
+  position: relative;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  padding: 20px 10px 0;
+}
+.fc-branch::before {
+  content: '';
+  position: absolute;
+  top: 0;
+  left: 50%;
+  height: 20px;
+  border-left: 2px solid var(--line2);
+  transform: translateX(-1px);
+}
+.fc-branch::after,
+.fc-foot::after {
+  content: '';
+  position: absolute;
+  left: 0;
+  right: 0;
+  border-top: 2px solid var(--line2);
+}
+.fc-branch::after {
+  top: 0;
+}
+.fc-branch:first-child::after,
+.fc-branch:first-child > .fc-foot::after {
+  left: 50%;
+}
+.fc-branch:last-child::after,
+.fc-branch:last-child > .fc-foot::after {
+  right: 50%;
+}
+.fc-branch:only-child::after,
+.fc-branch:only-child > .fc-foot::after {
+  display: none;
+}
+.fc-out {
+  position: relative;
+  z-index: 1;
+  padding: 3px 10px;
+  border-radius: 999px;
+  background: var(--card);
+  border: 1px solid var(--line2);
+  font-size: 12px;
+  font-weight: 600;
+  color: var(--mute);
+  white-space: nowrap;
+}
+.fc-branch .fc-list > .fc-step:first-child,
+.fc-branch .fc-list > .fc-add-wrap:first-child {
+  padding-top: 16px;
+}
+.fc-branch .fc-list > .fc-step:first-child::before,
+.fc-branch .fc-list > .fc-add-wrap:first-child::before {
+  height: 16px;
+}
+/* Lines from the end of each branch down to the joining bar. */
+.fc-fill {
+  flex: 1;
+  min-height: 16px;
+  border-left: 2px solid var(--line2);
+  transform: translateX(-1px);
+}
+.fc-foot {
+  position: relative;
+  align-self: stretch;
+  height: 0;
+  margin: 0 -10px;
+}
+.fc-foot::after {
+  bottom: 0;
+}
+/* "Add step" at the end of every list, with an inline picker. */
+.fc-add {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  height: 32px;
+  padding: 0 12px;
+  border-radius: 16px;
+  border: 1px dashed var(--line2);
+  background: var(--card);
+  color: var(--mute);
+  font: inherit;
+  font-size: 12px;
+  font-weight: 600;
+  cursor: pointer;
+}
+.fc-add:hover {
+  color: var(--fg);
+  border-color: var(--mute);
+}
+.fc-add.target,
+.fc-add[aria-expanded='true'] {
+  border-style: solid;
+  border-color: var(--accent);
+  color: var(--accent);
+  background: var(--accent-bg);
+}
+.fc-picker {
+  position: absolute;
+  top: calc(100% + 6px);
+  left: 50%;
+  z-index: 10;
+  transform: translateX(-50%);
+  display: flex;
+  flex-direction: column;
+  min-width: 200px;
+  padding: 6px;
+  border-radius: 12px;
+  border: 1px solid var(--line);
+  background: var(--card);
+  box-shadow: var(--shadow);
+}
+.fc-picker button {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  height: 36px;
+  padding: 0 10px;
+  border: 0;
+  border-radius: 8px;
+  background: transparent;
+  color: var(--fg);
+  font: inherit;
+  font-size: 13px;
+  font-weight: 600;
+  text-align: left;
+  cursor: pointer;
+}
+.fc-picker button:hover {
+  background: var(--soft);
+}
+/* The inspector: a column on wide screens; below 1100px it appears only while a step is selected, as a side panel,
+   and on phones as a panel above the bottom navigation. */
+.inspector-close {
+  display: none;
+  float: right;
+  margin: -6px -6px 0 8px;
+}
+@media (max-width: 1100px) {
+  .node-inspector.is-empty {
+    display: none;
+  }
+  .inspector-close {
+    display: grid;
+  }
+}
+@media (max-width: 760px) {
+  .node-inspector {
+    top: auto;
+    left: 0;
+    right: 0;
+    bottom: calc(72px + env(safe-area-inset-bottom));
+    width: auto;
+    max-height: 60dvh;
+    border-left: 0;
+    border-top: 1px solid var(--line);
+    border-radius: 20px 20px 0 0;
   }
 }

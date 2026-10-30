@@ -5,6 +5,7 @@ import {
   useRef,
   useState,
   type ReactNode,
+  type RefObject,
 } from 'react';
 import { AudioLines, Download, Pause, Play, X } from 'lucide-react';
 import { AnimatedIcon } from './AnimatedIcon';
@@ -13,12 +14,19 @@ import { api } from '../lib/api';
 // audio keeps playing while you move between pages. Call recordings need the
 // auth header, so they're fetched as a blob and played from an object URL;
 // audio files have a public playback URL and are played from it directly.
+//
+// iOS Safari only starts audio from inside a tap. A recording arrives after an
+// async fetch, so one <audio> element lives here for good and play() starts a
+// short silent clip on it during the tap; that unlocks the element, and the
+// recording then plays on it once it has loaded.
 export type Track = {
   title: string;
   subtitle?: string;
 } & (
   { recordingId: string; src?: never } | { src: string; recordingId?: never }
 );
+const SILENCE =
+  'data:audio/wav;base64,UklGRmQBAABXQVZFZm10IBAAAAABAAEAQB8AAIA+AAACABAAZGF0YUABAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAA==';
 type PlayerCtx = {
   track: Track | null;
   play: (t: Track) => void;
@@ -32,14 +40,37 @@ export function usePlayer() {
 }
 export function PlayerProvider({ children }: { children: ReactNode }) {
   const [track, setTrack] = useState<Track | null>(null);
-  const value = { track, play: setTrack, close: () => setTrack(null) };
+  const audioRef = useRef<HTMLAudioElement>(null);
+  const play = (t: Track) => {
+    const a = audioRef.current;
+    if (a) {
+      a.src = SILENCE;
+      a.play().catch(() => {});
+    }
+    // On phones a drawer is a bottom sheet over the docked player, so close it.
+    if (window.matchMedia('(max-width: 639px)').matches)
+      document
+        .querySelectorAll<HTMLDialogElement>('dialog.drawer[open]')
+        .forEach((d) => d.close());
+    setTrack(t);
+  };
+  const close = () => {
+    const a = audioRef.current;
+    if (a) {
+      a.pause();
+      a.removeAttribute('src');
+      a.load();
+    }
+    setTrack(null);
+  };
   return (
-    <Ctx.Provider value={value}>
+    <Ctx.Provider value={{ track, play, close }}>
       {children}
+      <audio ref={audioRef} preload="auto" playsInline hidden />
       {track && (
         <>
           <div className="player-spacer" aria-hidden="true" />
-          <PlayerBar track={track} onClose={value.close} />
+          <PlayerBar track={track} audioRef={audioRef} onClose={close} />
         </>
       )}
     </Ctx.Provider>
@@ -51,8 +82,15 @@ const clock = (s: number) => {
   const m = Math.floor(s / 60);
   return `${m}:${String(Math.floor(s % 60)).padStart(2, '0')}`;
 };
-function PlayerBar({ track, onClose }: { track: Track; onClose: () => void }) {
-  const audioRef = useRef<HTMLAudioElement>(null);
+function PlayerBar({
+  track,
+  audioRef,
+  onClose,
+}: {
+  track: Track;
+  audioRef: RefObject<HTMLAudioElement | null>;
+  onClose: () => void;
+}) {
   const [src, setSrc] = useState('');
   const [failed, setFailed] = useState(false);
   const [playing, setPlaying] = useState(false);
@@ -86,9 +124,49 @@ function PlayerBar({ track, onClose }: { track: Track; onClose: () => void }) {
       if (url) URL.revokeObjectURL(url);
     };
   }, [track.recordingId, track.src]);
+  // Load the track on the shared element and start it. The element was unlocked
+  // by the tap that chose the track, so iOS lets this play.
+  useEffect(() => {
+    const a = audioRef.current;
+    if (!a || !src) return;
+    a.src = src;
+    a.playbackRate = speed;
+    a.play().catch(() => setPlaying(false));
+    // Speed is applied separately below; only a new source restarts playback.
+  }, [src, audioRef]);
   useEffect(() => {
     if (audioRef.current) audioRef.current.playbackRate = speed;
-  }, [speed, src]);
+  }, [speed, audioRef]);
+  // Mirror the element's state into the bar.
+  useEffect(() => {
+    const a = audioRef.current;
+    if (!a) return;
+    const real = () => !!src && a.currentSrc !== SILENCE;
+    const onPlay = () => real() && setPlaying(true);
+    const onPause = () => setPlaying(false);
+    const onTime = () => real() && setTime(a.currentTime);
+    const onMeta = () =>
+      real() && Number.isFinite(a.duration) && setDuration(a.duration);
+    const onError = () => real() && setFailed(true);
+    a.addEventListener('play', onPlay);
+    a.addEventListener('playing', onPlay);
+    a.addEventListener('pause', onPause);
+    a.addEventListener('ended', onPause);
+    a.addEventListener('timeupdate', onTime);
+    a.addEventListener('loadedmetadata', onMeta);
+    a.addEventListener('durationchange', onMeta);
+    a.addEventListener('error', onError);
+    return () => {
+      a.removeEventListener('play', onPlay);
+      a.removeEventListener('playing', onPlay);
+      a.removeEventListener('pause', onPause);
+      a.removeEventListener('ended', onPause);
+      a.removeEventListener('timeupdate', onTime);
+      a.removeEventListener('loadedmetadata', onMeta);
+      a.removeEventListener('durationchange', onMeta);
+      a.removeEventListener('error', onError);
+    };
+  }, [src, audioRef]);
   const loading = !src && !failed;
   const toggle = () => {
     const a = audioRef.current;
@@ -117,18 +195,6 @@ function PlayerBar({ track, onClose }: { track: Track; onClose: () => void }) {
   const progress = duration ? (time / duration) * 100 : 0;
   return (
     <section className="player-bar" aria-label="Audio player">
-      <audio
-        ref={audioRef}
-        src={src || undefined}
-        autoPlay
-        onPlay={() => setPlaying(true)}
-        onPause={() => setPlaying(false)}
-        onEnded={() => setPlaying(false)}
-        onTimeUpdate={(e) => setTime(e.currentTarget.currentTime)}
-        onLoadedMetadata={(e) => setDuration(e.currentTarget.duration)}
-        onDurationChange={(e) => setDuration(e.currentTarget.duration)}
-        onError={() => src && setFailed(true)}
-      />
       <div className="player-meta">
         <span className="player-art" aria-hidden="true">
           <AudioLines size={18} />
