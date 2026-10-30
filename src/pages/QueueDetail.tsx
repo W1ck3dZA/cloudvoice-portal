@@ -21,6 +21,8 @@ import {
   Spinner,
   Status,
   StatusToggle,
+  rowOpen,
+  RowMain,
 } from '../components/UI';
 import { HoldButton } from '../components/HoldButton';
 import { AnimatedIcon } from '../components/AnimatedIcon';
@@ -196,26 +198,35 @@ export default function QueueDetail() {
           <Spinner />
         ) : (members.data || []).length ? (
           <div className="table-wrap">
-            <table>
+            <table className="rt">
               <thead>
                 <tr>
                   <th>Caller</th>
                   <th>Status</th>
                   <th>Agent</th>
                   <th>Joined</th>
-                  <th>Bridged</th>
+                  <th className="hide-md">Bridged</th>
                 </tr>
               </thead>
               <tbody>
                 {members.data!.map((m) => (
                   <tr key={m.id}>
-                    <td>{m.cid_number || m.cid_name || 'Unknown'}</td>
-                    <td>
+                    <RowMain
+                      sub={[
+                        m.agent_name ? `with ${m.agent_name}` : null,
+                        `joined ${new Date(m.joined_at).toLocaleTimeString()}`,
+                      ]
+                        .filter(Boolean)
+                        .join(' · ')}
+                    >
+                      {m.cid_number || m.cid_name || 'Unknown'}
+                    </RowMain>
+                    <td className="c-end">
                       <Status value={m.status} />
                     </td>
                     <td>{m.agent_name || '—'}</td>
                     <td>{new Date(m.joined_at).toLocaleTimeString()}</td>
-                    <td>
+                    <td className="hide-md">
                       {m.bridged_at
                         ? new Date(m.bridged_at).toLocaleTimeString()
                         : '—'}
@@ -251,7 +262,7 @@ export default function QueueDetail() {
           <Spinner />
         ) : (tiers.data || []).length ? (
           <div className="table-wrap">
-            <table>
+            <table className="rt">
               <thead>
                 <tr>
                   <th>Agent</th>
@@ -265,13 +276,16 @@ export default function QueueDetail() {
               <tbody>
                 {tiers.data!.map((t) => (
                   <tr key={t.agent_id}>
-                    <td>
+                    <RowMain
+                      title={t.agent_name}
+                      sub={`${humanize(t.agent_status)} · level ${t.level} · position ${t.position}`}
+                    >
                       <strong>{t.agent_name}</strong>
-                    </td>
+                    </RowMain>
                     <td>
                       <Status value={t.agent_status} />
                     </td>
-                    <td>{humanize(t.agent_state)}</td>
+                    <td className="hide-md">{humanize(t.agent_state)}</td>
                     <td>
                       <input
                         className="mini-input"
@@ -308,7 +322,7 @@ export default function QueueDetail() {
                         }
                       />
                     </td>
-                    <td>
+                    <td className="c-end">
                       <HoldButton
                         iconOnly
                         aria-label={`Remove ${t.agent_name} from this queue`}

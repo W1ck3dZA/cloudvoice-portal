@@ -19,6 +19,8 @@ import {
   StatusToggle,
   Toggle,
   HoldToDelete,
+  rowOpen,
+  RowMain,
 } from '../components/UI';
 import {
   CopyValue,
@@ -172,30 +174,41 @@ export default function Messaging() {
             <Spinner />
           ) : (data.data || []).length ? (
             <div className="table-wrap">
-              <table>
+              <table className="rt">
                 <thead>
                   <tr>
                     <th>Direction</th>
                     <th>From</th>
                     <th>To</th>
-                    <th>Message</th>
+                    <th className="hide-md">Message</th>
                     <th>Status</th>
-                    <th>Segments</th>
+                    <th className="hide-md">Segments</th>
                     <th>Sent</th>
                     <th />
                   </tr>
                 </thead>
                 <tbody>
                   {data.data!.map((m) => (
-                    <tr key={m.id}>
-                      <td>{humanize(m.direction)}</td>
+                    <tr key={m.id} {...rowOpen(() => setView(m))}>
+                      <RowMain
+                        onOpen={() => setView(m)}
+                        label={`Open the message ${m.direction === 'inbound' ? 'from' : 'to'} ${m.direction === 'inbound' ? m.from_number : m.to_number}`}
+                        title={
+                          m.direction === 'inbound'
+                            ? m.from_number || 'Unknown sender'
+                            : m.to_number
+                        }
+                        sub={m.body}
+                      >
+                        {humanize(m.direction)}
+                      </RowMain>
                       <td>{m.from_number || '—'}</td>
                       <td>{m.to_number}</td>
-                      <td className="truncate">{m.body}</td>
-                      <td>
+                      <td className="truncate hide-md">{m.body}</td>
+                      <td className="c-end">
                         <Status value={m.status} />
                       </td>
-                      <td>{m.segments}</td>
+                      <td className="hide-md">{m.segments}</td>
                       <td>{new Date(m.created_at).toLocaleString()}</td>
                       <td>
                         <RowActions onView={() => setView(m)} />

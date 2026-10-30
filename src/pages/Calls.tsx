@@ -3,7 +3,12 @@ import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query';
 import { PhoneCall, PhoneOutgoing, PlayCircle, Search } from 'lucide-react';
 import { AnimatedIcon } from '../components/AnimatedIcon';
 import { usePlayer } from '../components/AudioPlayer';
-import { CallDetails } from '../components/CallDetails';
+import {
+  CallDetails,
+  callParty,
+  callSummary,
+  callTrack,
+} from '../components/CallDetails';
 import { appsApi, callsApi, errorMessage, gatewaysApi } from '../lib/api';
 import { answeredBy, humanize } from '../lib/labels';
 import type { Call } from '../types/api';
@@ -21,6 +26,8 @@ import {
   Status,
   Toggle,
   ConfirmAction,
+  rowOpen,
+  RowMain,
 } from '../components/UI';
 const PAGE_SIZE = 25;
 
@@ -57,19 +64,7 @@ export default function Calls() {
   const [page, setPage] = useState(1);
   const [view, setView] = useState<Call | null>(null);
   const player = usePlayer();
-  const playCall = (c: Call) =>
-    c.recording_id &&
-    player.play({
-      recordingId: c.recording_id,
-      title: `${c.from_number} to ${c.to_number}`,
-      subtitle: [
-        new Date(c.initiated_at).toLocaleString(),
-        c.duration_seconds == null ? null : `${c.duration_seconds}s`,
-        c.amd_result ? answeredBy(c) : null,
-      ]
-        .filter(Boolean)
-        .join(' · '),
-    });
+  const playCall = (c: Call) => c.recording_id && player.play(callTrack(c));
   const [open, setOpen] = useState(false);
   const [form, setForm] = useState(blank);
   const [err, setErr] = useState('');
@@ -174,32 +169,39 @@ export default function Calls() {
           <Spinner />
         ) : rows.length ? (
           <div className="table-wrap">
-            <table>
+            <table className="rt">
               <thead>
                 <tr>
                   <th>Direction</th>
-                  <th>From</th>
+                  <th className="hide-md">From</th>
                   <th>To</th>
                   <th>Status</th>
-                  <th>Hangup cause</th>
-                  <th>Answered by</th>
-                  <th>Duration</th>
+                  <th className="hide-md">Hangup cause</th>
+                  <th className="hide-md">Answered by</th>
+                  <th className="hide-md">Duration</th>
                   <th>Initiated</th>
                   <th />
                 </tr>
               </thead>
               <tbody>
                 {rows.map((c) => (
-                  <tr key={c.id}>
-                    <td className="caps">{c.direction}</td>
-                    <td>{c.from_number}</td>
+                  <tr key={c.id} {...rowOpen(() => setView(c))}>
+                    <RowMain
+                      onOpen={() => setView(c)}
+                      label={`Open the call with ${callParty(c)}`}
+                      title={callParty(c)}
+                      sub={callSummary(c)}
+                    >
+                      <span className="caps">{c.direction}</span>
+                    </RowMain>
+                    <td className="hide-md">{c.from_number}</td>
                     <td>{c.to_number}</td>
-                    <td>
+                    <td className="c-end">
                       <Status value={c.status} />
                     </td>
-                    <td>{humanize(c.hangup_cause)}</td>
-                    <td>{answeredBy(c)}</td>
-                    <td>
+                    <td className="hide-md">{humanize(c.hangup_cause)}</td>
+                    <td className="hide-md">{answeredBy(c)}</td>
+                    <td className="hide-md">
                       {c.duration_seconds == null
                         ? '—'
                         : `${c.duration_seconds}s`}
@@ -263,6 +265,8 @@ export default function Calls() {
               apps.data?.find((a) => a.id === view.application_id)?.name
             }
             onPlay={() => playCall(view)}
+            onHangup={() => hangup.mutate(view.id)}
+            hangingUp={hangup.isPending}
           />
         )}
       </Drawer>

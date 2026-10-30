@@ -9,7 +9,35 @@ import {
   DetailSummary,
   DetailView,
 } from './Details';
-import { Status } from './UI';
+import { ConfirmAction, Status } from './UI';
+
+/** The other party: who was called on outbound calls, who called on inbound ones. */
+export const callParty = (c: Call) =>
+  c.direction === 'inbound' ? c.from_number : c.to_number;
+/** One short line for lists on phones: direction, who answered, talk time and start time. */
+export const callSummary = (c: Call) =>
+  [
+    c.direction === 'inbound' ? 'Inbound' : 'Outbound',
+    c.amd_result ? answeredBy(c) : null,
+    c.duration_seconds == null ? null : `${c.duration_seconds}s`,
+    new Date(c.initiated_at).toLocaleString(),
+  ]
+    .filter(Boolean)
+    .join(' · ');
+/** The bottom player's track for a call's recording. */
+export const callTrack = (c: Call) => ({
+  recordingId: c.recording_id!,
+  title: `${c.from_number} to ${c.to_number}`,
+  subtitle: [
+    new Date(c.initiated_at).toLocaleString(),
+    c.duration_seconds == null ? null : `${c.duration_seconds}s`,
+    c.amd_result ? answeredBy(c) : null,
+  ]
+    .filter(Boolean)
+    .join(' · '),
+});
+const ENDED = ['completed', 'failed', 'cancelled', 'no_answer', 'busy'];
+export const callIsLive = (c: Call) => !ENDED.includes(c.status);
 // Body of the "Call details" drawer: a summary of who called whom and how it
 // went, then the timeline, answering machine detection and technical details.
 const AMD_SETTINGS: [string, string, string][] = [
@@ -33,10 +61,15 @@ export function CallDetails({
   call,
   applicationName,
   onPlay,
+  onHangup,
+  hangingUp = false,
 }: {
   call: Call;
   applicationName?: string;
   onPlay?: () => void;
+  /** Offered while the call is live. */
+  onHangup?: () => void;
+  hangingUp?: boolean;
 }) {
   const ringing = secondsBetween(call.initiated_at, call.answered_at);
   const talk = call.duration_seconds;
@@ -65,6 +98,15 @@ export function CallDetails({
           <button className="btn primary" onClick={onPlay}>
             <Play size={15} fill="currentColor" /> Play recording
           </button>
+        )}
+        {onHangup && callIsLive(call) && (
+          <ConfirmAction
+            label={hangingUp ? 'Hanging up…' : 'Hang up'}
+            confirmLabel="Yes, hang up"
+            consequence="The call ends for everyone on it straight away."
+            busy={hangingUp}
+            onConfirm={onHangup}
+          />
         )}
       </DetailSummary>
 

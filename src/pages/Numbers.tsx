@@ -18,6 +18,8 @@ import {
   StatusToggle,
   Toggle,
   HoldToDelete,
+  rowOpen,
+  RowMain,
 } from '../components/UI';
 import {
   ChoiceChips,
@@ -145,23 +147,31 @@ export default function Numbers() {
           <Spinner />
         ) : filtered.length ? (
           <div className="table-wrap">
-            <table>
+            <table className="rt">
               <thead>
                 <tr>
                   <th>Number</th>
                   <th>Capabilities</th>
                   <th>Application</th>
                   <th>Status</th>
-                  <th>Created</th>
+                  <th className="hide-md">Created</th>
                   <th />
                 </tr>
               </thead>
               <tbody>
                 {filtered.map((n) => (
-                  <tr key={n.id}>
-                    <td>
+                  <tr key={n.id} {...rowOpen(() => openView(n))}>
+                    <RowMain
+                      onOpen={() => openView(n)}
+                      label={`Open ${n.e164}`}
+                      sub={[
+                        n.capabilities.join(', ').toUpperCase(),
+                        apps.data?.find((a) => a.id === n.application_id)
+                          ?.name || 'No application',
+                      ].join(' · ')}
+                    >
                       <strong>{n.e164}</strong>
-                    </td>
+                    </RowMain>
                     <td>
                       <div className="chips">
                         {n.capabilities.map((c) => (
@@ -175,7 +185,7 @@ export default function Numbers() {
                       {apps.data?.find((a) => a.id === n.application_id)
                         ?.name || '—'}
                     </td>
-                    <td>
+                    <td className="c-end">
                       <StatusToggle
                         checked={n.active}
                         onChange={() => toggleActive.mutate(n)}
@@ -185,7 +195,9 @@ export default function Numbers() {
                         }
                       />
                     </td>
-                    <td>{new Date(n.created_at).toLocaleDateString()}</td>
+                    <td className="hide-md">
+                      {new Date(n.created_at).toLocaleDateString()}
+                    </td>
                     <td>
                       <RowActions
                         onView={() => openView(n)}

@@ -1,5 +1,5 @@
 import { useState } from 'react';
-import { useQuery, useQueryClient } from '@tanstack/react-query';
+import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query';
 import { ChevronRight, Music, Play, PlayCircle, Upload } from 'lucide-react';
 import { AnimatedIcon } from '../components/AnimatedIcon';
 import { audioFilesApi, authApi, errorMessage } from '../lib/api';
@@ -14,7 +14,11 @@ import {
   Field,
   PageHeader,
   Spinner,
+  rowOpen,
+  RowMain,
+  HoldToDelete,
 } from '../components/UI';
+import { HoldButton } from '../components/HoldButton';
 import { usePlayer } from '../components/AudioPlayer';
 import {
   CopyValue,
@@ -127,6 +131,16 @@ function AudioLibrary({ orgId, role }: { orgId: string; role?: Role | null }) {
       });
     }
   }
+  const del = useMutation({
+    mutationFn: (f: AudioFile) => audioFilesApi.remove(f.id, orgId),
+    onSuccess: (_d, f) => {
+      void qc.invalidateQueries({ queryKey: ['audio-files', orgId] });
+      if (player.track?.src === f.url) player.close();
+      setViewing(null);
+      showToast({ kind: 'success', message: `Deleted ${f.name}.` });
+    },
+    onError: (e) => showToast({ kind: 'error', message: errorMessage(e) }),
+  });
   const play = (f: AudioFile) =>
     player.play({
       src: f.url,
@@ -173,29 +187,36 @@ function AudioLibrary({ orgId, role }: { orgId: string; role?: Role | null }) {
           </div>
         ) : files.length ? (
           <div className="table-wrap">
-            <table>
+            <table className="rt">
               <thead>
                 <tr>
                   <th scope="col">Name</th>
                   <th scope="col">Format</th>
                   <th scope="col">Duration</th>
-                  <th scope="col">Size</th>
+                  <th scope="col" className="hide-md">
+                    Size
+                  </th>
                   <th scope="col" aria-label="Actions" />
                 </tr>
               </thead>
               <tbody>
                 {files.map((file) => (
-                  <tr key={file.id}>
-                    <td>
+                  <tr key={file.id} {...rowOpen(() => setViewing(file))}>
+                    <RowMain
+                      onOpen={() => setViewing(file)}
+                      label={`Open ${file.name}`}
+                      title={file.name}
+                      sub={`${format(file)} · ${duration(file.duration_seconds)} · ${size(file.size_bytes)}`}
+                    >
                       <div className="cell-stack audio-name">
                         <strong>{file.name}</strong>
                         <span>{file.original_filename}</span>
                       </div>
-                    </td>
+                    </RowMain>
                     <td>{format(file)}</td>
                     <td>{duration(file.duration_seconds)}</td>
-                    <td>{size(file.size_bytes)}</td>
-                    <td>
+                    <td className="hide-md">{size(file.size_bytes)}</td>
+                    <td className="c-end">
                       <div className="row-actions">
                         <button
                           className="icon-btn"
@@ -206,13 +227,13 @@ function AudioLibrary({ orgId, role }: { orgId: string; role?: Role | null }) {
                           <PlayCircle size={18} />
                         </button>
                         <button
-                          className="table-action"
+                          className="table-action wide-only"
                           onClick={() => void copy(file.url)}
                         >
                           Copy URL
                         </button>
                         <button
-                          className="table-action"
+                          className="table-action wide-only hide-sm"
                           onClick={() => setViewing(file)}
                         >
                           View{' '}
@@ -225,21 +246,20 @@ function AudioLibrary({ orgId, role }: { orgId: string; role?: Role | null }) {
                         {canManage && (
                           <>
                             <button
-                              className="table-action"
+                              className="table-action wide-only"
                               onClick={() =>
                                 setAction({ mode: 'rename', file })
                               }
                             >
                               Rename
                             </button>
-                            <button
-                              className="table-action danger-text"
-                              onClick={() =>
-                                setAction({ mode: 'delete', file })
-                              }
-                            >
-                              Delete
-                            </button>
+                            <span className="hide-sm">
+                              <HoldButton
+                                iconOnly
+                                aria-label={`Delete ${file.name}`}
+                                onHold={() => del.mutate(file)}
+                              />
+                            </span>
                           </>
                         )}
                       </div>
@@ -332,16 +352,14 @@ function AudioLibrary({ orgId, role }: { orgId: string; role?: Role | null }) {
                 >
                   Rename
                 </button>
-                <button
-                  className="btn danger"
-                  onClick={() => {
-                    setAction({ mode: 'delete', file: viewing });
-                    setViewing(null);
-                  }}
-                >
-                  Delete
-                </button>
               </DrawerActions>
+            )}
+            {canManage && (
+              <HoldToDelete
+                label="Hold to delete audio"
+                consequence="Its playback URL stops working. Update any applications and call-center sounds that use it first. This can't be undone."
+                onHold={() => del.mutate(viewing)}
+              />
             )}
           </DetailView>
         )}

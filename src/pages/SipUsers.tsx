@@ -19,6 +19,8 @@ import {
   Toggle,
   ConfirmAction,
   HoldToDelete,
+  rowOpen,
+  RowMain,
 } from '../components/UI';
 import {
   CopyValue,
@@ -127,27 +129,47 @@ export default function SipUsers() {
           <Spinner />
         ) : (data.data || []).length ? (
           <div className="table-wrap">
-            <table>
+            <table className="rt">
               <thead>
                 <tr>
                   <th>Extension</th>
                   <th>Display name</th>
-                  <th>Realm</th>
-                  <th>Voicemail</th>
+                  <th className="hide-md">Realm</th>
+                  <th className="hide-md">Voicemail</th>
                   <th>Status</th>
                   <th />
                 </tr>
               </thead>
               <tbody>
                 {data.data!.map((u) => (
-                  <tr key={u.id}>
-                    <td>
+                  <tr
+                    key={u.id}
+                    {...rowOpen(() => {
+                      setSelected(u);
+                      setMode('view');
+                    })}
+                  >
+                    <RowMain
+                      onOpen={() => {
+                        setSelected(u);
+                        setMode('view');
+                      }}
+                      label={`Open SIP user ${u.extension}`}
+                      title={
+                        u.display_name
+                          ? `${u.extension} · ${u.display_name}`
+                          : u.extension
+                      }
+                      sub={`${u.realm} · voicemail ${u.voicemail_enabled ? 'on' : 'off'}`}
+                    >
                       <strong>{u.extension}</strong>
-                    </td>
+                    </RowMain>
                     <td>{u.display_name || '—'}</td>
-                    <td>{u.realm}</td>
-                    <td>{u.voicemail_enabled ? 'Enabled' : 'Off'}</td>
-                    <td>
+                    <td className="hide-md">{u.realm}</td>
+                    <td className="hide-md">
+                      {u.voicemail_enabled ? 'Enabled' : 'Off'}
+                    </td>
+                    <td className="c-end">
                       <StatusToggle
                         checked={u.active}
                         onChange={() => toggleActive.mutate(u)}
