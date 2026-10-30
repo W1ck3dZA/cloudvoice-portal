@@ -1,34 +1,32 @@
-import { useState } from 'react';
 import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query';
 import { Download, FileAudio, PlayCircle } from 'lucide-react';
 import { api, recordingsApi } from '../lib/api';
 import type { Recording } from '../types/api';
-import {
-  Card,
-  Drawer,
-  Empty,
-  PageHeader,
-  RowActions,
-  Spinner,
-} from '../components/UI';
+import { usePlayer } from '../components/AudioPlayer';
+import { Card, Empty, PageHeader, RowActions, Spinner } from '../components/UI';
 export default function Recordings() {
   const qc = useQueryClient();
   const data = useQuery({
     queryKey: ['recordings'],
     queryFn: recordingsApi.list,
   });
-  const [selected, setSelected] = useState<Recording | null>(null);
-  const [audio, setAudio] = useState('');
+  const player = usePlayer();
   const del = useMutation({
     mutationFn: recordingsApi.remove,
     onSuccess: () => qc.invalidateQueries({ queryKey: ['recordings'] }),
   });
-  async function play(r: Recording) {
-    setSelected(r);
-    const res = await api.get(`/v1/recordings/${r.id}/download`, {
-      responseType: 'blob',
+  function play(r: Recording) {
+    player.play({
+      recordingId: r.id,
+      title: r.call_id ? `Call ${r.call_id}` : 'Recording',
+      subtitle: [
+        new Date(r.created_at).toLocaleString(),
+        r.duration_seconds == null ? null : `${r.duration_seconds}s`,
+        `${(r.size_bytes / 1024 / 1024).toFixed(2)} MB`,
+      ]
+        .filter(Boolean)
+        .join(' · '),
     });
-    setAudio(URL.createObjectURL(res.data));
   }
   async function download(r: Recording) {
     const res = await api.get(`/v1/recordings/${r.id}/download`, {
@@ -113,32 +111,6 @@ export default function Recordings() {
           />
         )}
       </Card>
-      <Drawer
-        open={!!selected}
-        onClose={() => {
-          setSelected(null);
-          if (audio) URL.revokeObjectURL(audio);
-          setAudio('');
-        }}
-        title="Recording player"
-      >
-        {selected && (
-          <>
-            <div className="recording-card">
-              <strong>Call {selected.call_id || '—'}</strong>
-              <span>
-                {selected.duration_seconds || 0}s ·{' '}
-                {(selected.size_bytes / 1024 / 1024).toFixed(2)} MB
-              </span>
-            </div>
-            {audio ? (
-              <audio controls autoPlay src={audio} className="audio-player" />
-            ) : (
-              <Spinner />
-            )}
-          </>
-        )}
-      </Drawer>
     </>
   );
 }

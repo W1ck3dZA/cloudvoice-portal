@@ -1,7 +1,8 @@
 import { useState } from 'react';
 import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query';
 import { PhoneCall, PhoneOutgoing, PlayCircle, Search } from 'lucide-react';
-import { RecordingPlayer } from '../components/RecordingPlayer';
+import { usePlayer } from '../components/AudioPlayer';
+import { CallDetails } from '../components/CallDetails';
 import { appsApi, callsApi, errorMessage, gatewaysApi } from '../lib/api';
 import { answeredBy, humanize } from '../lib/labels';
 import type { Call } from '../types/api';
@@ -53,7 +54,20 @@ export default function Calls() {
   const [q, setQ] = useState('');
   const [page, setPage] = useState(1);
   const [view, setView] = useState<Call | null>(null);
-  const [playing, setPlaying] = useState<Call | null>(null);
+  const player = usePlayer();
+  const playCall = (c: Call) =>
+    c.recording_id &&
+    player.play({
+      recordingId: c.recording_id,
+      title: `${c.from_number} to ${c.to_number}`,
+      subtitle: [
+        new Date(c.initiated_at).toLocaleString(),
+        c.duration_seconds == null ? null : `${c.duration_seconds}s`,
+        c.amd_result ? answeredBy(c) : null,
+      ]
+        .filter(Boolean)
+        .join(' · '),
+    });
   const [open, setOpen] = useState(false);
   const [form, setForm] = useState(blank);
   const [err, setErr] = useState('');
@@ -197,7 +211,7 @@ export default function Calls() {
                             className="icon-btn"
                             aria-label="Play recording"
                             title="Play recording"
-                            onClick={() => setPlaying(c)}
+                            onClick={() => playCall(c)}
                           >
                             <PlayCircle size={18} />
                           </button>
@@ -240,48 +254,15 @@ export default function Calls() {
           />
         )}
       </Card>
-      <RecordingPlayer call={playing} onClose={() => setPlaying(null)} />
       <Drawer open={!!view} onClose={() => setView(null)} title="Call details">
         {view && (
-          <div className="detail-grid">
-            {[
-              ['Call ID', view.id],
-              ['Direction', view.direction],
-              ['From', view.from_number],
-              ['To', view.to_number],
-              ['Status', humanize(view.status)],
-              ['Hangup cause', humanize(view.hangup_cause)],
-              ['Answered by', answeredBy(view)],
-              [
-                'Duration',
-                view.duration_seconds == null
-                  ? '—'
-                  : `${view.duration_seconds}s`,
-              ],
-              [
-                'Application',
-                apps.data?.find((a) => a.id === view.application_id)?.name ||
-                  '—',
-              ],
-              ['Recording', view.record_calls ? 'Enabled' : 'Off'],
-              ['Started', new Date(view.initiated_at).toLocaleString()],
-              [
-                'Answered',
-                view.answered_at
-                  ? new Date(view.answered_at).toLocaleString()
-                  : '—',
-              ],
-              [
-                'Ended',
-                view.ended_at ? new Date(view.ended_at).toLocaleString() : '—',
-              ],
-            ].map(([a, b]) => (
-              <div className="detail-item" key={String(a)}>
-                <span>{a}</span>
-                <strong>{b as any}</strong>
-              </div>
-            ))}
-          </div>
+          <CallDetails
+            call={view}
+            applicationName={
+              apps.data?.find((a) => a.id === view.application_id)?.name
+            }
+            onPlay={() => playCall(view)}
+          />
         )}
       </Drawer>
       <Drawer

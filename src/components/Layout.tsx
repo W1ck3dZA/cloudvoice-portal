@@ -1,6 +1,7 @@
 import { useEffect, useRef, useState } from 'react';
 import { useQuery } from '@tanstack/react-query';
 import { NavLink, Outlet, useLocation, useNavigate } from 'react-router-dom';
+import { PlayerProvider } from './AudioPlayer';
 import {
   Activity,
   AppWindow,
@@ -228,11 +229,13 @@ export function Layout() {
           </div>
         </header>
         <main className={'page' + (isFullBleed ? ' page-full' : '')}>
-          {session && !session.orgId && location.pathname !== '/settings' ? (
-            <NoOrganisation />
-          ) : (
-            <Outlet />
-          )}
+          <PlayerProvider>
+            {session && !session.orgId && location.pathname !== '/settings' ? (
+              <NoOrganisation />
+            ) : (
+              <Outlet />
+            )}
+          </PlayerProvider>
         </main>
       </div>
       {open && <div className="scrim" onClick={() => setOpen(false)} />}
