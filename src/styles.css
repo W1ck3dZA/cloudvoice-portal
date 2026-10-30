@@ -4040,27 +4040,22 @@ tr.tap:hover td {
   border-left: 2px solid var(--line2);
   transform: translateX(-1px);
 }
-.fc-branch::after,
-.fc-foot::after {
+.fc-branch::after {
   content: '';
   position: absolute;
+  top: 0;
   left: 0;
   right: 0;
   border-top: 2px solid var(--line2);
 }
-.fc-branch::after {
-  top: 0;
-}
-.fc-branch:first-child::after,
-.fc-branch:first-child > .fc-foot::after {
+.fc-branch:first-child::after {
   left: 50%;
 }
-.fc-branch:last-child::after,
-.fc-branch:last-child > .fc-foot::after {
+/* The joining bar is the last child, so the last branch is the one before it. */
+.fc-branch:nth-last-child(2)::after {
   right: 50%;
 }
-.fc-branch:only-child::after,
-.fc-branch:only-child > .fc-foot::after {
+.fc-branch:first-child:nth-last-child(2)::after {
   display: none;
 }
 .fc-out {
@@ -4083,21 +4078,41 @@ tr.tap:hover td {
 .fc-branch .fc-list > .fc-add-wrap:first-child::before {
   height: 16px;
 }
-/* Lines from the end of each branch down to the joining bar. */
+/* A branch that joins runs a line down to the bar; the bar is placed by FlowBuilder from the joining branches. */
 .fc-fill {
   flex: 1;
   min-height: 16px;
   border-left: 2px solid var(--line2);
   transform: translateX(-1px);
 }
-.fc-foot {
-  position: relative;
-  align-self: stretch;
-  height: 0;
-  margin: 0 -10px;
-}
-.fc-foot::after {
+.fc-join {
+  position: absolute;
   bottom: 0;
+  border-top: 2px solid var(--line2);
+}
+/* Where nothing follows, a branch ends the call: a small End under it. */
+.fc-stop {
+  position: relative;
+  margin: 16px 0 4px;
+  padding: 4px 10px;
+  border-radius: 999px;
+  background: var(--soft);
+  border: 1px solid var(--line2);
+  color: var(--mute);
+  font-size: 11px;
+  font-weight: 700;
+}
+.fc-stop::before {
+  content: '';
+  position: absolute;
+  bottom: 100%;
+  left: 50%;
+  height: 16px;
+  border-left: 2px solid var(--line2);
+  transform: translateX(-1px);
+}
+.fc-add-wrap.detached::before {
+  display: none;
 }
 /* "Add step" at the end of every list, with an inline picker. */
 .fc-add {
@@ -4250,8 +4265,14 @@ tr.tap:hover td {
   }
   .fc-branch::after,
   .fc-fill,
-  .fc-foot {
-    display: none;
+  .fc-join {
+    display: none !important;
+  }
+  .fc-stop {
+    align-self: flex-start;
+  }
+  .fc-stop::before {
+    left: 20px;
   }
   .fc-out {
     align-self: flex-start;
