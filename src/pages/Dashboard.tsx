@@ -3,6 +3,7 @@ import { useQuery } from '@tanstack/react-query';
 import { Activity, AppWindow, PhoneCall, RadioTower } from 'lucide-react';
 import { Area, AreaChart, ResponsiveContainer, Tooltip, XAxis } from 'recharts';
 import { callsApi, numbersApi, appsApi, smsApi } from '../lib/api';
+import { answeredBy } from '../lib/labels';
 import { useSession } from '../lib/session';
 import { Card, PageHeader, Spinner, Status } from '../components/UI';
 type Range = 'today' | 'week' | 'month';
@@ -254,6 +255,7 @@ export default function Dashboard() {
                 <th>From</th>
                 <th>To</th>
                 <th>Status</th>
+                <th>Answered by</th>
                 <th>Duration</th>
                 <th>Started</th>
               </tr>
@@ -267,6 +269,7 @@ export default function Dashboard() {
                   <td>
                     <Status value={c.status} />
                   </td>
+                  <td>{answeredBy(c)}</td>
                   <td>
                     {c.duration_seconds == null
                       ? '—'
