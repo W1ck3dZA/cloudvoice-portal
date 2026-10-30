@@ -1,4 +1,4 @@
-import { useEffect, useMemo, useState } from 'react';
+import { useEffect, useRef, useState, type ReactNode } from 'react';
 import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query';
 import { useNavigate, useParams } from 'react-router-dom';
 import {
@@ -13,11 +13,13 @@ import {
   Pause,
   PhoneForwarded,
   Play,
+  Plus,
   Reply,
   Save,
   UsersRound,
   Voicemail,
   Volume2,
+  X,
 } from 'lucide-react';
 import { AnimatedIcon } from '../components/AnimatedIcon';
 import {
@@ -172,6 +174,35 @@ function label(v: Verb) {
       return `${v.code} ${v.reason}`.trim() || 'Set response code';
   }
 }
+/** Where a node's branches live, in the order they're drawn. Flow carries on to the next node after a branch. */
+function outputsOf(v: Verb): { key: Path; label: string }[] {
+  if (v.verb === 'amd')
+    return (['human', 'machine', 'unknown'] as const).map((b) => ({
+      key: ['branches', b],
+      label: AMD_BRANCH_LABEL[b],
+    }));
+  if (v.verb === 'gather')
+    return [
+      ...Object.keys(v.branches || {}).map((k) => ({
+        key: ['branches', k],
+        label: `Pressed ${k}`,
+      })),
+      { key: ['defaultVerbs'], label: 'No match' },
+    ];
+  if (v.verb === 'queue')
+    return [
+      { key: ['answeredVerbs'], label: 'Answered' },
+      { key: ['timeoutVerbs'], label: 'Timed out' },
+      { key: ['abandonVerbs'], label: 'Caller hung up' },
+    ];
+  return [];
+}
+const samePath = (a: Path | null, b: Path | null) =>
+  !!a && !!b && a.length === b.length && a.every((x, i) => x === b[i]);
+const verbName = (v: Verb) =>
+  catalog.find((x) => x[0] === v.verb)?.[1] || v.verb;
+const verbIcon = (v: Verb) => catalog.find((x) => x[0] === v.verb)?.[2] || Play;
+
 export default function FlowBuilder() {
   const { id } = useParams();
   const nav = useNavigate();
@@ -191,19 +222,29 @@ export default function FlowBuilder() {
     queryFn: sipUsersApi.list,
   });
   const [root, setRoot] = useState<Verb[]>([]);
-  const [path, setPath] = useState<Path>([]);
-  const [selected, setSelected] = useState<number | null>(null);
-  const [dragIndex, setDragIndex] = useState<number | null>(null);
+  // The selected node's full path, e.g. [0, 'branches', 'human', 1].
+  const [sel, setSel] = useState<Path | null>(null);
+  // The list the palette adds to: after the selected node if it's in this list, else at the end.
+  const [active, setActive] = useState<Path>([]);
+  // The list whose inline "Add step" picker is open.
+  const [picker, setPicker] = useState<Path | null>(null);
+  const [drag, setDrag] = useState<Path | null>(null);
   const [dirty, setDirty] = useState(false);
   const [err, setErr] = useState('');
+  const canvasRef = useRef<HTMLElement>(null);
   useEffect(() => {
     if (app.data) {
       setRoot(structuredClone(app.data.flow || []));
       setDirty(false);
     }
   }, [app.data]);
-  const current = getFlow(root, path);
-  const node = selected == null ? null : current[selected];
+  useEffect(() => {
+    const c = canvasRef.current;
+    if (c && app.data) c.scrollLeft = (c.scrollWidth - c.clientWidth) / 2;
+  }, [app.data]);
+  const node = sel
+    ? getFlow(root, sel.slice(0, -1))[sel[sel.length - 1] as number]
+    : null;
   const save = useMutation({
     mutationFn: () => appsApi.update(id!, { flow: root }),
     onSuccess: () => {
@@ -213,58 +254,224 @@ export default function FlowBuilder() {
     },
     onError: (e) => setErr(errorMessage(e)),
   });
-  function updateCurrent(next: Verb[]) {
-    setRoot((r) => setFlow(r, path, next));
+  function updateList(list: Path, next: Verb[]) {
+    setRoot((r) => setFlow(r, list, next));
     setDirty(true);
   }
-  function add(type: string) {
-    updateCurrent([...current, defaults[type]()]);
-    setSelected(current.length);
+  function insert(list: Path, type: string) {
+    const items = getFlow(root, list);
+    const at =
+      sel && samePath(sel.slice(0, -1), list)
+        ? (sel[sel.length - 1] as number) + 1
+        : items.length;
+    updateList(list, [
+      ...items.slice(0, at),
+      defaults[type](),
+      ...items.slice(at),
+    ]);
+    setSel([...list, at]);
+    setActive(list);
+    setPicker(null);
   }
   function patch(p: any) {
-    if (selected == null) return;
-    const next = [...current];
-    next[selected] = { ...next[selected], ...p } as Verb;
-    updateCurrent(next);
+    if (!sel || !node) return;
+    const list = sel.slice(0, -1);
+    const i = sel[sel.length - 1] as number;
+    const next = [...getFlow(root, list)];
+    next[i] = { ...next[i], ...p } as Verb;
+    updateList(list, next);
   }
-  function remove(i: number) {
-    updateCurrent(current.filter((_, x) => x !== i));
-    setSelected(null);
+  function remove(path: Path) {
+    const list = path.slice(0, -1);
+    const i = path[path.length - 1] as number;
+    updateList(
+      list,
+      getFlow(root, list).filter((_, x) => x !== i),
+    );
+    setSel(null);
+    setActive(list);
   }
-  function move(i: number, d: number) {
+  function move(path: Path, d: number) {
+    const list = path.slice(0, -1);
+    const i = path[path.length - 1] as number;
+    const items = [...getFlow(root, list)];
     const n = i + d;
-    if (n < 0 || n >= current.length) return;
-    const next = [...current];
-    [next[i], next[n]] = [next[n], next[i]];
-    updateCurrent(next);
-    setSelected(n);
+    if (n < 0 || n >= items.length) return;
+    [items[i], items[n]] = [items[n], items[i]];
+    updateList(list, items);
+    setSel([...list, n]);
   }
-  // Branches live on the selected node, so its index goes in the path.
-  function drill(childPath: Path) {
-    if (selected == null) return;
-    setPath([...path, selected, ...childPath]);
-    setSelected(null);
-  }
-  const crumbs = useMemo(() => {
-    const out = [{ label: 'Main flow', path: [] as Path }];
-    let p: Path = [];
-    for (let i = 0; i < path.length; i++) {
-      p = [...p, path[i]];
-      if (
-        typeof path[i] === 'string' &&
-        ['answeredVerbs', 'timeoutVerbs', 'abandonVerbs'].includes(
-          String(path[i]),
-        )
-      )
-        out.push({ label: String(path[i]).replace('Verbs', ''), path: [...p] });
-      if (i > 0 && path[i - 1] === 'branches')
-        out.push({
-          label: AMD_BRANCH_LABEL[String(path[i])] ?? `DTMF ${path[i]}`,
-          path: [...p],
-        });
+  // Drag to reorder within the same list.
+  function drop(onto: Path) {
+    if (!drag) return;
+    const list = onto.slice(0, -1);
+    if (samePath(drag.slice(0, -1), list) && !samePath(drag, onto)) {
+      const items = [...getFlow(root, list)];
+      const [item] = items.splice(drag[drag.length - 1] as number, 1);
+      items.splice(onto[onto.length - 1] as number, 0, item);
+      updateList(list, items);
+      setSel(onto);
     }
-    return out;
-  }, [path]);
+    setDrag(null);
+  }
+  // The inspector's branch buttons point the palette at that branch.
+  function focusBranch(childPath: Path) {
+    if (!sel) return;
+    setActive([...sel, ...childPath]);
+  }
+  function describe(list: Path) {
+    if (!list.length) return 'the main flow';
+    const parent = getFlow(root, list.slice(0, -2))[
+      list[list.length - 2] as number
+    ];
+    const key = list[list.length - 1];
+    const out =
+      list[list.length - 2] === 'branches'
+        ? undefined
+        : outputsOf(parent || ({} as Verb)).find((o) => o.key[0] === key);
+    if (out) return `${out.label}`;
+    // branches/<name>: the parent node sits three steps up.
+    const owner = getFlow(root, list.slice(0, -3))[
+      list[list.length - 3] as number
+    ];
+    return (
+      outputsOf(owner || ({} as Verb)).find(
+        (o) => o.key[1] === key && o.key[0] === 'branches',
+      )?.label ?? 'this branch'
+    );
+  }
+  const addTarget =
+    sel && samePath(sel.slice(0, -1), active) && node
+      ? `after ${verbName(node)}`
+      : `to ${describe(active)}`;
+
+  function renderList(list: Path): ReactNode {
+    const items = getFlow(root, list);
+    const isTarget = samePath(active, list);
+    return (
+      <div className="fc-list">
+        {items.map((v, i) => {
+          const p = [...list, i];
+          const outs = outputsOf(v);
+          const Icon = verbIcon(v);
+          return (
+            <div className="fc-step" key={`${v.verb}-${i}`}>
+              <div
+                draggable
+                className={
+                  'canvas-node fc-node ' + (samePath(sel, p) ? 'selected' : '')
+                }
+                onDragStart={(e) => {
+                  e.stopPropagation();
+                  setDrag(p);
+                }}
+                onDragOver={(e) => e.preventDefault()}
+                onDrop={(e) => {
+                  e.stopPropagation();
+                  drop(p);
+                }}
+                onClick={() => {
+                  setSel(p);
+                  setActive(list);
+                }}
+              >
+                <div className="node-rail" title="Drag to reorder">
+                  <GripVertical size={15} />
+                </div>
+                <span className={`fc-icon verb-${v.verb}`} aria-hidden="true">
+                  <Icon size={16} />
+                </span>
+                <div className="node-copy">
+                  <strong>{verbName(v)}</strong>
+                  <span>{label(v)}</span>
+                </div>
+                <div className="node-buttons">
+                  <button
+                    aria-label={`Move ${verbName(v)} up`}
+                    title="Move up"
+                    disabled={i === 0}
+                    onClick={(e) => {
+                      e.stopPropagation();
+                      move(p, -1);
+                    }}
+                  >
+                    <ArrowUp size={14} />
+                  </button>
+                  <button
+                    aria-label={`Move ${verbName(v)} down`}
+                    title="Move down"
+                    disabled={i === items.length - 1}
+                    onClick={(e) => {
+                      e.stopPropagation();
+                      move(p, 1);
+                    }}
+                  >
+                    <ArrowDown size={14} />
+                  </button>
+                  <span onClick={(e) => e.stopPropagation()}>
+                    <HoldButton
+                      iconOnly
+                      aria-label={`Remove ${verbName(v)}${outs.length ? ' and its branches' : ''}`}
+                      onHold={() => remove(p)}
+                    />
+                  </span>
+                </div>
+              </div>
+              {outs.length > 0 && (
+                <div className="fc-outputs">
+                  {outs.map((o) => {
+                    const bp = [...p, ...o.key];
+                    return (
+                      <div className="fc-branch" key={o.key.join('.')}>
+                        <span className="fc-out">{o.label}</span>
+                        {renderList(bp)}
+                        <span className="fc-fill" aria-hidden="true" />
+                        <span className="fc-foot" aria-hidden="true" />
+                      </div>
+                    );
+                  })}
+                </div>
+              )}
+            </div>
+          );
+        })}
+        <div className="fc-add-wrap">
+          <button
+            type="button"
+            className={
+              'fc-add' +
+              (isTarget && !samePath(sel?.slice(0, -1) ?? null, list)
+                ? ' target'
+                : '')
+            }
+            aria-expanded={samePath(picker, list)}
+            onClick={() => {
+              setActive(list);
+              setSel(null);
+              setPicker(samePath(picker, list) ? null : list);
+            }}
+          >
+            <Plus size={14} aria-hidden="true" /> Add step
+          </button>
+          {samePath(picker, list) && (
+            <div className="fc-picker" role="menu">
+              {catalog.map(([type, name, Icon]) => (
+                <button
+                  key={type}
+                  role="menuitem"
+                  onClick={() => insert(list, type)}
+                >
+                  <Icon size={15} aria-hidden="true" />
+                  {name}
+                </button>
+              ))}
+            </div>
+          )}
+        </div>
+      </div>
+    );
+  }
+
   if (app.isLoading) return <Spinner />;
   if (!app.data) return <ErrorBox message="Application not found" />;
   return (
@@ -298,9 +505,9 @@ export default function FlowBuilder() {
       <ErrorBox message={err} />
       <div className="builder-shell">
         <aside className="verb-palette">
-          <div className="palette-title">Nodes</div>
+          <div className="palette-title">Add {addTarget}</div>
           {catalog.map(([type, name, Icon]) => (
-            <button key={type} onClick={() => add(type)}>
+            <button key={type} onClick={() => insert(active, type)}>
               <span>
                 <Icon size={17} />
               </span>
@@ -312,100 +519,39 @@ export default function FlowBuilder() {
             </button>
           ))}
         </aside>
-        <section className="builder-canvas">
-          <div className="flow-breadcrumbs">
-            {crumbs.map((c, i) => (
-              <button
-                key={i}
-                onClick={() => {
-                  setPath(c.path);
-                  setSelected(null);
-                }}
-              >
-                {c.label}
-                {i < crumbs.length - 1 && <ChevronRight size={12} />}
-              </button>
-            ))}
-          </div>
-          <div className="canvas-flow">
-            <div className="canvas-entry">
-              <span />
-              Incoming call
-            </div>
-            {current.map((v, i) => (
-              <div
-                draggable
-                className={'canvas-node ' + (selected === i ? 'selected' : '')}
-                key={`${v.verb}-${i}`}
-                onDragStart={() => setDragIndex(i)}
-                onDragOver={(e) => e.preventDefault()}
-                onDrop={() => {
-                  if (dragIndex != null && dragIndex !== i) {
-                    const next = [...current];
-                    const [item] = next.splice(dragIndex, 1);
-                    next.splice(i, 0, item);
-                    updateCurrent(next);
-                    setSelected(i);
-                  }
-                  setDragIndex(null);
-                }}
-                onClick={() => setSelected(i)}
-              >
-                <div className="node-rail" title="Drag to reorder">
-                  <GripVertical size={15} />
-                </div>
-                <div className={`node-type verb-${v.verb}`}>{v.verb}</div>
-                <div className="node-copy">
-                  <strong>
-                    {catalog.find((x) => x[0] === v.verb)?.[1] || v.verb}
-                  </strong>
-                  <span>{label(v)}</span>
-                </div>
-                <div className="node-buttons">
-                  <button
-                    onClick={(e) => {
-                      e.stopPropagation();
-                      move(i, -1);
-                    }}
-                  >
-                    <ArrowUp size={14} />
-                  </button>
-                  <button
-                    onClick={(e) => {
-                      e.stopPropagation();
-                      move(i, 1);
-                    }}
-                  >
-                    <ArrowDown size={14} />
-                  </button>
-                  <span onClick={(e) => e.stopPropagation()}>
-                    <HoldButton
-                      iconOnly
-                      aria-label={`Remove step ${i + 1}, ${
-                        catalog.find((x) => x[0] === v.verb)?.[1] || v.verb
-                      }`}
-                      onHold={() => remove(i)}
-                    />
-                  </span>
-                </div>
-              </div>
-            ))}
-            {!current.length && (
-              <div className="canvas-empty">
-                <GitBranch />
-                <h3>This branch is empty</h3>
-                <p>Add a node from the palette.</p>
-              </div>
-            )}
+        <section
+          ref={canvasRef}
+          className="builder-canvas"
+          onClick={(e) => {
+            if (e.target === e.currentTarget) {
+              setSel(null);
+              setPicker(null);
+            }
+          }}
+        >
+          <div className="fc">
+            <div className="canvas-entry">Incoming call</div>
+            {renderList([])}
             <div className="canvas-exit">End</div>
           </div>
         </section>
-        <aside className="node-inspector">
+        <aside className={'node-inspector ' + (node ? 'is-open' : 'is-empty')}>
+          {node && (
+            <button
+              type="button"
+              className="icon-btn inspector-close"
+              aria-label="Close the inspector"
+              title="Close"
+              onClick={() => setSel(null)}
+            >
+              <X size={18} />
+            </button>
+          )}
           {node ? (
             <Inspector
               node={node}
               patch={patch}
-              drill={drill}
+              drill={focusBranch}
               queues={queues.data || []}
               gateways={gateways.data || []}
               sipUsers={sipUsers.data || []}
@@ -414,8 +560,9 @@ export default function FlowBuilder() {
             <div className="inspector-empty">
               <strong>Node inspector</strong>
               <p>
-                Select a flow node to configure it. Every field maps directly to
-                the application verb schema.
+                Select a step to configure it. Steps with outcomes, such as
+                Detect machine, Gather digits and Queue, branch on the canvas;
+                each branch carries on to the next step when it ends.
               </p>
             </div>
           )}
