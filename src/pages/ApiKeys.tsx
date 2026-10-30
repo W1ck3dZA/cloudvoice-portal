@@ -1,9 +1,9 @@
 import { useState } from 'react';
 import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query';
-import { KeyRound } from 'lucide-react';
+import { ChevronRight, KeyRound } from 'lucide-react';
 import { apiKeysApi, errorMessage } from '../lib/api';
 import { useSession } from '../lib/session';
-import { humanize } from '../lib/labels';
+import { showToast } from '../lib/toast';
 import type { ApiKey } from '../types/api';
 import {
   AddButton,
@@ -13,11 +13,20 @@ import {
   ErrorBox,
   Field,
   PageHeader,
-  RowActions,
   SecretReveal,
   Spinner,
   Status,
 } from '../components/UI';
+import {
+  CopyValue,
+  DetailRow,
+  DetailRows,
+  DetailSection,
+  DetailSummary,
+  DetailView,
+  DrawerActions,
+  FormSection,
+} from '../components/Details';
 const SCOPES = [
   {
     value: 'read',
@@ -30,9 +39,16 @@ const SCOPES = [
     hint: 'Place calls, send SMS, and create, change or delete anything',
   },
 ] as const;
-const scopeLabel = (scopes: string[]) =>
-  scopes.map((s) => SCOPES.find((x) => x.value === s)?.label ?? s).join(', ') ||
-  '—';
+const accessText = (scopes: string[]) =>
+  scopes.includes('read') && scopes.includes('write')
+    ? 'Read and write'
+    : scopes.includes('write')
+      ? 'Write only'
+      : scopes.includes('read')
+        ? 'Read only'
+        : 'No access';
+const date = (iso: string | null, fallback = 'Never') =>
+  iso ? new Date(iso).toLocaleString() : fallback;
 export default function ApiKeys() {
   const { session } = useSession();
   const qc = useQueryClient();
@@ -68,17 +84,55 @@ export default function ApiKeys() {
   });
   const del = useMutation({
     mutationFn: apiKeysApi.remove,
-    onSuccess: () => qc.invalidateQueries({ queryKey: ['api-keys'] }),
+    onSuccess: () => {
+      qc.invalidateQueries({ queryKey: ['api-keys'] });
+      setView(null);
+      showToast({ kind: 'success', message: 'API key revoked.' });
+    },
+    onError: (e) => showToast({ kind: 'error', message: errorMessage(e) }),
   });
+  const saveLimits = useMutation({
+    mutationFn: () =>
+      apiKeysApi.limits(limitsOpen!.id, {
+        requests_per_minute: limits.requests_per_minute
+          ? +limits.requests_per_minute
+          : undefined,
+        requests_per_day: limits.requests_per_day
+          ? +limits.requests_per_day
+          : undefined,
+      }),
+    onSuccess: () => {
+      setLimitsOpen(null);
+      showToast({ kind: 'success', message: 'Rate limits saved.' });
+    },
+    onError: (e) => setErr(errorMessage(e)),
+  });
+  function openCreate() {
+    setErr('');
+    setForm({ name: '', scopes: ['read'], expires_at: '' });
+    setOpen(true);
+  }
+  function openLimits(k: ApiKey) {
+    setErr('');
+    setLimits({ requests_per_minute: '', requests_per_day: '' });
+    setView(null);
+    setLimitsOpen(k);
+  }
+  function revoke(k: ApiKey) {
+    if (
+      confirm(
+        `Revoke ${k.name}? Anything using this key stops working straight away, and this can't be undone.`,
+      )
+    )
+      del.mutate(k.id);
+  }
   return (
     <>
       <PageHeader
         eyebrow="Developers"
         title="API Keys"
-        description="Create scoped credentials for server-to-server integrations."
-        action={
-          <AddButton onClick={() => setOpen(true)}>Create API key</AddButton>
-        }
+        description="Keys for your own servers and integrations to call the Cloudvoice API. Give each integration its own key with only the access it needs."
+        action={<AddButton onClick={openCreate}>Create API key</AddButton>}
       />
       <Card>
         {data.isLoading ? (
@@ -88,9 +142,8 @@ export default function ApiKeys() {
             <table>
               <thead>
                 <tr>
-                  <th>Name</th>
-                  <th>Prefix</th>
-                  <th>Scopes</th>
+                  <th>Key</th>
+                  <th>Access</th>
                   <th>Status</th>
                   <th>Last used</th>
                   <th>Expires</th>
@@ -101,20 +154,16 @@ export default function ApiKeys() {
                 {data.data!.map((k) => (
                   <tr key={k.id}>
                     <td>
-                      <strong>{k.name}</strong>
+                      <div className="cell-stack">
+                        <strong>{k.name}</strong>
+                        <span>{k.prefix}…</span>
+                      </div>
                     </td>
-                    <td>
-                      <code>{k.prefix}</code>
-                    </td>
-                    <td>{scopeLabel(k.scopes)}</td>
+                    <td>{accessText(k.scopes)}</td>
                     <td>
                       <Status value={k.status} />
                     </td>
-                    <td>
-                      {k.last_used_at
-                        ? new Date(k.last_used_at).toLocaleString()
-                        : 'Never'}
-                    </td>
+                    <td>{date(k.last_used_at)}</td>
                     <td>
                       {k.expires_at
                         ? new Date(k.expires_at).toLocaleDateString()
@@ -124,22 +173,26 @@ export default function ApiKeys() {
                       <div className="row-actions">
                         <button
                           className="table-action"
-                          onClick={() => {
-                            setLimitsOpen(k);
-                            setLimits({
-                              requests_per_minute: '',
-                              requests_per_day: '',
-                            });
-                          }}
+                          onClick={() => setView(k)}
                         >
-                          Limits
+                          View <ChevronRight size={14} />
                         </button>
-                        <RowActions
-                          onView={() => setView(k)}
-                          onDelete={() =>
-                            confirm(`Revoke ${k.name}?`) && del.mutate(k.id)
-                          }
-                        />
+                        {k.status === 'active' && (
+                          <>
+                            <button
+                              className="table-action"
+                              onClick={() => openLimits(k)}
+                            >
+                              Limits
+                            </button>
+                            <button
+                              className="table-action danger-text"
+                              onClick={() => revoke(k)}
+                            >
+                              Revoke
+                            </button>
+                          </>
+                        )}
                       </div>
                     </td>
                   </tr>
@@ -150,7 +203,8 @@ export default function ApiKeys() {
         ) : (
           <Empty
             icon={<KeyRound size={16} />}
-            text="No API keys have been created."
+            text="No API keys yet. Create one for each server or integration that calls the API."
+            action={<AddButton onClick={openCreate}>Create API key</AddButton>}
           />
         )}
       </Card>
@@ -164,123 +218,224 @@ export default function ApiKeys() {
           }}
         >
           <ErrorBox message={err} />
-          <Field label="Name">
-            <input
-              required
-              value={form.name}
-              onChange={(e) => setForm((f) => ({ ...f, name: e.target.value }))}
-            />
-          </Field>
-          <fieldset className="check-list">
-            <legend className="field-label">Scopes</legend>
-            {SCOPES.map((sc) => (
-              <label key={sc.value}>
-                <input
-                  type="checkbox"
-                  checked={form.scopes.includes(sc.value)}
-                  onChange={(e) =>
-                    setForm((f) => ({
-                      ...f,
-                      scopes: e.target.checked
-                        ? [...f.scopes, sc.value]
-                        : f.scopes.filter((x) => x !== sc.value),
-                    }))
-                  }
-                />
-                <span>
-                  <strong>{sc.label}</strong>
-                  <small>{sc.hint}</small>
-                </span>
-              </label>
-            ))}
-            {!form.scopes.length && (
-              <small className="check-list-note" role="alert">
-                Choose at least one scope.
-              </small>
-            )}
-          </fieldset>
-          <Field label="Expires at">
-            <input
-              type="datetime-local"
-              value={form.expires_at}
-              onChange={(e) =>
-                setForm((f) => ({ ...f, expires_at: e.target.value }))
-              }
-            />
-          </Field>
-          <button
-            className="btn primary"
-            disabled={create.isPending || !form.scopes.length}
+          <FormSection title="Name">
+            <Field
+              label="Key name"
+              hint="So you can tell keys apart, e.g. CRM integration"
+            >
+              <input
+                required
+                value={form.name}
+                onChange={(e) =>
+                  setForm((f) => ({ ...f, name: e.target.value }))
+                }
+              />
+            </Field>
+          </FormSection>
+          <FormSection
+            title="Access"
+            hint="Choose only what this integration needs."
           >
-            Create key
-          </button>
+            <div className="check-list" role="group" aria-label="Access">
+              {SCOPES.map((sc) => (
+                <label key={sc.value}>
+                  <input
+                    type="checkbox"
+                    checked={form.scopes.includes(sc.value)}
+                    onChange={(e) =>
+                      setForm((f) => ({
+                        ...f,
+                        scopes: e.target.checked
+                          ? [...f.scopes, sc.value]
+                          : f.scopes.filter((x) => x !== sc.value),
+                      }))
+                    }
+                  />
+                  <span>
+                    <strong>{sc.label}</strong>
+                    <small>{sc.hint}</small>
+                  </span>
+                </label>
+              ))}
+              {!form.scopes.length && (
+                <small className="check-list-note" role="alert">
+                  Choose at least one.
+                </small>
+              )}
+            </div>
+          </FormSection>
+          <FormSection title="Expiry">
+            <Field
+              label="Expires"
+              hint="Optional. Leave blank for a key that doesn't expire"
+            >
+              <input
+                type="datetime-local"
+                value={form.expires_at}
+                onChange={(e) =>
+                  setForm((f) => ({ ...f, expires_at: e.target.value }))
+                }
+              />
+            </Field>
+          </FormSection>
+          <p className="fs-hint">
+            The key is shown once after you create it. Store it somewhere safe.
+          </p>
+          <DrawerActions>
+            <button
+              className="btn primary"
+              disabled={create.isPending || !form.scopes.length}
+            >
+              {create.isPending ? 'Creating…' : 'Create key'}
+            </button>
+            <button
+              type="button"
+              className="btn"
+              onClick={() => setOpen(false)}
+            >
+              Cancel
+            </button>
+          </DrawerActions>
         </form>
       </Drawer>
       <Drawer
         open={!!view}
         onClose={() => setView(null)}
-        title={view?.name || 'API key'}
+        title="API key details"
       >
         {view && (
-          <div className="detail-grid">
-            <div className="detail-item">
-              <span>Prefix</span>
-              <strong>{view.prefix}</strong>
-            </div>
-            <div className="detail-item">
-              <span>Status</span>
-              <strong>{humanize(view.status)}</strong>
-            </div>
-            <div className="detail-item full">
-              <span>Scopes</span>
-              <strong>{scopeLabel(view.scopes)}</strong>
-            </div>
-          </div>
+          <DetailView>
+            <DetailSummary
+              kind="API key"
+              title={view.name}
+              subtitle={`${view.prefix}…`}
+              facts={
+                <>
+                  <Status value={view.status} />
+                  <span>{accessText(view.scopes)}</span>
+                  <span>
+                    {view.expires_at
+                      ? `Expires ${new Date(view.expires_at).toLocaleDateString()}`
+                      : "Doesn't expire"}
+                  </span>
+                </>
+              }
+            >
+              {view.status === 'active' && (
+                <>
+                  <button
+                    className="btn primary"
+                    onClick={() => openLimits(view)}
+                  >
+                    Set rate limits
+                  </button>
+                  <button
+                    className="btn danger"
+                    disabled={del.isPending}
+                    onClick={() => revoke(view)}
+                  >
+                    Revoke key
+                  </button>
+                  <p className="dv-note">
+                    Revoking stops anything using this key straight away. It
+                    can't be undone.
+                  </p>
+                </>
+              )}
+            </DetailSummary>
+            <DetailSection title="Access">
+              <DetailRows>
+                {SCOPES.map((sc) => (
+                  <DetailRow key={sc.value} label={sc.label}>
+                    {view.scopes.includes(sc.value) ? 'Allowed' : 'Not allowed'}
+                  </DetailRow>
+                ))}
+              </DetailRows>
+              <p className="dv-note dv-note-block">
+                Read lets it view calls, numbers, recordings and settings. Write
+                lets it place calls, send SMS, and create, change or delete
+                anything.
+              </p>
+            </DetailSection>
+            <DetailSection title="Usage">
+              <DetailRows>
+                <DetailRow label="Last used">
+                  {date(view.last_used_at)}
+                </DetailRow>
+                <DetailRow label="Created">
+                  {date(view.created_at, '—')}
+                </DetailRow>
+                <DetailRow label="Expires">{date(view.expires_at)}</DetailRow>
+              </DetailRows>
+            </DetailSection>
+            <DetailSection title="Details">
+              <DetailRows>
+                <DetailRow label="Key ID">
+                  <CopyValue value={view.id} label="key ID" />
+                </DetailRow>
+                <DetailRow label="Prefix">{view.prefix}</DetailRow>
+              </DetailRows>
+            </DetailSection>
+          </DetailView>
         )}
       </Drawer>
       <Drawer
         open={!!limitsOpen}
         onClose={() => setLimitsOpen(null)}
-        title="API key limits"
+        title="Rate limits"
+        subtitle={limitsOpen?.name}
       >
         <form
           className="form-stack"
           onSubmit={(e) => {
             e.preventDefault();
-            apiKeysApi
-              .limits(limitsOpen!.id, {
-                requests_per_minute: limits.requests_per_minute
-                  ? +limits.requests_per_minute
-                  : undefined,
-                requests_per_day: limits.requests_per_day
-                  ? +limits.requests_per_day
-                  : undefined,
-              })
-              .then(() => setLimitsOpen(null));
+            setErr('');
+            saveLimits.mutate();
           }}
         >
-          <Field label="Requests per minute">
-            <input
-              type="number"
-              value={limits.requests_per_minute}
-              onChange={(e) =>
-                setLimits((v) => ({
-                  ...v,
-                  requests_per_minute: e.target.value,
-                }))
-              }
-            />
-          </Field>
-          <Field label="Requests per day">
-            <input
-              type="number"
-              value={limits.requests_per_day}
-              onChange={(e) =>
-                setLimits((v) => ({ ...v, requests_per_day: e.target.value }))
-              }
-            />
-          </Field>
-          <button className="btn primary">Update limits</button>
+          <ErrorBox message={err} />
+          <FormSection
+            title="Limits"
+            hint="Requests over a limit are refused until the window resets. Leave a field blank to keep its current limit."
+          >
+            <Field label="Requests per minute">
+              <input
+                type="number"
+                min={1}
+                inputMode="numeric"
+                value={limits.requests_per_minute}
+                onChange={(e) =>
+                  setLimits((v) => ({
+                    ...v,
+                    requests_per_minute: e.target.value,
+                  }))
+                }
+              />
+            </Field>
+            <Field label="Requests per day">
+              <input
+                type="number"
+                min={1}
+                inputMode="numeric"
+                value={limits.requests_per_day}
+                onChange={(e) =>
+                  setLimits((v) => ({ ...v, requests_per_day: e.target.value }))
+                }
+              />
+            </Field>
+          </FormSection>
+          <DrawerActions>
+            <button className="btn primary" disabled={saveLimits.isPending}>
+              {saveLimits.isPending ? 'Saving…' : 'Save limits'}
+            </button>
+            <button
+              type="button"
+              className="btn"
+              onClick={() => setLimitsOpen(null)}
+            >
+              Cancel
+            </button>
+          </DrawerActions>
         </form>
       </Drawer>
       <Drawer open={!!secret} onClose={() => setSecret('')} title="API key">

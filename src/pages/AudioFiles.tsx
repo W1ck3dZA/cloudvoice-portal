@@ -1,10 +1,29 @@
 import { useState } from 'react';
 import { useQuery, useQueryClient } from '@tanstack/react-query';
-import { Music, Upload } from 'lucide-react';
+import { ChevronRight, Music, Play, PlayCircle, Upload } from 'lucide-react';
 import { audioFilesApi, authApi, errorMessage } from '../lib/api';
 import { useSession } from '../lib/session';
+import { showToast } from '../lib/toast';
 import type { AudioFile, Role } from '../types/api';
-import { Card, Empty, ErrorBox, Field, PageHeader } from '../components/UI';
+import {
+  Card,
+  Drawer,
+  Empty,
+  ErrorBox,
+  Field,
+  PageHeader,
+  Spinner,
+} from '../components/UI';
+import { usePlayer } from '../components/AudioPlayer';
+import {
+  CopyValue,
+  DetailRow,
+  DetailRows,
+  DetailSection,
+  DetailSummary,
+  DetailView,
+  DrawerActions,
+} from '../components/Details';
 import AudioFileDialog, {
   type AudioAction,
 } from '../components/audio/AudioFileDialog';
@@ -65,12 +84,23 @@ export default function AudioFiles() {
   );
 }
 
+const duration = (s: number) =>
+  `${Math.floor(s / 60)}:${String(Math.floor(s % 60)).padStart(2, '0')}`;
+const size = (bytes: number) =>
+  bytes < 1024 * 1024
+    ? `${(bytes / 1024).toFixed(1)} KiB`
+    : `${(bytes / 1024 / 1024).toFixed(1)} MiB`;
+const format = (f: AudioFile) =>
+  (f.content_type.split('/')[1] || f.content_type)
+    .replace(/^x-/, '')
+    .replace(/^mpeg$/, 'mp3')
+    .toUpperCase();
+
 function AudioLibrary({ orgId, role }: { orgId: string; role?: Role | null }) {
   const qc = useQueryClient();
+  const player = usePlayer();
   const [action, setAction] = useState<AudioAction | null>(null);
-  const [preview, setPreview] = useState<string | null>(null);
-  const [notice, setNotice] = useState('');
-  const [error, setError] = useState('');
+  const [viewing, setViewing] = useState<AudioFile | null>(null);
   const canManage =
     role === 'owner' || role === 'admin' || role === 'developer';
   const pageSize = 50;
@@ -87,23 +117,28 @@ function AudioLibrary({ orgId, role }: { orgId: string; role?: Role | null }) {
   });
   const files = rows.data || [];
   async function copy(url: string) {
-    setError('');
-    setNotice('');
     try {
       await navigator.clipboard.writeText(url);
-      setNotice('Playback URL copied.');
+      showToast({ kind: 'success', message: 'Playback URL copied.' });
     } catch {
-      setError(
-        'Could not copy the URL. Select and copy it from the preview below.',
-      );
+      showToast({
+        kind: 'error',
+        message: "Couldn't copy the URL. Open the file's details to copy it.",
+      });
     }
   }
+  const play = (f: AudioFile) =>
+    player.play({
+      src: f.url,
+      title: f.name,
+      subtitle: `${f.original_filename} · ${duration(f.duration_seconds)}`,
+    });
   return (
     <>
       <PageHeader
         eyebrow="Voice"
         title="Audio files"
-        description="Reusable prompts, greetings, and hold music for your organisation."
+        description="Reusable prompts, greetings and hold music. Copy a file's playback URL into an application audio step or a call-center sound field."
         action={
           canManage && (
             <button
@@ -115,26 +150,15 @@ function AudioLibrary({ orgId, role }: { orgId: string; role?: Role | null }) {
           )
         }
       />
-      <p className="muted">
-        Use a playback URL in application audio steps or call-center sound
-        fields. Anyone with the URL can play that file; share it only where
-        needed.
-      </p>
       {!canManage && (
         <p className="muted">
-          You have read-only access. An owner, admin, or developer can manage
-          audio files.
+          You have read-only access. An owner, admin or developer can upload,
+          rename and delete audio files.
         </p>
       )}
-      <p role="status">{notice}</p>
-      <div role="alert">
-        <ErrorBox message={error} />
-      </div>
       <Card className="audio-library">
         {rows.isLoading ? (
-          <div role="status" className="audio-loading">
-            Loading audio files…
-          </div>
+          <Spinner />
         ) : rows.isError ? (
           <div role="alert">
             <ErrorBox message={errorMessage(rows.error)} />
@@ -148,80 +172,45 @@ function AudioLibrary({ orgId, role }: { orgId: string; role?: Role | null }) {
               <thead>
                 <tr>
                   <th scope="col">Name</th>
+                  <th scope="col">Format</th>
                   <th scope="col">Duration</th>
                   <th scope="col">Size</th>
-                  <th scope="col">Actions</th>
+                  <th scope="col" aria-label="Actions" />
                 </tr>
               </thead>
               <tbody>
                 {files.map((file) => (
                   <tr key={file.id}>
-                    <td className="audio-name">
-                      <strong>{file.name}</strong>
-                      <span className="muted">{file.original_filename}</span>
-                      {preview === file.id && (
-                        <div className="audio-preview">
-                          <audio
-                            controls
-                            preload="none"
-                            src={file.url}
-                            aria-label={`Preview ${file.name}`}
-                            onError={() =>
-                              setError(
-                                'Audio could not be played. The file may be unavailable; try refreshing the library.',
-                              )
-                            }
-                          />
-                          <Field label="Playback URL">
-                            <input
-                              readOnly
-                              value={file.url}
-                              onFocus={(event) => event.target.select()}
-                            />
-                          </Field>
-                          <a
-                            className="table-action"
-                            href={file.url}
-                            target="_blank"
-                            rel="noreferrer"
-                          >
-                            Open WAV file
-                          </a>
-                        </div>
-                      )}
-                    </td>
                     <td>
-                      {Math.floor(file.duration_seconds / 60)}:
-                      {String(Math.floor(file.duration_seconds % 60)).padStart(
-                        2,
-                        '0',
-                      )}
+                      <div className="cell-stack audio-name">
+                        <strong>{file.name}</strong>
+                        <span>{file.original_filename}</span>
+                      </div>
                     </td>
-                    <td>
-                      {file.size_bytes < 1024 * 1024
-                        ? `${(file.size_bytes / 1024).toFixed(1)} KiB`
-                        : `${(file.size_bytes / 1024 / 1024).toFixed(1)} MiB`}
-                    </td>
+                    <td>{format(file)}</td>
+                    <td>{duration(file.duration_seconds)}</td>
+                    <td>{size(file.size_bytes)}</td>
                     <td>
                       <div className="row-actions">
                         <button
-                          className="table-action"
-                          aria-expanded={preview === file.id}
-                          onClick={() => {
-                            setError('');
-                            setPreview(preview === file.id ? null : file.id);
-                          }}
+                          className="icon-btn"
+                          aria-label={`Play ${file.name}`}
+                          title="Play"
+                          onClick={() => play(file)}
                         >
-                          {preview === file.id ? 'Close preview' : 'Preview'}
+                          <PlayCircle size={18} />
                         </button>
                         <button
                           className="table-action"
-                          onClick={() => {
-                            setPreview(file.id);
-                            void copy(file.url);
-                          }}
+                          onClick={() => void copy(file.url)}
                         >
                           Copy URL
+                        </button>
+                        <button
+                          className="table-action"
+                          onClick={() => setViewing(file)}
+                        >
+                          View <ChevronRight size={14} />
                         </button>
                         {canManage && (
                           <>
@@ -256,12 +245,98 @@ function AudioLibrary({ orgId, role }: { orgId: string; role?: Role | null }) {
             title="No audio files yet"
             text={
               canManage
-                ? 'Upload a greeting, prompt, or hold music to get started.'
+                ? 'Upload a greeting, prompt or hold music to get started.'
                 : 'Audio uploaded by your team will appear here.'
             }
           />
         )}
       </Card>
+      <Drawer
+        open={!!viewing}
+        onClose={() => setViewing(null)}
+        title="Audio file details"
+      >
+        {viewing && (
+          <DetailView>
+            <DetailSummary
+              kind="Audio file"
+              title={viewing.name}
+              subtitle={viewing.original_filename}
+              facts={
+                <>
+                  <span>{format(viewing)}</span>
+                  <span>{duration(viewing.duration_seconds)}</span>
+                  <span>{size(viewing.size_bytes)}</span>
+                </>
+              }
+            >
+              <button className="btn primary" onClick={() => play(viewing)}>
+                <Play size={15} fill="currentColor" /> Play
+              </button>
+              <button className="btn" onClick={() => void copy(viewing.url)}>
+                Copy URL
+              </button>
+              <a
+                className="btn"
+                href={viewing.url}
+                target="_blank"
+                rel="noreferrer"
+              >
+                Open file
+              </a>
+            </DetailSummary>
+            <DetailSection title="Playback URL">
+              <DetailRows>
+                <DetailRow label="URL">
+                  <CopyValue value={viewing.url} label="playback URL" />
+                </DetailRow>
+              </DetailRows>
+              <p className="dv-note dv-note-block">
+                Paste it into an application audio step or a call-center sound
+                field. Anyone with the URL can play this file, so share it only
+                where it's needed.
+              </p>
+            </DetailSection>
+            <DetailSection title="Details">
+              <DetailRows>
+                <DetailRow label="File ID">
+                  <CopyValue value={viewing.id} label="file ID" />
+                </DetailRow>
+                <DetailRow label="Original file">
+                  {viewing.original_filename}
+                </DetailRow>
+                <DetailRow label="Format">{format(viewing)}</DetailRow>
+                <DetailRow label="Duration">
+                  {duration(viewing.duration_seconds)}
+                </DetailRow>
+                <DetailRow label="Size">{size(viewing.size_bytes)}</DetailRow>
+              </DetailRows>
+            </DetailSection>
+            {canManage && (
+              <DrawerActions>
+                <button
+                  className="btn"
+                  onClick={() => {
+                    setAction({ mode: 'rename', file: viewing });
+                    setViewing(null);
+                  }}
+                >
+                  Rename
+                </button>
+                <button
+                  className="btn danger"
+                  onClick={() => {
+                    setAction({ mode: 'delete', file: viewing });
+                    setViewing(null);
+                  }}
+                >
+                  Delete
+                </button>
+              </DrawerActions>
+            )}
+          </DetailView>
+        )}
+      </Drawer>
       {action && canManage && (
         <AudioFileDialog
           action={action}
@@ -269,17 +344,21 @@ function AudioLibrary({ orgId, role }: { orgId: string; role?: Role | null }) {
           onClose={() => setAction(null)}
           onSaved={() => {
             void qc.invalidateQueries({ queryKey: ['audio-files', orgId] });
-            if (action.mode === 'delete') {
-              setPreview(null);
+            if (
+              action.mode === 'delete' &&
+              player.track?.src === action.file.url
+            ) {
+              player.close();
             }
-            setNotice(
-              action.mode === 'upload'
-                ? 'Audio uploaded and ready to use.'
-                : action.mode === 'rename'
-                  ? 'Audio renamed.'
-                  : 'Audio deleted.',
-            );
-            setError('');
+            showToast({
+              kind: 'success',
+              message:
+                action.mode === 'upload'
+                  ? 'Audio uploaded and ready to use.'
+                  : action.mode === 'rename'
+                    ? 'Audio renamed.'
+                    : 'Audio deleted.',
+            });
             setAction(null);
           }}
         />

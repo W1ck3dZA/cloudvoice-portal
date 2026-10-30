@@ -8,14 +8,16 @@ import {
 } from 'react';
 import { AudioLines, Download, Pause, Play, X } from 'lucide-react';
 import { api } from '../lib/api';
-// A player docked to the bottom of the page. Mounted once in the layout, so a
-// recording keeps playing while you move between pages. Recordings need the
-// auth header, so each one is fetched as a blob and played from an object URL.
+// A player docked to the bottom of the page. Mounted once in the layout, so
+// audio keeps playing while you move between pages. Call recordings need the
+// auth header, so they're fetched as a blob and played from an object URL;
+// audio files have a public playback URL and are played from it directly.
 export type Track = {
-  recordingId: string;
   title: string;
   subtitle?: string;
-};
+} & (
+  { recordingId: string; src?: never } | { src: string; recordingId?: never }
+);
 type PlayerCtx = {
   track: Track | null;
   play: (t: Track) => void;
@@ -64,6 +66,10 @@ function PlayerBar({ track, onClose }: { track: Track; onClose: () => void }) {
     setPlaying(false);
     setTime(0);
     setDuration(0);
+    if (track.src) {
+      setSrc(track.src);
+      return;
+    }
     api
       .get(`/v1/recordings/${track.recordingId}/download`, {
         responseType: 'blob',
@@ -78,7 +84,7 @@ function PlayerBar({ track, onClose }: { track: Track; onClose: () => void }) {
       cancelled = true;
       if (url) URL.revokeObjectURL(url);
     };
-  }, [track.recordingId]);
+  }, [track.recordingId, track.src]);
   useEffect(() => {
     if (audioRef.current) audioRef.current.playbackRate = speed;
   }, [speed, src]);
@@ -98,12 +104,18 @@ function PlayerBar({ track, onClose }: { track: Track; onClose: () => void }) {
     if (!src) return;
     const a = document.createElement('a');
     a.href = src;
-    a.download = `recording-${track.recordingId}.wav`;
+    if (track.src) {
+      // Cross-origin downloads ignore the filename, so open it instead.
+      a.target = '_blank';
+      a.rel = 'noreferrer';
+    } else {
+      a.download = `recording-${track.recordingId}.wav`;
+    }
     a.click();
   };
   const progress = duration ? (time / duration) * 100 : 0;
   return (
-    <section className="player-bar" aria-label="Recording player">
+    <section className="player-bar" aria-label="Audio player">
       <audio
         ref={audioRef}
         src={src || undefined}
@@ -124,7 +136,9 @@ function PlayerBar({ track, onClose }: { track: Track; onClose: () => void }) {
           <strong>{track.title}</strong>
           {failed ? (
             <span className="player-error" role="alert">
-              The recording couldn't be loaded. It may still be uploading.
+              {track.src
+                ? "The audio couldn't be played. The file may be unavailable."
+                : "The recording couldn't be loaded. It may still be uploading."}
             </span>
           ) : (
             track.subtitle && <span>{track.subtitle}</span>
@@ -178,8 +192,8 @@ function PlayerBar({ track, onClose }: { track: Track; onClose: () => void }) {
           className="icon-btn"
           onClick={download}
           disabled={!src}
-          aria-label="Download recording"
-          title="Download recording"
+          aria-label="Download"
+          title="Download"
         >
           <Download size={18} />
         </button>
