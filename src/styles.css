@@ -1252,7 +1252,7 @@ html:has(dialog[open]) {
 .form-stack textarea,
 .login-card input {
   min-height: 40px;
-  background: var(--soft);
+  background-color: var(--soft);
   border: 1px solid var(--line2);
   color: var(--fg);
   border-radius: 10px;
@@ -1673,7 +1673,7 @@ html:has(dialog[open]) {
 .field textarea,
 .inline-add input {
   min-height: 40px;
-  background: var(--soft);
+  background-color: var(--soft);
   border: 1px solid var(--line2);
   color: var(--fg);
   border-radius: 10px;
@@ -2220,7 +2220,7 @@ html:has(dialog[open]) {
 }
 .status-select,
 .mini-input {
-  background: var(--soft);
+  background-color: var(--soft);
   border: 1px solid var(--line);
   color: var(--fg);
   border-radius: 7px;
@@ -2230,6 +2230,11 @@ html:has(dialog[open]) {
 }
 .mini-input {
   width: 64px;
+}
+.status-select {
+  padding-right: 28px;
+  background-position: right 6px center;
+  background-size: 16px;
 }
 .tier-card {
   margin-top: 14px;
@@ -4322,4 +4327,36 @@ tr.tap:hover td {
   .verb-palette strong {
     white-space: nowrap;
   }
+}
+/* Name and value rows (e.g. SIP headers on a Hang up step). */
+.kv {
+  display: flex;
+  flex-direction: column;
+  align-items: flex-start;
+  gap: 8px;
+}
+.kv .fs-hint {
+  margin: 0;
+}
+.kv-row {
+  display: grid;
+  grid-template-columns: minmax(0, 1fr) minmax(0, 1fr) auto;
+  gap: 6px;
+  align-self: stretch;
+  align-items: center;
+}
+.kv-row input {
+  min-width: 0;
+  min-height: 40px;
+  padding: 9px 12px;
+  border-radius: 10px;
+  border: 1px solid var(--line2);
+  background: var(--soft);
+  color: var(--fg);
+  font-size: 14px;
+}
+.kv-row input:focus {
+  outline: none;
+  border-color: var(--inf);
+  box-shadow: 0 0 0 3px var(--inb);
 }
