@@ -5,13 +5,11 @@ import { Check, Copy } from 'lucide-react';
 
 /** Top of a view drawer: what it is, its name, a few facts and actions. */
 export function DetailSummary({
-  kind,
   title,
   subtitle,
   facts,
   children,
 }: {
-  kind: string;
   title: ReactNode;
   subtitle?: ReactNode;
   facts?: ReactNode;
@@ -19,7 +17,6 @@ export function DetailSummary({
 }) {
   return (
     <section className="dv-summary">
-      <span className="dv-kind">{kind}</span>
       <div className="dv-title">{title}</div>
       {subtitle && <div className="dv-subtitle">{subtitle}</div>}
       {facts && <div className="dv-facts">{facts}</div>}

@@ -233,8 +233,8 @@ export default function CallCenter() {
                             });
                             setDrawer('qedit');
                           }}
+                          deleteLabel={`Delete queue ${q.name}`}
                           onDelete={() =>
-                            confirm(`Delete ${q.name}?`) &&
                             queuesApi
                               .remove(q.id)
                               .then(() =>
@@ -310,8 +310,8 @@ export default function CallCenter() {
                             });
                             setDrawer('aedit');
                           }}
+                          deleteLabel={`Delete agent ${a.name}`}
                           onDelete={() =>
-                            confirm(`Delete ${a.name}?`) &&
                             agentsApi
                               .remove(a.id)
                               .then(() =>

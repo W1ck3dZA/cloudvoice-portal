@@ -19,6 +19,7 @@ import {
   Spinner,
   Status,
   Toggle,
+  ConfirmAction,
 } from '../components/UI';
 const PAGE_SIZE = 25;
 
@@ -215,22 +216,22 @@ export default function Calls() {
                             <PlayCircle size={18} />
                           </button>
                         )}
-                        <RowActions
-                          onView={() => setView(c)}
-                          onDelete={
-                            ![
-                              'completed',
-                              'failed',
-                              'cancelled',
-                              'no_answer',
-                              'busy',
-                            ].includes(c.status)
-                              ? () =>
-                                  confirm('Hang up this active call?') &&
-                                  hangup.mutate(c.id)
-                              : undefined
-                          }
-                        />
+                        {![
+                          'completed',
+                          'failed',
+                          'cancelled',
+                          'no_answer',
+                          'busy',
+                        ].includes(c.status) && (
+                          <ConfirmAction
+                            compact
+                            label="Hang up"
+                            confirmLabel="Yes, hang up"
+                            busy={hangup.isPending}
+                            onConfirm={() => hangup.mutate(c.id)}
+                          />
+                        )}
+                        <RowActions onView={() => setView(c)} />
                       </div>
                     </td>
                   </tr>

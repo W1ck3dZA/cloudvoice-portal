@@ -7,7 +7,6 @@ import {
   Plus,
   RefreshCw,
   Search,
-  Trash2,
   Users,
 } from 'lucide-react';
 import { agentsApi, audioFilesApi, errorMessage, queuesApi } from '../lib/api';
@@ -23,6 +22,7 @@ import {
   Status,
   StatusToggle,
 } from '../components/UI';
+import { HoldButton } from '../components/HoldButton';
 import { humanize } from '../lib/labels';
 export default function QueueDetail() {
   const { id } = useParams();
@@ -315,19 +315,17 @@ export default function QueueDetail() {
                       />
                     </td>
                     <td>
-                      <button
-                        className="table-action danger-text"
-                        onClick={() =>
-                          confirm(`Remove ${t.agent_name} from queue?`) &&
+                      <HoldButton
+                        iconOnly
+                        aria-label={`Remove ${t.agent_name} from this queue`}
+                        onHold={() =>
                           queuesApi.removeTier(id!, t.agent_id).then(() =>
                             qc.invalidateQueries({
                               queryKey: ['queue-tiers', id],
                             }),
                           )
                         }
-                      >
-                        <Trash2 size={14} /> Remove
-                      </button>
+                      />
                     </td>
                   </tr>
                 ))}

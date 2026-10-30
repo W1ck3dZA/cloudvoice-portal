@@ -1,6 +1,6 @@
 import { useEffect, useState } from 'react';
 import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query';
-import { AlertTriangle, Settings2, UserCog, Users } from 'lucide-react';
+import { Settings2, UserCog, Users } from 'lucide-react';
 import { errorMessage, orgApi } from '../lib/api';
 import { useSession } from '../lib/session';
 import { humanize } from '../lib/labels';
@@ -17,6 +17,7 @@ import {
   PageHeader,
   RowActions,
   Spinner,
+  HoldToDelete,
 } from '../components/UI';
 
 export default function Organisation() {
@@ -268,10 +269,8 @@ export default function Organisation() {
                             setRole(m.role);
                             setDrawer('member-edit');
                           }}
+                          deleteLabel={`Remove ${m.email} from this organisation`}
                           onDelete={() =>
-                            confirm(
-                              `Remove ${m.email} from this organisation?`,
-                            ) &&
                             orgApi.removeMember(id, m.id).then(() =>
                               qc.invalidateQueries({
                                 queryKey: ['members', id],
@@ -333,19 +332,12 @@ export default function Organisation() {
               resources.
             </p>
           </div>
-          <button
-            className="btn danger"
-            onClick={() => {
-              if (
-                confirm(
-                  `Delete organisation ${org.data?.name}? This is a destructive owner-only action.`,
-                )
-              )
-                orgApi.remove(id).then(() => (location.href = '/'));
-            }}
-          >
-            <AlertTriangle size={15} /> Delete organisation
-          </button>
+          <HoldToDelete
+            label="Hold to delete organisation"
+            consequence={`Everyone loses access to ${org.data?.name ?? 'this organisation'} and its numbers, calls and settings.`}
+            ms={1500}
+            onHold={() => orgApi.remove(id).then(() => (location.href = '/'))}
+          />
         </Card>
       )}
       <Drawer
@@ -532,8 +524,7 @@ export default function Organisation() {
           onSubmit={(e) => {
             e.preventDefault();
             setErr('');
-            if (confirm('Transfer ownership to this member?'))
-              transfer.mutate();
+            transfer.mutate();
           }}
         >
           <ErrorBox message={err} />
@@ -557,7 +548,7 @@ export default function Organisation() {
             Ownership transfer is an owner-only action. Your role may change
             after the transfer.
           </div>
-          <button className="btn danger">Transfer ownership</button>
+          <button className="btn primary">Yes, transfer ownership</button>
         </form>
       </Drawer>
     </>

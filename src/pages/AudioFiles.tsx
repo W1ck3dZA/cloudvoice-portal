@@ -257,7 +257,6 @@ function AudioLibrary({ orgId, role }: { orgId: string; role?: Role | null }) {
         {viewing && (
           <DetailView>
             <DetailSummary
-              kind="Audio file"
               title={viewing.name}
               subtitle={viewing.original_filename}
               facts={

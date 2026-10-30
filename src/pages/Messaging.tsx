@@ -17,6 +17,7 @@ import {
   Status,
   StatusToggle,
   Toggle,
+  HoldToDelete,
 } from '../components/UI';
 import {
   CopyValue,
@@ -217,7 +218,6 @@ export default function Messaging() {
           ) : creds.data ? (
             <DetailView>
               <DetailSummary
-                kind="SMS gateway credential"
                 title={creds.data.username}
                 facts={
                   <>
@@ -259,19 +259,11 @@ export default function Messaging() {
                   </DetailRow>
                 </DetailRows>
               </DetailSection>
-              <DrawerActions>
-                <button
-                  className="btn danger"
-                  disabled={removeCred.isPending}
-                  onClick={() =>
-                    confirm(
-                      "Remove the SMS credential? Messages can't be sent until you add one again.",
-                    ) && removeCred.mutate()
-                  }
-                >
-                  Remove credential
-                </button>
-              </DrawerActions>
+              <HoldToDelete
+                label="Hold to remove credential"
+                consequence="Messages can't be sent until you add a credential again."
+                onHold={() => removeCred.mutate()}
+              />
             </DetailView>
           ) : (
             <Empty
@@ -451,11 +443,6 @@ export default function Messaging() {
         {view && (
           <DetailView>
             <DetailSummary
-              kind={
-                view.direction === 'inbound'
-                  ? 'Inbound message'
-                  : 'Outbound message'
-              }
               title={
                 <span className="dv-route">
                   {view.from_number || 'Default sender'}
@@ -466,6 +453,9 @@ export default function Messaging() {
               facts={
                 <>
                   <Status value={view.status} />
+                  <span>
+                    {view.direction === 'inbound' ? 'Inbound' : 'Outbound'}
+                  </span>
                   <span>
                     {view.segments}{' '}
                     {view.segments === 1 ? 'segment' : 'segments'}

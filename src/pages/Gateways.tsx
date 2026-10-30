@@ -17,6 +17,7 @@ import {
   Status,
   StatusToggle,
   Toggle,
+  HoldToDelete,
 } from '../components/UI';
 import {
   ChoiceChips,
@@ -131,12 +132,7 @@ export default function Gateways() {
     setMode('edit');
   }
   function remove(g: SipGateway) {
-    if (
-      confirm(
-        `Delete ${g.name}? Calls that use this gateway will fail, and this can't be undone.`,
-      )
-    )
-      del.mutate(g.id);
+    del.mutate(g.id);
   }
   const testing = (id: string) => test.isPending && test.variables === id;
   const last = selected ? tests[selected.id] : undefined;
@@ -213,6 +209,7 @@ export default function Gateways() {
                           onView={() => view(g)}
                           onEdit={() => edit(g)}
                           onDelete={() => remove(g)}
+                          deleteLabel={`Delete ${g.name}`}
                         />
                       </div>
                     </td>
@@ -242,7 +239,6 @@ export default function Gateways() {
         {mode === 'view' && selected ? (
           <DetailView>
             <DetailSummary
-              kind="SIP gateway"
               title={selected.name}
               subtitle={
                 selected.proxy
@@ -472,16 +468,14 @@ export default function Gateways() {
               <button type="button" className="btn" onClick={close}>
                 Cancel
               </button>
-              {mode === 'edit' && selected && (
-                <button
-                  type="button"
-                  className="btn danger"
-                  onClick={() => remove(selected)}
-                >
-                  Delete
-                </button>
-              )}
             </DrawerActions>
+            {mode === 'edit' && selected && (
+              <HoldToDelete
+                label="Hold to delete gateway"
+                consequence={`Calls that use ${selected.name} will fail. This can't be undone.`}
+                onHold={() => remove(selected)}
+              />
+            )}
           </form>
         )}
       </Drawer>

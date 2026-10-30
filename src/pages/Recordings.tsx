@@ -3,7 +3,8 @@ import { Download, FileAudio, PlayCircle } from 'lucide-react';
 import { api, recordingsApi } from '../lib/api';
 import type { Recording } from '../types/api';
 import { usePlayer } from '../components/AudioPlayer';
-import { Card, Empty, PageHeader, RowActions, Spinner } from '../components/UI';
+import { Card, Empty, PageHeader, Spinner } from '../components/UI';
+import { HoldButton } from '../components/HoldButton';
 export default function Recordings() {
   const qc = useQueryClient();
   const data = useQuery({
@@ -87,15 +88,11 @@ export default function Recordings() {
                         >
                           <Download size={14} /> Download
                         </button>
-                        <button
-                          className="table-action danger-text"
-                          onClick={() =>
-                            confirm('Delete this recording?') &&
-                            del.mutate(r.id)
-                          }
-                        >
-                          Delete
-                        </button>
+                        <HoldButton
+                          iconOnly
+                          aria-label={`Delete the recording of call ${r.call_id}`}
+                          onHold={() => del.mutate(r.id)}
+                        />
                       </div>
                     </td>
                   </tr>

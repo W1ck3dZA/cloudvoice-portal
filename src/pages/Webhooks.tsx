@@ -19,7 +19,10 @@ import {
   Status,
   StatusToggle,
   Toggle,
+  ConfirmAction,
+  HoldToDelete,
 } from '../components/UI';
+import { HoldButton } from '../components/HoldButton';
 import {
   CopyValue,
   DetailRow,
@@ -281,12 +284,7 @@ export default function Webhooks() {
     setMode('edit');
   }
   function remove(w: WebhookEndpoint) {
-    if (
-      confirm(
-        `Delete the webhook for ${host(w.url)}? It stops receiving events straight away.`,
-      )
-    )
-      del.mutate(w.id);
+    del.mutate(w.id);
   }
   function toggleType(t: string, on: boolean) {
     setForm((f) => ({
@@ -361,12 +359,11 @@ export default function Webhooks() {
                         >
                           Edit
                         </button>
-                        <button
-                          className="table-action danger-text"
-                          onClick={() => remove(w)}
-                        >
-                          Delete
-                        </button>
+                        <HoldButton
+                          iconOnly
+                          aria-label={`Delete the webhook for ${host(w.url)}`}
+                          onHold={() => remove(w)}
+                        />
                       </div>
                     </td>
                   </tr>
@@ -398,7 +395,6 @@ export default function Webhooks() {
         {mode === 'view' && selected ? (
           <DetailView>
             <DetailSummary
-              kind="Webhook"
               title={selected.description || host(selected.url)}
               subtitle={selected.url}
               facts={
@@ -446,21 +442,13 @@ export default function Webhooks() {
                 </DetailRow>
               </DetailRows>
               <div className="dv-actions wh-rotate">
-                <button
-                  className="btn"
-                  disabled={rotate.isPending}
-                  onClick={() =>
-                    confirm(
-                      'Rotate the signing secret? Deliveries are signed with the new secret straight away, so your server must switch to it or it will reject them.',
-                    ) && rotate.mutate(selected.id)
-                  }
-                >
-                  {rotate.isPending ? 'Rotating…' : 'Rotate secret'}
-                </button>
-                <p className="dv-note">
-                  The new secret is shown once. Update your server with it
-                  straight away.
-                </p>
+                <ConfirmAction
+                  label={rotate.isPending ? 'Rotating…' : 'Rotate secret'}
+                  confirmLabel="Yes, rotate secret"
+                  consequence="Deliveries are signed with the new secret straight away, so your server must switch to it or it will reject them. The new secret is shown once."
+                  busy={rotate.isPending}
+                  onConfirm={() => rotate.mutate(selected.id)}
+                />
               </div>
             </DetailSection>
             <DetailSection title="Recent deliveries">
@@ -665,16 +653,14 @@ export default function Webhooks() {
               <button type="button" className="btn" onClick={close}>
                 Cancel
               </button>
-              {mode === 'edit' && selected && (
-                <button
-                  type="button"
-                  className="btn danger"
-                  onClick={() => remove(selected)}
-                >
-                  Delete
-                </button>
-              )}
             </DrawerActions>
+            {mode === 'edit' && selected && (
+              <HoldToDelete
+                label="Hold to delete webhook"
+                consequence={`${host(selected.url)} stops receiving events straight away. This can't be undone.`}
+                onHold={() => remove(selected)}
+              />
+            )}
           </form>
         )}
       </Drawer>

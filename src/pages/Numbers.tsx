@@ -7,7 +7,6 @@ import type { NumberResource } from '../types/api';
 import {
   AddButton,
   Card,
-  ConfirmBar,
   Drawer,
   Empty,
   ErrorBox,
@@ -18,6 +17,7 @@ import {
   Status,
   StatusToggle,
   Toggle,
+  HoldToDelete,
 } from '../components/UI';
 import {
   ChoiceChips,
@@ -190,9 +190,8 @@ export default function Numbers() {
                       <RowActions
                         onView={() => openView(n)}
                         onEdit={() => openEdit(n)}
-                        onDelete={() => {
-                          if (confirm(`Release ${n.e164}?`)) del.mutate(n.id);
-                        }}
+                        onDelete={() => del.mutate(n.id)}
+                        deleteLabel={`Release ${n.e164}`}
                       />
                     </td>
                   </tr>
@@ -222,7 +221,6 @@ export default function Numbers() {
         {mode === 'view' && selected ? (
           <DetailView>
             <DetailSummary
-              kind="Phone number"
               title={selected.e164}
               facts={
                 <>
@@ -358,23 +356,14 @@ export default function Numbers() {
               <button type="button" className="btn" onClick={close}>
                 Cancel
               </button>
-              {mode === 'edit' && selected && (
-                <button
-                  className="btn danger"
-                  type="button"
-                  onClick={() => {
-                    if (
-                      confirm(
-                        `Release ${selected.e164}? Calls and messages to it stop, and this can't be undone.`,
-                      )
-                    )
-                      del.mutate(selected.id);
-                  }}
-                >
-                  Release number
-                </button>
-              )}
             </DrawerActions>
+            {mode === 'edit' && selected && (
+              <HoldToDelete
+                label="Hold to release number"
+                consequence={`Calls and messages to ${selected.e164} stop. This can't be undone.`}
+                onHold={() => del.mutate(selected.id)}
+              />
+            )}
           </form>
         )}
       </Drawer>

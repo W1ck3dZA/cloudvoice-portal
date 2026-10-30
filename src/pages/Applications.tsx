@@ -16,6 +16,7 @@ import {
   Spinner,
   StatusToggle,
   Toggle,
+  HoldToDelete,
 } from '../components/UI';
 const blank = { name: '', description: '', active: true, record_calls: false };
 export default function Applications() {
@@ -201,15 +202,11 @@ export default function Applications() {
               Save application
             </button>
             {mode === 'edit' && selected && (
-              <button
-                className="btn danger"
-                type="button"
-                onClick={() =>
-                  confirm(`Delete ${selected.name}?`) && del.mutate(selected.id)
-                }
-              >
-                Delete application
-              </button>
+              <HoldToDelete
+                label="Hold to delete application"
+                consequence={`Deletes ${selected.name} and its call flow. Numbers and SIP users that use it stop routing calls. This can't be undone.`}
+                onHold={() => del.mutate(selected.id)}
+              />
             )}
           </form>
         )}

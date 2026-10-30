@@ -16,7 +16,9 @@ import {
   SecretReveal,
   Spinner,
   Status,
+  HoldToDelete,
 } from '../components/UI';
+import { HoldButton } from '../components/HoldButton';
 import {
   CopyValue,
   DetailRow,
@@ -119,12 +121,7 @@ export default function ApiKeys() {
     setLimitsOpen(k);
   }
   function revoke(k: ApiKey) {
-    if (
-      confirm(
-        `Revoke ${k.name}? Anything using this key stops working straight away, and this can't be undone.`,
-      )
-    )
-      del.mutate(k.id);
+    del.mutate(k.id);
   }
   return (
     <>
@@ -184,12 +181,11 @@ export default function ApiKeys() {
                             >
                               Limits
                             </button>
-                            <button
-                              className="table-action danger-text"
-                              onClick={() => revoke(k)}
-                            >
-                              Revoke
-                            </button>
+                            <HoldButton
+                              iconOnly
+                              aria-label={`Revoke ${k.name}`}
+                              onHold={() => revoke(k)}
+                            />
                           </>
                         )}
                       </div>
@@ -305,7 +301,6 @@ export default function ApiKeys() {
         {view && (
           <DetailView>
             <DetailSummary
-              kind="API key"
               title={view.name}
               subtitle={`${view.prefix}…`}
               facts={
@@ -328,17 +323,11 @@ export default function ApiKeys() {
                   >
                     Set rate limits
                   </button>
-                  <button
-                    className="btn danger"
-                    disabled={del.isPending}
-                    onClick={() => revoke(view)}
-                  >
-                    Revoke key
-                  </button>
-                  <p className="dv-note">
-                    Revoking stops anything using this key straight away. It
-                    can't be undone.
-                  </p>
+                  <HoldToDelete
+                    label="Hold to revoke key"
+                    consequence="Revoking stops anything using this key straight away. It can't be undone."
+                    onHold={() => revoke(view)}
+                  />
                 </>
               )}
             </DetailSummary>
