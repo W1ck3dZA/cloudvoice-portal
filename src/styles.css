@@ -2374,6 +2374,274 @@ td .pills {
 a.btn {
   text-decoration: none;
 }
+/* ── Event Publisher ───────────────────────────────────────────────────── */
+.ev-how {
+  margin-bottom: 16px;
+}
+.ev-how h2,
+.ev-result h2 {
+  margin: 0 0 6px;
+  font-size: 15px;
+  font-weight: 700;
+}
+.ev-steps {
+  list-style: none;
+  margin: 12px 0 0;
+  padding: 0;
+  display: grid;
+  grid-template-columns: repeat(3, minmax(0, 1fr));
+  gap: 16px;
+}
+.ev-steps li {
+  display: flex;
+  flex-direction: column;
+  gap: 4px;
+  padding-left: 14px;
+  border-left: 2px solid var(--line);
+  font-size: 13px;
+}
+.ev-steps li span {
+  color: var(--muted);
+  line-height: 1.5;
+}
+.ev-grid {
+  display: grid;
+  grid-template-columns: minmax(0, 1.1fr) minmax(0, 1fr);
+  gap: 16px;
+  align-items: start;
+}
+.ev-templates {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 8px;
+}
+.ev-templates .btn.ev-on {
+  border-color: var(--text);
+}
+.ev-json {
+  font-size: 13px;
+  line-height: 1.5;
+}
+.ev-check {
+  margin: -6px 0 0;
+  font-size: 12px;
+  font-weight: 600;
+}
+.ev-check.ok {
+  color: var(--good);
+}
+.ev-check.bad {
+  color: var(--bad);
+}
+.ev-result .json-preview {
+  margin: 12px 0;
+}
+.ev-headers {
+  margin: 0;
+  font-size: 12px;
+  line-height: 1.5;
+}
+@media (max-width: 1100px) {
+  .ev-grid,
+  .ev-steps {
+    grid-template-columns: minmax(0, 1fr);
+  }
+}
+/* ── Webhooks ──────────────────────────────────────────────────────────── */
+.wh-how {
+  margin-bottom: 16px;
+  padding: 4px 20px;
+  background: var(--surface);
+  border: 1px solid var(--line);
+  border-radius: 16px;
+}
+.wh-how[open] {
+  padding-bottom: 20px;
+}
+.wh-how-body {
+  display: grid;
+  grid-template-columns: minmax(0, 1fr) minmax(0, 1fr);
+  gap: 24px;
+  margin-top: 8px;
+}
+.wh-facts {
+  margin: 0;
+  padding: 0;
+  list-style: none;
+  display: flex;
+  flex-direction: column;
+  gap: 12px;
+  font-size: 13px;
+  line-height: 1.55;
+}
+.wh-facts strong {
+  color: var(--text);
+}
+.wh-facts li {
+  color: var(--muted);
+}
+.wh-code h3 {
+  margin: 0 0 6px;
+  font-size: 13px;
+  font-weight: 700;
+}
+.wh-code h3 + .muted {
+  margin: 0 0 10px;
+  font-size: 12px;
+  line-height: 1.5;
+}
+.wh-code .json-preview + h3 {
+  margin-top: 16px;
+}
+.wh-endpoint span {
+  max-width: 420px;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+.wh-rotate {
+  margin-top: 12px;
+}
+.wh-deliveries {
+  list-style: none;
+  margin: 0;
+  padding: 0;
+}
+.wh-delivery {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 12px;
+  padding: 12px 0;
+  border-top: 1px solid var(--line);
+}
+.wh-delivery:last-child {
+  border-bottom: 1px solid var(--line);
+}
+.wh-delivery-main {
+  display: flex;
+  flex-direction: column;
+  gap: 4px;
+  min-width: 0;
+  font-size: 12px;
+  color: var(--muted);
+}
+.wh-delivery-head {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  color: var(--text);
+  font-size: 13px;
+}
+.wh-error {
+  color: var(--bad);
+  overflow-wrap: anywhere;
+}
+.form-stack .wh-scope {
+  display: grid;
+  grid-template-columns: minmax(0, 1fr) minmax(0, 1fr);
+  gap: 10px;
+}
+.form-stack .wh-scope label,
+.form-stack .wh-type {
+  flex-direction: row;
+  align-items: flex-start;
+  gap: 12px;
+  cursor: pointer;
+}
+.form-stack .wh-scope label {
+  padding: 12px 14px;
+  border: 1px solid var(--line);
+  border-radius: 12px;
+}
+.form-stack .wh-scope label.on {
+  border-color: var(--text);
+}
+.wh-scope span,
+.wh-type span {
+  display: flex;
+  flex-direction: column;
+  gap: 2px;
+  min-width: 0;
+}
+.wh-scope small,
+.wh-type small {
+  font-size: 12px;
+  font-weight: 500;
+  color: var(--muted);
+}
+.wh-scope input,
+.wh-type input {
+  accent-color: var(--brand);
+  margin-top: 2px;
+}
+.wh-groups {
+  display: flex;
+  flex-direction: column;
+  gap: 18px;
+  margin-top: 4px;
+}
+.wh-group {
+  margin: 0;
+  padding: 0;
+  border: 0;
+  min-width: 0;
+  display: flex;
+  flex-direction: column;
+  gap: 10px;
+}
+.wh-group legend {
+  float: left;
+  width: 100%;
+  margin-bottom: 4px;
+  padding: 0;
+  font-size: 12px;
+  font-weight: 700;
+  color: var(--muted);
+}
+.wh-group legend + * {
+  clear: both;
+}
+.form-stack .wh-type {
+  padding: 2px 0;
+}
+.wh-type code {
+  font-size: 12px;
+  font-weight: 700;
+}
+.wh-wild code {
+  color: var(--text);
+}
+.wh-type-grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fill, minmax(260px, 1fr));
+  gap: 10px 16px;
+}
+.wh-wild {
+  grid-column: 1 / -1;
+}
+.ev-steps a,
+.wh-facts a,
+.dv-empty a {
+  color: var(--text);
+  font-weight: 600;
+  text-decoration: underline;
+  text-underline-offset: 2px;
+}
+.wh-type:has(input:disabled) {
+  opacity: 0.55;
+  cursor: default;
+}
+@media (max-width: 1100px) {
+  .wh-how-body {
+    grid-template-columns: minmax(0, 1fr);
+  }
+}
+@media (max-width: 640px) {
+  .form-stack .wh-scope {
+    grid-template-columns: minmax(0, 1fr);
+  }
+}
 /* ── Settings page ─────────────────────────────────────────────────────── */
 .settings-page {
   display: flex;
