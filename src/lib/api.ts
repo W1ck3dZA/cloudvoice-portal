@@ -75,13 +75,25 @@ function list<T>(r: { data: ApiEnvelope<unknown> }, keys: string[] = []): T[] {
 export const errorMessage = (e: any) =>
   e?.response?.data?.error?.message || e?.message || 'Request failed';
 export const authApi = {
-  register: async (email: string, name: string, password: string) =>
+  register: async (
+    email: string,
+    name: string,
+    password: string,
+    organisation_name: string,
+  ) =>
     unwrap<{
       user: User;
       orgId: string | null;
       role: string | null;
       token: string;
-    }>(await api.post('/v1/auth/register', { email, name, password })),
+    }>(
+      await api.post('/v1/auth/register', {
+        email,
+        name,
+        password,
+        organisation_name,
+      }),
+    ),
   login: async (email: string, password: string) =>
     unwrap<{
       user: User;
