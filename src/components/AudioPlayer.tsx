@@ -77,6 +77,30 @@ export function PlayerProvider({ children }: { children: ReactNode }) {
   );
 }
 const SPEEDS = [1, 1.5, 2];
+/**
+ * Safari plays an object URL only when the blob has an audio type, and
+ * recordings are often stored as application/octet-stream. Read the first
+ * bytes to find the format and retype the blob.
+ */
+async function asAudio(blob: Blob): Promise<Blob> {
+  if (/^audio\//.test(blob.type)) return blob;
+  const b = new Uint8Array(await blob.slice(0, 12).arrayBuffer());
+  const text = (from: number, to: number) =>
+    String.fromCharCode(...b.slice(from, to));
+  const type =
+    text(0, 4) === 'RIFF' && text(8, 12) === 'WAVE'
+      ? 'audio/wav'
+      : text(0, 3) === 'ID3' || (b[0] === 0xff && (b[1] & 0xe0) === 0xe0)
+        ? 'audio/mpeg'
+        : text(0, 4) === 'OggS'
+          ? 'audio/ogg'
+          : text(4, 8) === 'ftyp'
+            ? 'audio/mp4'
+            : text(0, 4) === 'fLaC'
+              ? 'audio/flac'
+              : 'audio/wav';
+  return new Blob([blob], { type });
+}
 const clock = (s: number) => {
   if (!Number.isFinite(s) || s < 0) return '0:00';
   const m = Math.floor(s / 60);
@@ -113,9 +137,10 @@ function PlayerBar({
       .get(`/v1/recordings/${track.recordingId}/download`, {
         responseType: 'blob',
       })
-      .then((res) => {
+      .then(async (res) => {
+        const audio = await asAudio(res.data);
         if (cancelled) return;
-        url = URL.createObjectURL(res.data);
+        url = URL.createObjectURL(audio);
         setSrc(url);
       })
       .catch(() => !cancelled && setFailed(true));

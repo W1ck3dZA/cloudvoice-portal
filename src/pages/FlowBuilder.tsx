@@ -477,8 +477,13 @@ export default function FlowBuilder() {
   return (
     <div className="flow-builder-page">
       <header className="builder-top">
-        <button className="btn" onClick={() => nav('/applications')}>
-          <ArrowLeft size={15} /> Applications
+        <button
+          className="btn"
+          onClick={() => nav('/applications')}
+          aria-label="Back to applications"
+        >
+          <ArrowLeft size={15} aria-hidden="true" />
+          <span className="bt-label">Applications</span>
         </button>
         <div>
           <h1>{app.data.name}</h1>
