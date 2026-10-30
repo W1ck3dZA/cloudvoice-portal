@@ -3933,3 +3933,9 @@ tr.tap:hover td {
     background: var(--soft);
   }
 }
+/* Narrow phones: the account button shows initials only; the menu still names the account. */
+@media (max-width: 479px) {
+  .org-pill-name {
+    display: none;
+  }
+}

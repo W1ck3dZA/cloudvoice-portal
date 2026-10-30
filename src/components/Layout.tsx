@@ -1,11 +1,12 @@
 import { useEffect, useRef, useState, type ReactElement } from 'react';
-import { useQuery } from '@tanstack/react-query';
+import { useIsFetching, useQuery, useQueryClient } from '@tanstack/react-query';
 import { NavLink, Outlet, useLocation, useNavigate } from 'react-router-dom';
 import {
   Building2,
   Check,
   ChevronDown,
   LogOut,
+  RefreshCw,
   Settings,
   Sun,
 } from 'lucide-react';
@@ -94,6 +95,9 @@ export function Layout() {
   const menuRef = useRef<HTMLDivElement>(null);
   const { session, logout } = useSession();
   const { preference, cycleTheme } = useTheme();
+  // Refresh: refetch everything on screen without leaving the page; the icon spins while anything loads.
+  const qc = useQueryClient();
+  const fetching = useIsFetching() > 0;
   const organisations = useQuery({
     queryKey: ['organisations'],
     queryFn: orgApi.list,
@@ -200,6 +204,19 @@ export function Layout() {
             <span className="crumb-here">{page?.label ?? 'Cloudvoice'}</span>
           </div>
           <div className="top-actions">
+            <button
+              className="icon-btn"
+              onClick={() => void qc.refetchQueries({ type: 'active' })}
+              aria-label="Refresh"
+              title="Refresh"
+            >
+              <AnimatedIcon
+                icon={RefreshCw}
+                size={20}
+                animation="spin"
+                active={fetching}
+              />
+            </button>
             <button
               className="icon-btn"
               onClick={cycleTheme}
