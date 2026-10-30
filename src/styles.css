@@ -711,6 +711,37 @@ select {
   border-radius: 16px;
   padding: 20px;
 }
+/* The one hero figure per page (ui-design .hero). */
+.hero {
+  padding: 18px 20px;
+  border-radius: 18px;
+  background: var(--hero);
+  color: var(--herofg);
+}
+.hero .lbl {
+  font-size: 13px;
+  font-weight: 600;
+  color: var(--herom);
+}
+.hero .big {
+  margin-top: 4px;
+  font-size: 34px;
+  font-weight: 700;
+  letter-spacing: -0.02em;
+  line-height: 1.1;
+}
+.hero-facts {
+  margin-top: 6px;
+  font-size: 13px;
+  color: var(--herom);
+}
+.dash-hero {
+  margin-bottom: 24px;
+}
+/* Lucide icons use the standard's 1.8px stroke. */
+svg.lucide {
+  stroke-width: 1.8px;
+}
 .metric-grid {
   display: grid;
   grid-template-columns: repeat(4, 1fr);
