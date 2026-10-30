@@ -17,6 +17,8 @@ import {
   Status,
   StatusToggle,
   ConfirmAction,
+  rowOpen,
+  RowMain,
 } from '../components/UI';
 import { HoldButton } from '../components/HoldButton';
 import {
@@ -223,27 +225,32 @@ export default function Webhooks() {
           <Spinner />
         ) : list.length ? (
           <div className="table-wrap">
-            <table>
+            <table className="rt">
               <thead>
                 <tr>
                   <th>Endpoint</th>
                   <th>Events</th>
                   <th>Active</th>
-                  <th>Updated</th>
+                  <th className="hide-md">Updated</th>
                   <th aria-label="Actions" />
                 </tr>
               </thead>
               <tbody>
                 {list.map((w) => (
-                  <tr key={w.id}>
-                    <td>
+                  <tr key={w.id} {...rowOpen(() => setSelected(w))}>
+                    <RowMain
+                      onOpen={() => setSelected(w)}
+                      label={`Open the webhook for ${host(w.url)}`}
+                      title={w.description || host(w.url)}
+                      sub={`${eventSummary(w.event_types)} · ${host(w.url)}`}
+                    >
                       <div className="cell-stack wh-endpoint">
                         <strong>{w.description || host(w.url)}</strong>
                         <span>{w.url}</span>
                       </div>
-                    </td>
+                    </RowMain>
                     <td>{eventSummary(w.event_types)}</td>
-                    <td>
+                    <td className="c-end">
                       <StatusToggle
                         checked={w.active}
                         onChange={() => toggleActive.mutate(w)}
@@ -256,11 +263,13 @@ export default function Webhooks() {
                         }
                       />
                     </td>
-                    <td>{new Date(w.updated_at).toLocaleString()}</td>
+                    <td className="hide-md">
+                      {new Date(w.updated_at).toLocaleString()}
+                    </td>
                     <td>
                       <div className="row-actions">
                         <button
-                          className="table-action"
+                          className="table-action wide-only"
                           onClick={() => setSelected(w)}
                         >
                           View{' '}

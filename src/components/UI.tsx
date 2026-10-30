@@ -1,4 +1,11 @@
-import { useEffect, useId, useRef, useState, type ReactNode } from 'react';
+import {
+  useEffect,
+  useId,
+  useRef,
+  useState,
+  type MouseEvent,
+  type ReactNode,
+} from 'react';
 import { HoldButton } from './HoldButton';
 import {
   AlertTriangle,
@@ -367,7 +374,7 @@ export function RowActions({
   return (
     <div className="row-actions">
       {onView && (
-        <button className="table-action" onClick={onView}>
+        <button className="table-action wide-only" onClick={onView}>
           View <AnimatedIcon icon={ChevronRight} size={14} animation="nudge" />
         </button>
       )}
@@ -493,5 +500,62 @@ export function SecretReveal({
         </button>
       </div>
     </div>
+  );
+}
+/**
+ * Responsive tables (table.rt): on phones each row collapses to its main cell and an end cell (.c-end), and the
+ * whole row opens the item. Spread rowOpen(fn) on the <tr>; taps on the row's own controls don't open it.
+ */
+export function rowOpen(onOpen?: () => void) {
+  if (!onOpen) return {};
+  return {
+    className: 'tap',
+    onClick: (e: MouseEvent<HTMLTableRowElement>) => {
+      const t = e.target as HTMLElement;
+      if (t.closest('button, a, input, select, textarea, label, .hold')) return;
+      onOpen();
+    },
+  };
+}
+/**
+ * The first cell of a responsive table row. `children` is the desktop content; on phones `title` (default:
+ * children) and the `sub` summary line show instead. With onOpen the content is a button, so keyboards can open it.
+ */
+export function RowMain({
+  children,
+  title,
+  sub,
+  onOpen,
+  label,
+}: {
+  children: ReactNode;
+  title?: ReactNode;
+  sub?: ReactNode;
+  onOpen?: () => void;
+  /** Accessible name for the open button, e.g. "Open +27100562194". */
+  label?: string;
+}) {
+  const body = (
+    <>
+      <span className="main-lg">{children}</span>
+      <span className="main-sm">{title ?? children}</span>
+      {sub && <span className="sub-sm">{sub}</span>}
+    </>
+  );
+  return (
+    <td className="c-main">
+      {onOpen ? (
+        <button
+          type="button"
+          className="row-open"
+          aria-label={label}
+          onClick={onOpen}
+        >
+          {body}
+        </button>
+      ) : (
+        body
+      )}
+    </td>
   );
 }

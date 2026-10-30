@@ -15,6 +15,8 @@ import {
   Spinner,
   Status,
   StatusToggle,
+  rowOpen,
+  RowMain,
 } from '../components/UI';
 import {
   CopyValue,
@@ -90,12 +92,12 @@ export default function Gateways() {
           <Spinner />
         ) : (data.data || []).length ? (
           <div className="table-wrap">
-            <table>
+            <table className="rt">
               <thead>
                 <tr>
                   <th>Gateway</th>
-                  <th>Username</th>
-                  <th>Caller ID</th>
+                  <th className="hide-md">Username</th>
+                  <th className="hide-md">Caller ID</th>
                   <th>Codecs</th>
                   <th>Active</th>
                   <th />
@@ -103,21 +105,26 @@ export default function Gateways() {
               </thead>
               <tbody>
                 {data.data!.map((g) => (
-                  <tr key={g.id}>
-                    <td>
+                  <tr key={g.id} {...rowOpen(() => view(g))}>
+                    <RowMain
+                      onOpen={() => view(g)}
+                      label={`Open ${g.name}`}
+                      title={g.name}
+                      sub={g.proxy ? `${g.realm} via ${g.proxy}` : g.realm}
+                    >
                       <div className="cell-stack">
                         <strong>{g.name}</strong>
                         <span>
                           {g.proxy ? `${g.realm} via ${g.proxy}` : g.realm}
                         </span>
                       </div>
-                    </td>
-                    <td>{g.username}</td>
-                    <td>{g.caller_id_number || '—'}</td>
+                    </RowMain>
+                    <td className="hide-md">{g.username}</td>
+                    <td className="hide-md">{g.caller_id_number || '—'}</td>
                     <td>
                       <ValuePills values={g.codecs || []} />
                     </td>
-                    <td>
+                    <td className="c-end">
                       <StatusToggle
                         checked={g.active}
                         onChange={() => toggleActive.mutate(g)}
@@ -131,7 +138,7 @@ export default function Gateways() {
                     <td>
                       <div className="row-actions">
                         <button
-                          className="table-action"
+                          className="table-action wide-only"
                           disabled={testing(g.id)}
                           onClick={() => test.mutate(g.id)}
                         >

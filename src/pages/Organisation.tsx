@@ -18,6 +18,8 @@ import {
   RowActions,
   Spinner,
   HoldToDelete,
+  rowOpen,
+  RowMain,
 } from '../components/UI';
 
 export default function Organisation() {
@@ -240,27 +242,40 @@ export default function Organisation() {
           <Spinner />
         ) : (members.data || []).length ? (
           <div className="table-wrap">
-            <table>
+            <table className="rt">
               <thead>
                 <tr>
                   <th>Name</th>
                   <th>Email</th>
                   <th>Role</th>
-                  <th>Status</th>
-                  <th>Joined</th>
+                  <th className="hide-md">Status</th>
+                  <th className="hide-md">Joined</th>
                   <th />
                 </tr>
               </thead>
               <tbody>
                 {members.data!.map((m) => (
-                  <tr key={m.id}>
-                    <td>
+                  <tr
+                    key={m.id}
+                    {...rowOpen(
+                      canManage && m.role !== 'owner'
+                        ? () => {
+                            setEditMember(m);
+                            setRole(m.role);
+                            setDrawer('member-edit');
+                          }
+                        : undefined,
+                    )}
+                  >
+                    <RowMain title={m.name} sub={m.email}>
                       <strong>{m.name}</strong>
-                    </td>
+                    </RowMain>
                     <td>{m.email}</td>
-                    <td>{m.role}</td>
-                    <td>{humanize(m.status)}</td>
-                    <td>{new Date(m.joined_at).toLocaleDateString()}</td>
+                    <td className="c-end caps">{m.role}</td>
+                    <td className="hide-md">{humanize(m.status)}</td>
+                    <td className="hide-md">
+                      {new Date(m.joined_at).toLocaleDateString()}
+                    </td>
                     <td>
                       {canManage && m.role !== 'owner' && (
                         <RowActions

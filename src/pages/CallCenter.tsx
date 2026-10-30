@@ -23,6 +23,8 @@ import {
   RowActions,
   Spinner,
   StatusToggle,
+  rowOpen,
+  RowMain,
 } from '../components/UI';
 import { AGENT_STATUSES, humanize } from '../lib/labels';
 const qBlank = {
@@ -185,11 +187,11 @@ export default function CallCenter() {
             <Spinner />
           ) : (qs.data || []).length ? (
             <div className="table-wrap">
-              <table>
+              <table className="rt">
                 <thead>
                   <tr>
                     <th>Name</th>
-                    <th>Strategy</th>
+                    <th className="hide-md">Strategy</th>
                     <th>Answered</th>
                     <th>Abandoned</th>
                     <th>Status</th>
@@ -198,14 +200,22 @@ export default function CallCenter() {
                 </thead>
                 <tbody>
                   {qs.data!.map((q) => (
-                    <tr key={q.id}>
-                      <td>
+                    <tr
+                      key={q.id}
+                      {...rowOpen(() => nav(`/call-center/queues/${q.id}`))}
+                    >
+                      <RowMain
+                        onOpen={() => nav(`/call-center/queues/${q.id}`)}
+                        label={`Open queue ${q.name}`}
+                        title={q.name}
+                        sub={`${q.calls_answered} answered · ${q.calls_abandoned} abandoned · ${q.strategy}`}
+                      >
                         <strong>{q.name}</strong>
-                      </td>
-                      <td>{q.strategy}</td>
+                      </RowMain>
+                      <td className="hide-md">{q.strategy}</td>
                       <td>{q.calls_answered}</td>
                       <td>{q.calls_abandoned}</td>
-                      <td>
+                      <td className="c-end">
                         <StatusToggle
                           checked={q.active}
                           onChange={() => toggleQueueActive.mutate(q)}
@@ -261,7 +271,7 @@ export default function CallCenter() {
             <Spinner />
           ) : (as.data || []).length ? (
             <div className="table-wrap">
-              <table>
+              <table className="rt">
                 <thead>
                   <tr>
                     <th>Name</th>
@@ -273,11 +283,26 @@ export default function CallCenter() {
                 </thead>
                 <tbody>
                   {as.data!.map((a) => (
-                    <tr key={a.id}>
-                      <td>
+                    <tr
+                      key={a.id}
+                      {...rowOpen(() => {
+                        setASel(a);
+                        setAf({
+                          ...aBlank,
+                          name: a.name,
+                          status: a.status,
+                          wrap_up_time: String(a.wrap_up_time || 0),
+                        });
+                        setDrawer('aedit');
+                      })}
+                    >
+                      <RowMain
+                        title={a.name}
+                        sub={`${humanize(a.state)} · ${a.calls_answered} calls`}
+                      >
                         <strong>{a.name}</strong>
-                      </td>
-                      <td>
+                      </RowMain>
+                      <td className="c-end">
                         <select
                           className="status-select"
                           value={a.status}

@@ -4,7 +4,7 @@ import { AnimatedIcon } from '../components/AnimatedIcon';
 import { api, recordingsApi } from '../lib/api';
 import type { Recording } from '../types/api';
 import { usePlayer } from '../components/AudioPlayer';
-import { Card, Empty, PageHeader, Spinner } from '../components/UI';
+import { Card, Empty, PageHeader, RowMain, Spinner } from '../components/UI';
 import { HoldButton } from '../components/HoldButton';
 export default function Recordings() {
   const qc = useQueryClient();
@@ -52,13 +52,13 @@ export default function Recordings() {
           <Spinner />
         ) : (data.data || []).length ? (
           <div className="table-wrap">
-            <table>
+            <table className="rt">
               <thead>
                 <tr>
                   <th>Call</th>
-                  <th>Format</th>
+                  <th className="hide-md">Format</th>
                   <th>Duration</th>
-                  <th>Size</th>
+                  <th className="hide-md">Size</th>
                   <th>Created</th>
                   <th />
                 </tr>
@@ -66,16 +66,31 @@ export default function Recordings() {
               <tbody>
                 {data.data!.map((r) => (
                   <tr key={r.id}>
-                    <td>{r.call_id || '—'}</td>
-                    <td>{r.content_type}</td>
+                    <RowMain
+                      title={new Date(r.created_at).toLocaleString()}
+                      sub={[
+                        r.duration_seconds == null
+                          ? null
+                          : `${r.duration_seconds}s`,
+                        `${(r.size_bytes / 1024 / 1024).toFixed(2)} MB`,
+                        r.call_id ? `call ${r.call_id}` : null,
+                      ]
+                        .filter(Boolean)
+                        .join(' · ')}
+                    >
+                      {r.call_id || '—'}
+                    </RowMain>
+                    <td className="hide-md">{r.content_type}</td>
                     <td>
                       {r.duration_seconds == null
                         ? '—'
                         : `${r.duration_seconds}s`}
                     </td>
-                    <td>{(r.size_bytes / 1024 / 1024).toFixed(2)} MB</td>
+                    <td className="hide-md">
+                      {(r.size_bytes / 1024 / 1024).toFixed(2)} MB
+                    </td>
                     <td>{new Date(r.created_at).toLocaleString()}</td>
-                    <td>
+                    <td className="c-end">
                       <div className="row-actions">
                         <button
                           className="table-action"
@@ -90,7 +105,7 @@ export default function Recordings() {
                           Play
                         </button>
                         <button
-                          className="table-action"
+                          className="table-action wide-only"
                           onClick={() => download(r)}
                         >
                           <AnimatedIcon

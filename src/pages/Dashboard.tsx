@@ -11,7 +11,23 @@ import {
 import { callsApi, numbersApi, appsApi, smsApi } from '../lib/api';
 import { answeredBy } from '../lib/labels';
 import { useSession } from '../lib/session';
-import { Card, PageHeader, Spinner, Status } from '../components/UI';
+import {
+  Card,
+  Drawer,
+  PageHeader,
+  Spinner,
+  Status,
+  rowOpen,
+  RowMain,
+} from '../components/UI';
+import { usePlayer } from '../components/AudioPlayer';
+import {
+  CallDetails,
+  callParty,
+  callSummary,
+  callTrack,
+} from '../components/CallDetails';
+import type { Call } from '../types/api';
 type Range = 'today' | 'week' | 'month';
 const ranges: { key: Range; label: string }[] = [
   { key: 'today', label: 'Today' },
@@ -69,6 +85,8 @@ function buildSeries<T>(
 export default function Dashboard() {
   const { session } = useSession();
   const [range, setRange] = useState<Range>('week');
+  const [view, setView] = useState<Call | null>(null);
+  const player = usePlayer();
   const numbers = useQuery({
     queryKey: ['numbers', session?.orgId],
     queryFn: () => numbersApi.list(session?.orgId || undefined),
@@ -223,29 +241,36 @@ export default function Dashboard() {
           </div>
         </div>
         <div className="table-wrap">
-          <table>
+          <table className="rt">
             <thead>
               <tr>
                 <th>Direction</th>
-                <th>From</th>
+                <th className="hide-md">From</th>
                 <th>To</th>
                 <th>Status</th>
-                <th>Answered by</th>
-                <th>Duration</th>
+                <th className="hide-md">Answered by</th>
+                <th className="hide-md">Duration</th>
                 <th>Started</th>
               </tr>
             </thead>
             <tbody>
               {recent.map((c) => (
-                <tr key={c.id}>
-                  <td className="caps">{c.direction}</td>
-                  <td>{c.from_number}</td>
+                <tr key={c.id} {...rowOpen(() => setView(c))}>
+                  <RowMain
+                    onOpen={() => setView(c)}
+                    label={`Open the call with ${callParty(c)}`}
+                    title={callParty(c)}
+                    sub={callSummary(c)}
+                  >
+                    <span className="caps">{c.direction}</span>
+                  </RowMain>
+                  <td className="hide-md">{c.from_number}</td>
                   <td>{c.to_number}</td>
-                  <td>
+                  <td className="c-end">
                     <Status value={c.status} />
                   </td>
-                  <td>{answeredBy(c)}</td>
-                  <td>
+                  <td className="hide-md">{answeredBy(c)}</td>
+                  <td className="hide-md">
                     {c.duration_seconds == null
                       ? '—'
                       : `${c.duration_seconds}s`}
@@ -257,6 +282,17 @@ export default function Dashboard() {
           </table>
         </div>
       </Card>
+      <Drawer open={!!view} onClose={() => setView(null)} title="Call details">
+        {view && (
+          <CallDetails
+            call={view}
+            applicationName={
+              apps.data?.find((a) => a.id === view.application_id)?.name
+            }
+            onPlay={() => view.recording_id && player.play(callTrack(view))}
+          />
+        )}
+      </Drawer>
     </>
   );
 }

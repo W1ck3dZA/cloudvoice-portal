@@ -18,6 +18,8 @@ import {
   Spinner,
   Status,
   HoldToDelete,
+  rowOpen,
+  RowMain,
 } from '../components/UI';
 import { HoldButton } from '../components/HoldButton';
 import {
@@ -136,32 +138,37 @@ export default function ApiKeys() {
           <Spinner />
         ) : (data.data || []).length ? (
           <div className="table-wrap">
-            <table>
+            <table className="rt">
               <thead>
                 <tr>
                   <th>Key</th>
-                  <th>Access</th>
+                  <th className="hide-md">Access</th>
                   <th>Status</th>
                   <th>Last used</th>
-                  <th>Expires</th>
+                  <th className="hide-md">Expires</th>
                   <th />
                 </tr>
               </thead>
               <tbody>
                 {data.data!.map((k) => (
-                  <tr key={k.id}>
-                    <td>
+                  <tr key={k.id} {...rowOpen(() => setView(k))}>
+                    <RowMain
+                      onOpen={() => setView(k)}
+                      label={`Open ${k.name}`}
+                      title={k.name}
+                      sub={`${k.prefix}… · ${accessText(k.scopes)}`}
+                    >
                       <div className="cell-stack">
                         <strong>{k.name}</strong>
                         <span>{k.prefix}…</span>
                       </div>
-                    </td>
-                    <td>{accessText(k.scopes)}</td>
-                    <td>
+                    </RowMain>
+                    <td className="hide-md">{accessText(k.scopes)}</td>
+                    <td className="c-end">
                       <Status value={k.status} />
                     </td>
                     <td>{date(k.last_used_at)}</td>
-                    <td>
+                    <td className="hide-md">
                       {k.expires_at
                         ? new Date(k.expires_at).toLocaleDateString()
                         : 'Never'}
@@ -169,7 +176,7 @@ export default function ApiKeys() {
                     <td>
                       <div className="row-actions">
                         <button
-                          className="table-action"
+                          className="table-action wide-only"
                           onClick={() => setView(k)}
                         >
                           View{' '}
