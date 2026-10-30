@@ -126,7 +126,7 @@ export default function ApiKeys() {
   return (
     <>
       <PageHeader
-        title="API Keys"
+        title="API keys"
         description="Keys for your own servers and integrations to call the Cloudvoice API. Give each integration its own key with only the access it needs."
         action={<AddButton onClick={openCreate}>Create API key</AddButton>}
       />

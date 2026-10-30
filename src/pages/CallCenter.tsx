@@ -147,7 +147,7 @@ export default function CallCenter() {
   return (
     <>
       <PageHeader
-        title="Call Center"
+        title="Call center"
         description="Manage call queues and the agents who answer them."
         action={
           <AddButton

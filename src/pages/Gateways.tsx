@@ -139,7 +139,7 @@ export default function Gateways() {
   return (
     <>
       <PageHeader
-        title="SIP Gateways"
+        title="SIP gateways"
         description="Outbound trunks to your carriers: where calls go, how they authenticate, the caller ID and codecs."
         action={
           <AddButton

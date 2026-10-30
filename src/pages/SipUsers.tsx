@@ -109,7 +109,7 @@ export default function SipUsers() {
   return (
     <>
       <PageHeader
-        title="SIP Users"
+        title="SIP users"
         description="Manage registered extensions, voicemail and default inbound applications."
         action={
           <AddButton

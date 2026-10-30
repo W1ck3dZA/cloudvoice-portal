@@ -105,7 +105,7 @@ export default function EventTester() {
   return (
     <>
       <PageHeader
-        title="Event Publisher"
+        title="Event publisher"
         description="Send a test event to everything listening for this organisation's events, to check your webhooks and WebSocket clients handle it. It doesn't touch any calls or messages."
       />
       <Card className="ev-how">
