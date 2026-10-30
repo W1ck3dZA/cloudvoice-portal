@@ -14,9 +14,22 @@ import {
   PageHeader,
   RowActions,
   Spinner,
+  Status,
   StatusToggle,
   Toggle,
 } from '../components/UI';
+import {
+  ChoiceChips,
+  CopyValue,
+  DetailRow,
+  DetailRows,
+  DetailSection,
+  DetailSummary,
+  DetailView,
+  DrawerActions,
+  FormSection,
+  ValuePills,
+} from '../components/Details';
 const CODEC_OPTIONS = ['OPUS', 'PCMU', 'PCMA', 'G729', 'G722'];
 const blank = {
   name: '',
@@ -39,6 +52,7 @@ const GATEWAY_STATUS: Record<string, string> = {
   not_found: 'Gateway is not loaded yet. Save it again or contact support',
   unknown: 'Gateway status is unknown',
 };
+type TestResult = { connected: boolean; status: string; at: Date };
 export default function Gateways() {
   const qc = useQueryClient();
   const data = useQuery({ queryKey: ['gateways'], queryFn: gatewaysApi.list });
@@ -46,6 +60,8 @@ export default function Gateways() {
   const [selected, setSelected] = useState<SipGateway | null>(null);
   const [form, setForm] = useState(blank);
   const [err, setErr] = useState('');
+  // Latest connection test per gateway, shown in its drawer.
+  const [tests, setTests] = useState<Record<string, TestResult>>({});
   const close = () => {
     setMode(null);
     setSelected(null);
@@ -59,14 +75,6 @@ export default function Gateways() {
       caller_id_number: form.caller_id_number || null,
       caller_id_name: form.caller_id_name || null,
     };
-  }
-  function codec(c: string, v: boolean) {
-    setForm((f) => ({
-      ...f,
-      codecs: v
-        ? [...new Set([...f.codecs, c])]
-        : f.codecs.filter((x) => x !== c),
-    }));
   }
   const save = useMutation({
     mutationFn: () =>
@@ -88,20 +96,27 @@ export default function Gateways() {
   });
   const test = useMutation({
     mutationFn: gatewaysApi.test,
-    onSuccess: (d: { connected: boolean; status: string }) =>
+    onSuccess: (d: { connected: boolean; status: string }, id: string) => {
+      setTests((t) => ({ ...t, [id]: { ...d, at: new Date() } }));
       showToast({
         kind: d.connected ? 'success' : 'error',
         message: GATEWAY_STATUS[d.status] ?? 'Gateway status is unknown',
-      }),
-    onError: (e) => alert(errorMessage(e)),
+      });
+    },
+    onError: (e) => showToast({ kind: 'error', message: errorMessage(e) }),
   });
   const toggleActive = useMutation({
     mutationFn: (g: SipGateway) =>
       gatewaysApi.update(g.id, { active: !g.active }),
     onSuccess: () => qc.invalidateQueries({ queryKey: ['gateways'] }),
   });
+  function view(g: SipGateway) {
+    setSelected(g);
+    setMode('view');
+  }
   function edit(g: SipGateway) {
     setSelected(g);
+    setErr('');
     setForm({
       name: g.name,
       realm: g.realm,
@@ -115,16 +130,27 @@ export default function Gateways() {
     });
     setMode('edit');
   }
+  function remove(g: SipGateway) {
+    if (
+      confirm(
+        `Delete ${g.name}? Calls that use this gateway will fail, and this can't be undone.`,
+      )
+    )
+      del.mutate(g.id);
+  }
+  const testing = (id: string) => test.isPending && test.variables === id;
+  const last = selected ? tests[selected.id] : undefined;
   return (
     <>
       <PageHeader
         eyebrow="Voice"
         title="SIP Gateways"
-        description="Configure outbound trunks, authentication, caller ID and codecs."
+        description="Outbound trunks to your carriers: where calls go, how they authenticate, the caller ID and codecs."
         action={
           <AddButton
             onClick={() => {
               setForm(blank);
+              setErr('');
               setMode('add');
             }}
           >
@@ -140,11 +166,11 @@ export default function Gateways() {
             <table>
               <thead>
                 <tr>
-                  <th>Name</th>
-                  <th>Realm</th>
+                  <th>Gateway</th>
                   <th>Username</th>
+                  <th>Caller ID</th>
                   <th>Codecs</th>
-                  <th>Status</th>
+                  <th>Active</th>
                   <th />
                 </tr>
               </thead>
@@ -152,11 +178,18 @@ export default function Gateways() {
                 {data.data!.map((g) => (
                   <tr key={g.id}>
                     <td>
-                      <strong>{g.name}</strong>
+                      <div className="cell-stack">
+                        <strong>{g.name}</strong>
+                        <span>
+                          {g.proxy ? `${g.realm} via ${g.proxy}` : g.realm}
+                        </span>
+                      </div>
                     </td>
-                    <td>{g.realm}</td>
                     <td>{g.username}</td>
-                    <td>{g.codecs?.join(', ') || '—'}</td>
+                    <td>{g.caller_id_number || '—'}</td>
+                    <td>
+                      <ValuePills values={g.codecs || []} />
+                    </td>
                     <td>
                       <StatusToggle
                         checked={g.active}
@@ -165,19 +198,24 @@ export default function Gateways() {
                           toggleActive.isPending &&
                           toggleActive.variables?.id === g.id
                         }
+                        title={g.active ? 'Turn off' : 'Turn on'}
                       />
                     </td>
                     <td>
-                      <RowActions
-                        onView={() => {
-                          setSelected(g);
-                          setMode('view');
-                        }}
-                        onEdit={() => edit(g)}
-                        onDelete={() =>
-                          confirm(`Delete ${g.name}?`) && del.mutate(g.id)
-                        }
-                      />
+                      <div className="row-actions">
+                        <button
+                          className="table-action"
+                          disabled={testing(g.id)}
+                          onClick={() => test.mutate(g.id)}
+                        >
+                          {testing(g.id) ? 'Testing…' : 'Test'}
+                        </button>
+                        <RowActions
+                          onView={() => view(g)}
+                          onEdit={() => edit(g)}
+                          onDelete={() => remove(g)}
+                        />
+                      </div>
                     </td>
                   </tr>
                 ))}
@@ -187,7 +225,7 @@ export default function Gateways() {
         ) : (
           <Empty
             icon={<Router size={16} />}
-            text="No SIP gateways configured."
+            text="No SIP gateways yet. Add one to start making outbound calls through your carrier."
           />
         )}
       </Card>
@@ -199,38 +237,99 @@ export default function Gateways() {
             ? 'Add SIP gateway'
             : mode === 'edit'
               ? 'Edit SIP gateway'
-              : selected?.name || 'Gateway'
+              : 'Gateway details'
         }
       >
         {mode === 'view' && selected ? (
-          <>
-            <div className="detail-grid">
-              <div className="detail-item">
-                <span>Realm</span>
-                <strong>{selected.realm}</strong>
-              </div>
-              <div className="detail-item">
-                <span>Proxy</span>
-                <strong>{selected.proxy || 'Direct'}</strong>
-              </div>
-              <div className="detail-item">
-                <span>Username</span>
-                <strong>{selected.username}</strong>
-              </div>
-              <div className="detail-item">
-                <span>Caller ID</span>
-                <strong>{selected.caller_id_number || '—'}</strong>
-              </div>
-            </div>
-            <div className="button-row">
+          <DetailView>
+            <DetailSummary
+              kind="SIP gateway"
+              title={selected.name}
+              subtitle={
+                selected.proxy
+                  ? `${selected.realm} via ${selected.proxy}`
+                  : selected.realm
+              }
+              facts={
+                <>
+                  <Status value={selected.active ? 'active' : 'inactive'} />
+                  <span>{selected.codecs?.length || 0} codecs</span>
+                </>
+              }
+            >
               <button className="btn primary" onClick={() => edit(selected)}>
-                Edit
+                Edit gateway
               </button>
-              <button className="btn" onClick={() => test.mutate(selected.id)}>
-                Test gateway
+              <button
+                className="btn"
+                disabled={testing(selected.id)}
+                onClick={() => test.mutate(selected.id)}
+              >
+                {testing(selected.id) ? 'Testing…' : 'Test connection'}
               </button>
-            </div>
-          </>
+              <div className="dv-result" role="status">
+                {last && (
+                  <>
+                    <span
+                      className={'badge ' + (last.connected ? 'good' : 'bad')}
+                    >
+                      <span />
+                      {last.connected ? 'Connected' : 'Not connected'}
+                    </span>
+                    <span>
+                      {GATEWAY_STATUS[last.status] ??
+                        'Gateway status is unknown'}
+                      . Tested {last.at.toLocaleTimeString()}.
+                    </span>
+                  </>
+                )}
+              </div>
+            </DetailSummary>
+            <DetailSection title="Connection">
+              <DetailRows>
+                <DetailRow label="Realm">{selected.realm}</DetailRow>
+                <DetailRow label="Outbound proxy">
+                  {selected.proxy || 'None, straight to the realm'}
+                </DetailRow>
+              </DetailRows>
+            </DetailSection>
+            <DetailSection title="Authentication">
+              <DetailRows>
+                <DetailRow label="Username">{selected.username}</DetailRow>
+                <DetailRow label="Password">Saved</DetailRow>
+              </DetailRows>
+            </DetailSection>
+            <DetailSection title="Caller ID">
+              <DetailRows>
+                <DetailRow label="Number">
+                  {selected.caller_id_number || 'From the call'}
+                </DetailRow>
+                <DetailRow label="Name">
+                  {selected.caller_id_name || 'From the call'}
+                </DetailRow>
+              </DetailRows>
+            </DetailSection>
+            <DetailSection title="Codecs">
+              <DetailRows>
+                <DetailRow label="Offered to the carrier">
+                  <ValuePills values={selected.codecs || []} />
+                </DetailRow>
+              </DetailRows>
+            </DetailSection>
+            <DetailSection title="Details">
+              <DetailRows>
+                <DetailRow label="Gateway ID">
+                  <CopyValue value={selected.id} label="gateway ID" />
+                </DetailRow>
+                <DetailRow label="Created">
+                  {new Date(selected.created_at).toLocaleString()}
+                </DetailRow>
+                <DetailRow label="Last updated">
+                  {new Date(selected.updated_at).toLocaleString()}
+                </DetailRow>
+              </DetailRows>
+            </DetailSection>
+          </DetailView>
         ) : (
           <form
             className="form-stack"
@@ -240,56 +339,150 @@ export default function Gateways() {
             }}
           >
             <ErrorBox message={err} />
-            {(
-              [
-                'name',
-                'realm',
-                'proxy',
-                'username',
-                'password',
-                'caller_id_number',
-                'caller_id_name',
-              ] as const
-            ).map((k) => (
-              <Field label={k.replaceAll('_', ' ')} key={k}>
+            <FormSection title="Gateway">
+              <Field
+                label="Name"
+                hint="Shown in the portal and when you pick a gateway for a call"
+              >
                 <input
-                  type={k === 'password' ? 'password' : 'text'}
-                  required={['name', 'realm', 'username'].includes(k)}
-                  placeholder={
-                    k === 'password' && mode === 'edit'
-                      ? 'Leave blank to keep current password'
-                      : ''
-                  }
-                  value={form[k]}
+                  required
+                  value={form.name}
+                  placeholder="Main carrier"
                   onChange={(e) =>
-                    setForm((f) => ({ ...f, [k]: e.target.value }))
+                    setForm((f) => ({ ...f, name: e.target.value }))
                   }
                 />
               </Field>
-            ))}
-            <div>
-              <div className="field-label">Codecs</div>
-              <div className="check-row">
-                {CODEC_OPTIONS.map((c) => (
-                  <label key={c}>
-                    <input
-                      type="checkbox"
-                      checked={form.codecs.includes(c)}
-                      onChange={(e) => codec(c, e.target.checked)}
-                    />{' '}
-                    {c}
-                  </label>
-                ))}
-              </div>
-            </div>
-            <Toggle
-              checked={form.active}
-              onChange={(v) => setForm((f) => ({ ...f, active: v }))}
-              label="Gateway active"
-            />
-            <button className="btn primary" disabled={save.isPending}>
-              Save gateway
-            </button>
+              <Field
+                label="Realm"
+                hint="Your carrier's SIP domain or IP address"
+              >
+                <input
+                  required
+                  value={form.realm}
+                  placeholder="sip.carrier.com"
+                  onChange={(e) =>
+                    setForm((f) => ({ ...f, realm: e.target.value }))
+                  }
+                />
+              </Field>
+              <Field
+                label="Outbound proxy"
+                hint="Optional. Leave blank to send calls straight to the realm"
+              >
+                <input
+                  value={form.proxy}
+                  placeholder="proxy.carrier.com:5060"
+                  onChange={(e) =>
+                    setForm((f) => ({ ...f, proxy: e.target.value }))
+                  }
+                />
+              </Field>
+            </FormSection>
+            <FormSection
+              title="Authentication"
+              hint="The SIP credentials your carrier gave you."
+            >
+              <Field label="Username">
+                <input
+                  required
+                  value={form.username}
+                  autoComplete="off"
+                  onChange={(e) =>
+                    setForm((f) => ({ ...f, username: e.target.value }))
+                  }
+                />
+              </Field>
+              <Field
+                label="Password"
+                hint={
+                  mode === 'edit'
+                    ? 'Leave blank to keep the current password'
+                    : undefined
+                }
+              >
+                <input
+                  type="password"
+                  autoComplete="new-password"
+                  value={form.password}
+                  onChange={(e) =>
+                    setForm((f) => ({ ...f, password: e.target.value }))
+                  }
+                />
+              </Field>
+            </FormSection>
+            <FormSection
+              title="Caller ID"
+              hint="Optional. Leave blank to use the caller ID set on each call."
+            >
+              <Field
+                label="Number"
+                hint="International format, e.g. +27100562194"
+              >
+                <input
+                  value={form.caller_id_number}
+                  inputMode="tel"
+                  onChange={(e) =>
+                    setForm((f) => ({ ...f, caller_id_number: e.target.value }))
+                  }
+                />
+              </Field>
+              <Field label="Name">
+                <input
+                  value={form.caller_id_name}
+                  onChange={(e) =>
+                    setForm((f) => ({ ...f, caller_id_name: e.target.value }))
+                  }
+                />
+              </Field>
+            </FormSection>
+            <FormSection
+              title="Codecs"
+              hint="Audio formats offered to the carrier. Most carriers accept PCMU and PCMA."
+            >
+              <ChoiceChips
+                label="Codecs"
+                options={CODEC_OPTIONS.map((c) => ({ value: c, label: c }))}
+                value={form.codecs}
+                onChange={(codecs) => setForm((f) => ({ ...f, codecs }))}
+              />
+              {!form.codecs.length && (
+                <p className="fs-hint" role="alert">
+                  Choose at least one codec.
+                </p>
+              )}
+            </FormSection>
+            <FormSection title="Status">
+              <Toggle
+                checked={form.active}
+                onChange={(v) => setForm((f) => ({ ...f, active: v }))}
+                label="Use this gateway for calls"
+              />
+            </FormSection>
+            <DrawerActions>
+              <button
+                className="btn primary"
+                disabled={save.isPending || !form.codecs.length}
+              >
+                {save.isPending
+                  ? 'Saving…'
+                  : mode === 'add'
+                    ? 'Add gateway'
+                    : 'Save changes'}
+              </button>
+              <button type="button" className="btn" onClick={close}>
+                Cancel
+              </button>
+              {mode === 'edit' && selected && (
+                <button
+                  type="button"
+                  className="btn danger"
+                  onClick={() => remove(selected)}
+                >
+                  Delete
+                </button>
+              )}
+            </DrawerActions>
           </form>
         )}
       </Drawer>

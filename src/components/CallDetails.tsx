@@ -1,11 +1,17 @@
-import { useState, type ReactNode } from 'react';
-import { ArrowRight, Check, ChevronRight, Copy, Play } from 'lucide-react';
+import { ArrowRight, ChevronRight, Play } from 'lucide-react';
 import { answeredBy, humanize } from '../lib/labels';
 import type { Call } from '../types/api';
+import {
+  CopyValue,
+  DetailRow,
+  DetailRows,
+  DetailSection,
+  DetailSummary,
+  DetailView,
+} from './Details';
 import { Status } from './UI';
 // Body of the "Call details" drawer: a summary of who called whom and how it
-// went, then the timeline, answering machine detection and technical details
-// as label / value rows.
+// went, then the timeline, answering machine detection and technical details.
 const AMD_SETTINGS: [string, string, string][] = [
   ['initial_silence', 'Initial silence', 'ms'],
   ['greeting', 'Greeting length', 'ms'],
@@ -23,38 +29,6 @@ const secondsBetween = (a: string | null, b: string | null) =>
   a && b
     ? Math.max(0, Math.round((Date.parse(b) - Date.parse(a)) / 1000))
     : null;
-function Row({ label, children }: { label: string; children: ReactNode }) {
-  return (
-    <div className="cd-row">
-      <dt>{label}</dt>
-      <dd>{children}</dd>
-    </div>
-  );
-}
-function CopyValue({ value }: { value: string }) {
-  const [copied, setCopied] = useState(false);
-  return (
-    <span className="cd-copy">
-      <code>{value}</code>
-      <button
-        className="icon-btn"
-        aria-label={copied ? 'Copied' : 'Copy call ID'}
-        title={copied ? 'Copied' : 'Copy call ID'}
-        onClick={() =>
-          navigator.clipboard.writeText(value).then(() => {
-            setCopied(true);
-            setTimeout(() => setCopied(false), 1500);
-          })
-        }
-      >
-        {copied ? <Check size={15} /> : <Copy size={15} />}
-      </button>
-      <span className="sr-only" role="status">
-        {copied ? 'Call ID copied' : ''}
-      </span>
-    </span>
-  );
-}
 export function CallDetails({
   call,
   applicationName,
@@ -69,36 +43,38 @@ export function CallDetails({
   const amd = (call.amd_params || {}) as Record<string, unknown>;
   const amdRows = AMD_SETTINGS.filter(([key]) => amd[key] !== undefined);
   return (
-    <div className="cd">
-      <section className="cd-summary">
-        <span className="cd-kind">
-          {call.direction === 'inbound' ? 'Inbound call' : 'Outbound call'}
-        </span>
-        <div className="cd-route">
-          <strong>{call.from_number}</strong>
-          <ArrowRight size={16} aria-label="to" />
-          <strong>{call.to_number}</strong>
-        </div>
-        <div className="cd-facts">
-          <Status value={call.status} />
-          {call.amd_result && <span>{answeredBy(call)}</span>}
-          <span>{talk == null ? 'Not connected' : `${talk}s talk time`}</span>
-        </div>
+    <DetailView>
+      <DetailSummary
+        kind={call.direction === 'inbound' ? 'Inbound call' : 'Outbound call'}
+        title={
+          <span className="dv-route">
+            {call.from_number}
+            <ArrowRight size={16} aria-label="to" />
+            {call.to_number}
+          </span>
+        }
+        facts={
+          <>
+            <Status value={call.status} />
+            {call.amd_result && <span>{answeredBy(call)}</span>}
+            <span>{talk == null ? 'Not connected' : `${talk}s talk time`}</span>
+          </>
+        }
+      >
         {call.recording_id && onPlay && (
-          <button className="btn primary cd-play" onClick={onPlay}>
+          <button className="btn primary" onClick={onPlay}>
             <Play size={15} fill="currentColor" /> Play recording
           </button>
         )}
-      </section>
+      </DetailSummary>
 
-      <section className="cd-section">
-        <h3>Timeline</h3>
-        <ol className="cd-timeline">
+      <DetailSection title="Timeline">
+        <ol className="dv-timeline">
           <li>
             <strong>Started</strong>
             <span>{when(call.initiated_at)}</span>
           </li>
-          <li className={call.answered_at ? '' : 'cd-skipped'}>
+          <li className={call.answered_at ? '' : 'dv-skipped'}>
             <strong>Answered</strong>
             <span>
               {call.answered_at
@@ -106,7 +82,7 @@ export function CallDetails({
                 : 'Not answered'}
             </span>
           </li>
-          <li className={call.ended_at ? '' : 'cd-skipped'}>
+          <li className={call.ended_at ? '' : 'dv-skipped'}>
             <strong>Ended</strong>
             <span>
               {call.ended_at
@@ -115,59 +91,57 @@ export function CallDetails({
             </span>
           </li>
         </ol>
-      </section>
+      </DetailSection>
 
-      <section className="cd-section">
-        <h3>Answering machine detection</h3>
+      <DetailSection title="Answering machine detection">
         {call.amd_enabled || call.amd_result ? (
           <>
-            <dl className="cd-rows">
-              <Row label="Answered by">{answeredBy(call)}</Row>
-            </dl>
+            <DetailRows>
+              <DetailRow label="Answered by">{answeredBy(call)}</DetailRow>
+            </DetailRows>
             {amdRows.length > 0 && (
-              <details className="cd-more">
+              <details className="dv-more">
                 <summary>
                   <ChevronRight size={15} aria-hidden="true" />
                   Settings used
                 </summary>
-                <dl className="cd-rows">
+                <DetailRows>
                   {amdRows.map(([key, label, unit]) => (
-                    <Row key={key} label={label}>
+                    <DetailRow key={key} label={label}>
                       {String(amd[key])}
                       {unit && ` ${unit}`}
-                    </Row>
+                    </DetailRow>
                   ))}
-                </dl>
+                </DetailRows>
               </details>
             )}
           </>
         ) : (
-          <p className="muted cd-empty">Didn't run on this call.</p>
+          <p className="muted dv-empty">Didn't run on this call.</p>
         )}
-      </section>
+      </DetailSection>
 
-      <section className="cd-section">
-        <h3>Details</h3>
-        <dl className="cd-rows">
-          <Row label="Call ID">
-            <CopyValue value={call.id} />
-          </Row>
-          <Row label="Application">{applicationName || '—'}</Row>
-          <Row label="Recording">
+      <DetailSection title="Details">
+        <DetailRows>
+          <DetailRow label="Call ID">
+            <CopyValue value={call.id} label="call ID" />
+          </DetailRow>
+          <DetailRow label="Application">{applicationName || '—'}</DetailRow>
+          <DetailRow label="Recording">
             {call.recording_id
               ? 'Recorded'
               : call.record_calls
                 ? 'On, not uploaded yet'
                 : 'Off'}
-          </Row>
+          </DetailRow>
           {call.caller_id_name && call.caller_id_name !== call.from_number && (
-            <Row label="Caller ID name">{call.caller_id_name}</Row>
+            <DetailRow label="Caller ID name">{call.caller_id_name}</DetailRow>
           )}
           {call.time_limit_secs != null && (
-            <Row label="Time limit">{call.time_limit_secs}s</Row>
+            <DetailRow label="Time limit">{call.time_limit_secs}s</DetailRow>
           )}
-        </dl>
-      </section>
-    </div>
+        </DetailRows>
+      </DetailSection>
+    </DetailView>
   );
 }

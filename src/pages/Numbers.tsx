@@ -15,9 +15,29 @@ import {
   PageHeader,
   RowActions,
   Spinner,
+  Status,
   StatusToggle,
   Toggle,
 } from '../components/UI';
+import {
+  ChoiceChips,
+  CopyValue,
+  DetailRow,
+  DetailRows,
+  DetailSection,
+  DetailSummary,
+  DetailView,
+  DrawerActions,
+  FormSection,
+} from '../components/Details';
+const capabilityText = (c: ('voice' | 'sms')[]) =>
+  c.includes('voice') && c.includes('sms')
+    ? 'Voice and SMS'
+    : c.includes('voice')
+      ? 'Voice only'
+      : c.includes('sms')
+        ? 'SMS only'
+        : 'No capabilities';
 const blank = {
   e164: '',
   capabilities: ['voice'] as ('voice' | 'sms')[],
@@ -101,14 +121,6 @@ export default function Numbers() {
     setMode(null);
     setSelected(null);
     setErr('');
-  }
-  function cap(c: 'voice' | 'sms', v: boolean) {
-    setForm((f) => ({
-      ...f,
-      capabilities: v
-        ? [...new Set([...f.capabilities, c])]
-        : f.capabilities.filter((x) => x !== c),
-    }));
   }
   return (
     <>
@@ -205,48 +217,59 @@ export default function Numbers() {
             ? 'Add number'
             : mode === 'edit'
               ? 'Edit number'
-              : selected?.e164 || 'Number'
+              : 'Number details'
         }
       >
         {mode === 'view' && selected ? (
-          <>
-            <div className="detail-grid">
-              <div className="detail-item">
-                <span>E.164</span>
-                <strong>{selected.e164}</strong>
-              </div>
-              <div className="detail-item">
-                <span>Capabilities</span>
-                <strong>{selected.capabilities.join(', ')}</strong>
-              </div>
-              <div className="detail-item">
-                <span>Application</span>
-                <strong>
-                  {apps.data?.find((a) => a.id === selected.application_id)
-                    ?.name || 'None'}
-                </strong>
-              </div>
-              <div className="detail-item">
-                <span>Status</span>
-                <StatusToggle
-                  checked={selected.active}
-                  onChange={() => toggleActive.mutate(selected)}
-                  disabled={
-                    toggleActive.isPending &&
-                    toggleActive.variables?.id === selected.id
-                  }
-                />
-              </div>
-            </div>
-            <div className="drawer-footer">
+          <DetailView>
+            <DetailSummary
+              kind="Phone number"
+              title={selected.e164}
+              facts={
+                <>
+                  <Status value={selected.active ? 'active' : 'inactive'} />
+                  <span>{capabilityText(selected.capabilities)}</span>
+                </>
+              }
+            >
               <button
                 className="btn primary"
                 onClick={() => openEdit(selected)}
               >
                 Edit number
               </button>
-            </div>
-          </>
+            </DetailSummary>
+            <DetailSection title="Routing">
+              <DetailRows>
+                <DetailRow label="Inbound application">
+                  {selected.capabilities.includes('voice')
+                    ? apps.data?.find((a) => a.id === selected.application_id)
+                        ?.name || 'None'
+                    : 'Voice not enabled'}
+                </DetailRow>
+                <DetailRow label="Accepting calls and messages">
+                  <StatusToggle
+                    checked={selected.active}
+                    onChange={() => toggleActive.mutate(selected)}
+                    disabled={
+                      toggleActive.isPending &&
+                      toggleActive.variables?.id === selected.id
+                    }
+                  />
+                </DetailRow>
+              </DetailRows>
+            </DetailSection>
+            <DetailSection title="Details">
+              <DetailRows>
+                <DetailRow label="Number ID">
+                  <CopyValue value={selected.id} label="number ID" />
+                </DetailRow>
+                <DetailRow label="Added">
+                  {new Date(selected.created_at).toLocaleString()}
+                </DetailRow>
+              </DetailRows>
+            </DetailSection>
+          </DetailView>
         ) : (
           <form
             className="form-stack"
@@ -257,81 +280,102 @@ export default function Numbers() {
             }}
           >
             <ErrorBox message={err} />
-            <Field
-              label="E.164 number"
-              hint="Cannot be changed after provisioning"
-            >
-              <input
-                value={form.e164}
-                disabled={mode === 'edit'}
-                required
-                onChange={(e) =>
-                  setForm((f) => ({ ...f, e164: e.target.value }))
+            <FormSection title="Number">
+              <Field
+                label="Phone number"
+                hint={
+                  mode === 'edit'
+                    ? "Can't be changed once added"
+                    : 'International format with the country code, e.g. +27821234567'
                 }
-                placeholder="+27821234567"
-              />
-            </Field>
-            <div>
-              <div className="field-label">Capabilities</div>
-              <div className="check-row">
-                <label>
-                  <input
-                    type="checkbox"
-                    checked={form.capabilities.includes('voice')}
-                    onChange={(e) => cap('voice', e.target.checked)}
-                  />{' '}
-                  Voice
-                </label>
-                <label>
-                  <input
-                    type="checkbox"
-                    checked={form.capabilities.includes('sms')}
-                    onChange={(e) => cap('sms', e.target.checked)}
-                  />{' '}
-                  SMS
-                </label>
-              </div>
-            </div>
-            {form.capabilities.includes('voice') && (
-              <Field label="Inbound application">
-                <select
-                  value={form.application_id}
-                  onChange={(e) =>
-                    setForm((f) => ({ ...f, application_id: e.target.value }))
-                  }
+              >
+                <input
+                  value={form.e164}
+                  disabled={mode === 'edit'}
                   required
-                >
-                  <option value="">Select application…</option>
-                  {(apps.data || []).map((a) => (
-                    <option value={a.id} key={a.id}>
-                      {a.name}
-                    </option>
-                  ))}
-                </select>
+                  inputMode="tel"
+                  onChange={(e) =>
+                    setForm((f) => ({ ...f, e164: e.target.value }))
+                  }
+                  placeholder="+27821234567"
+                />
               </Field>
-            )}
-            <Toggle
-              checked={form.active}
-              onChange={(v) => setForm((f) => ({ ...f, active: v }))}
-              label="Number active"
-            />
-            <div className="drawer-footer">
+            </FormSection>
+            <FormSection
+              title="Capabilities"
+              hint="What this number can be used for."
+            >
+              <ChoiceChips
+                label="Capabilities"
+                options={[
+                  { value: 'voice', label: 'Voice' },
+                  { value: 'sms', label: 'SMS' },
+                ]}
+                value={form.capabilities}
+                onChange={(capabilities) =>
+                  setForm((f) => ({ ...f, capabilities }))
+                }
+              />
+            </FormSection>
+            <FormSection title="Routing">
+              {form.capabilities.includes('voice') && (
+                <Field
+                  label="Inbound application"
+                  hint="Runs when someone calls this number"
+                >
+                  <select
+                    value={form.application_id}
+                    onChange={(e) =>
+                      setForm((f) => ({
+                        ...f,
+                        application_id: e.target.value,
+                      }))
+                    }
+                    required
+                  >
+                    <option value="">Select application…</option>
+                    {(apps.data || []).map((a) => (
+                      <option value={a.id} key={a.id}>
+                        {a.name}
+                      </option>
+                    ))}
+                  </select>
+                </Field>
+              )}
+              <Toggle
+                checked={form.active}
+                onChange={(v) => setForm((f) => ({ ...f, active: v }))}
+                label="Accept calls and messages on this number"
+              />
+            </FormSection>
+            <DrawerActions>
               <button className="btn primary" disabled={save.isPending}>
-                {save.isPending ? 'Saving…' : 'Save number'}
+                {save.isPending
+                  ? 'Saving…'
+                  : mode === 'add'
+                    ? 'Add number'
+                    : 'Save changes'}
+              </button>
+              <button type="button" className="btn" onClick={close}>
+                Cancel
               </button>
               {mode === 'edit' && selected && (
                 <button
                   className="btn danger"
                   type="button"
                   onClick={() => {
-                    if (confirm(`Release ${selected.e164}?`))
+                    if (
+                      confirm(
+                        `Release ${selected.e164}? Calls and messages to it stop, and this can't be undone.`,
+                      )
+                    )
                       del.mutate(selected.id);
                   }}
                 >
-                  Delete
+                  Release number
                 </button>
               )}
-            </div>
+            </DrawerActions>
           </form>
         )}
       </Drawer>
