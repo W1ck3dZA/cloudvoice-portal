@@ -1,56 +1,31 @@
-import { useId, useState } from 'react';
+import { useId, useRef, useState } from 'react';
 import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query';
-import { ChevronRight, ShieldCheck } from 'lucide-react';
-import { AnimatedIcon } from '../components/AnimatedIcon';
+import { ShieldCheck } from 'lucide-react';
 import { errorMessage, ipAllowlistApi } from '../lib/api';
 import { checkAllowlistCidr } from '../lib/cidr';
 import { useSession } from '../lib/session';
 import { showToast } from '../lib/toast';
 import type { IpAllowlistEntry } from '../types/api';
-import {
-  AddButton,
-  Card,
-  Drawer,
-  Empty,
-  ErrorBox,
-  Field,
-  HoldToDelete,
-  PageHeader,
-  RowMain,
-  Spinner,
-  rowOpen,
-} from '../components/UI';
+import { Card, Empty, ErrorBox, PageHeader, Spinner } from '../components/UI';
 import { HoldButton } from '../components/HoldButton';
-import {
-  CopyValue,
-  DetailRow,
-  DetailRows,
-  DetailSection,
-  DetailSummary,
-  DetailView,
-  DrawerActions,
-} from '../components/Details';
 
 const DESCRIPTION_MAX = 255;
 const ADDRESS_EXAMPLE =
   'A single IP, like 41.0.0.10, or a range, like 41.0.0.0/24.';
 
 /** "41.0.0.10/32" → "41.0.0.10"; ranges keep their prefix. */
-function addressText(cidr: string) {
-  return cidr.replace(/\/(32|128)$/, '');
-}
+const addressText = (cidr: string) => cidr.replace(/\/(32|128)$/, '');
 
-/** Plain description of what the entry covers. */
+/** Short description of what a saved entry covers. */
 function coverage(cidr: string) {
-  const [, prefix] = cidr.split('/');
-  const p = Number(prefix);
+  const p = Number(cidr.split('/')[1]);
   const v6 = cidr.includes(':');
-  if ((v6 && p === 128) || (!v6 && p === 32)) return 'Single address';
-  if (v6) return `IPv6 range (/${p})`;
-  return `Range of ${(2 ** (32 - p)).toLocaleString()} addresses`;
+  if (p === (v6 ? 128 : 32)) return 'Single address';
+  return v6
+    ? `IPv6 range (/${p})`
+    : `${(2 ** (32 - p)).toLocaleString()} addresses`;
 }
 
-const date = (iso: string) => new Date(iso).toLocaleString();
 const shortDate = (iso: string) =>
   new Date(iso).toLocaleDateString(undefined, {
     day: 'numeric',
@@ -58,7 +33,83 @@ const shortDate = (iso: string) =>
     year: 'numeric',
   });
 
-type Form = { cidr: string; description: string };
+type Draft = { cidr: string; description: string };
+
+/**
+ * The address and description fields with the live check under the
+ * address. Shared by the add form and a row being changed.
+ */
+function AddressFields({
+  draft,
+  onChange,
+  serverError,
+  touched,
+  onTouch,
+  previous,
+  addressRef,
+  autoFocus,
+}: {
+  draft: Draft;
+  onChange: (d: Draft) => void;
+  serverError: string;
+  touched: boolean;
+  onTouch: () => void;
+  /** The saved address when changing a row, to warn that it stops. */
+  previous?: string;
+  addressRef?: React.Ref<HTMLInputElement>;
+  autoFocus?: boolean;
+}) {
+  const msgId = useId();
+  const check = checkAllowlistCidr(draft.cidr);
+  const error =
+    serverError ||
+    (touched && draft.cidr.trim() && !check.ok ? check.error : '');
+  const note = error || (check.ok ? check.covers : ADDRESS_EXAMPLE);
+  const moving = !!previous && check.ok && check.cidr !== previous;
+
+  return (
+    <div className="allow-fields">
+      <label className="field">
+        <span>IP address or range</span>
+        <input
+          ref={addressRef}
+          autoFocus={autoFocus}
+          inputMode="text"
+          autoCapitalize="off"
+          autoCorrect="off"
+          autoComplete="off"
+          spellCheck={false}
+          aria-invalid={error ? true : undefined}
+          aria-describedby={msgId}
+          value={draft.cidr}
+          onBlur={onTouch}
+          onChange={(e) => onChange({ ...draft, cidr: e.target.value })}
+        />
+        <small
+          id={msgId}
+          className={error ? 'field-error' : undefined}
+          role={error ? 'alert' : 'status'}
+        >
+          {note}
+        </small>
+        {moving && !error && (
+          <small>
+            Saving stops SIP from {addressText(previous!)} within a few seconds.
+          </small>
+        )}
+      </label>
+      <label className="field">
+        <span>Description</span>
+        <input
+          maxLength={DESCRIPTION_MAX}
+          value={draft.description}
+          onChange={(e) => onChange({ ...draft, description: e.target.value })}
+        />
+        <small>Optional, e.g. Head office PBX</small>
+      </label>
+    </div>
+  );
+}
 
 export default function IpAllowlist() {
   const { session } = useSession();
@@ -68,300 +119,262 @@ export default function IpAllowlist() {
     queryKey: ['ip-allowlist'],
     queryFn: ipAllowlistApi.list,
   });
+  const entries = data.data || [];
+  const refresh = () => qc.invalidateQueries({ queryKey: ['ip-allowlist'] });
 
-  // `editing` is the entry being changed; null with `open` means adding.
-  const [open, setOpen] = useState(false);
-  const [editing, setEditing] = useState<IpAllowlistEntry | null>(null);
-  const [view, setView] = useState<IpAllowlistEntry | null>(null);
-  const [form, setForm] = useState<Form>({ cidr: '', description: '' });
-  // Server error for the address, and whether to show local problems yet
-  // (after leaving the field or pressing save, not while typing).
-  const [err, setErr] = useState('');
-  const [touched, setTouched] = useState(false);
-  const addressMsgId = useId();
+  // ── Add ────────────────────────────────────────────────────────────────
+  const empty: Draft = { cidr: '', description: '' };
+  const [add, setAdd] = useState<Draft>(empty);
+  const [addErr, setAddErr] = useState('');
+  const [addTouched, setAddTouched] = useState(false);
+  const addRef = useRef<HTMLInputElement>(null);
+  const addCheck = checkAllowlistCidr(add.cidr);
 
-  const done = (message: string) => {
-    qc.invalidateQueries({ queryKey: ['ip-allowlist'] });
-    setOpen(false);
-    setEditing(null);
-    setView(null);
-    showToast({ kind: 'success', message });
-  };
-
-  const save = useMutation({
-    mutationFn: () => {
-      const body = {
-        cidr: form.cidr.trim(),
-        description: form.description.trim() || null,
-      };
-      return editing
-        ? ipAllowlistApi.update(editing.id, body)
-        : ipAllowlistApi.create(body);
+  const create = useMutation({
+    mutationFn: () =>
+      ipAllowlistApi.create({
+        cidr: add.cidr.trim(),
+        description: add.description.trim() || null,
+      }),
+    onSuccess: (e) => {
+      refresh();
+      setAdd(empty);
+      setAddTouched(false);
+      addRef.current?.focus();
+      showToast({
+        kind: 'success',
+        message: `${addressText(e.cidr)} added. The firewall picks it up within a few seconds.`,
+      });
     },
-    onSuccess: (e) =>
-      done(
-        editing
-          ? `${addressText(e.cidr)} updated.`
-          : `${addressText(e.cidr)} added. The firewall picks it up within a few seconds.`,
-      ),
-    onError: (e) => setErr(errorMessage(e)),
+    onError: (e) => setAddErr(errorMessage(e)),
   });
 
-  const del = useMutation({
+  function submitAdd() {
+    setAddTouched(true);
+    setAddErr('');
+    if (addCheck.ok) create.mutate();
+  }
+
+  // ── Change one row in place ────────────────────────────────────────────
+  const [editId, setEditId] = useState<string | null>(null);
+  const [edit, setEdit] = useState<Draft>(empty);
+  const [editErr, setEditErr] = useState('');
+  const [editTouched, setEditTouched] = useState(false);
+  const editing = entries.find((e) => e.id === editId) ?? null;
+  const editCheck = checkAllowlistCidr(edit.cidr);
+  const editDirty =
+    !!editing &&
+    ((editCheck.ok && editCheck.cidr !== editing.cidr) ||
+      (edit.description.trim() || null) !== (editing.description || null));
+
+  function openEdit(e: IpAllowlistEntry) {
+    setEditId(e.id);
+    setEdit({ cidr: addressText(e.cidr), description: e.description ?? '' });
+    setEditErr('');
+    setEditTouched(false);
+  }
+
+  const update = useMutation({
+    mutationFn: () =>
+      ipAllowlistApi.update(editId!, {
+        cidr: edit.cidr.trim(),
+        description: edit.description.trim() || null,
+      }),
+    onSuccess: (e) => {
+      refresh();
+      setEditId(null);
+      showToast({ kind: 'success', message: `${addressText(e.cidr)} saved.` });
+    },
+    onError: (e) => setEditErr(errorMessage(e)),
+  });
+
+  function submitEdit() {
+    setEditTouched(true);
+    setEditErr('');
+    if (editCheck.ok && editDirty) update.mutate();
+  }
+
+  // ── Remove ─────────────────────────────────────────────────────────────
+  const remove = useMutation({
     mutationFn: (e: IpAllowlistEntry) => ipAllowlistApi.remove(e.id),
-    onSuccess: (_r, e) => done(`${addressText(e.cidr)} removed.`),
+    onSuccess: (_r, e) => {
+      refresh();
+      if (editId === e.id) setEditId(null);
+      showToast({
+        kind: 'success',
+        message: `${addressText(e.cidr)} removed. SIP from it stops within a few seconds.`,
+      });
+    },
     onError: (e) => showToast({ kind: 'error', message: errorMessage(e) }),
   });
 
-  function openAdd() {
-    setErr('');
-    setTouched(false);
-    setEditing(null);
-    setForm({ cidr: '', description: '' });
-    setOpen(true);
-  }
-
-  function openEntry(e: IpAllowlistEntry) {
-    if (!canManage) return setView(e);
-    setErr('');
-    setTouched(false);
-    setEditing(e);
-    setForm({ cidr: addressText(e.cidr), description: e.description ?? '' });
-    setOpen(true);
-  }
-
-  const entries = data.data || [];
-  const check = checkAllowlistCidr(form.cidr);
-  const cidrChanged = !!editing && check.ok && check.cidr !== editing.cidr;
-  const descChanged =
-    !!editing &&
-    (form.description.trim() || null) !== (editing.description || null);
-  const dirty = editing ? cidrChanged || descChanged : !!form.cidr.trim();
-
-  // The line under the address: the server's error, a local problem once
-  // shown, what a valid address covers, or an example.
-  const addressError =
-    err || (touched && form.cidr.trim() && !check.ok ? check.error : '');
-  const addressNote = addressError
-    ? addressError
-    : check.ok
-      ? check.covers
-      : ADDRESS_EXAMPLE;
-
-  function submit() {
-    setTouched(true);
-    setErr('');
-    if (!check.ok || !dirty) return;
-    save.mutate();
-  }
-
   return (
-    <>
+    <div className="allow-page">
       <PageHeader
         title="IP allowlist"
-        description="The public IP addresses your PBX, SIP trunk or servers send SIP to Cloudvoice from. Our firewall only accepts SIP from addresses on this list, so add every address you send from."
-        action={
-          canManage && entries.length ? (
-            <AddButton onClick={openAdd}>Add address</AddButton>
-          ) : undefined
-        }
+        description="Our firewall only accepts SIP from the public IP addresses on this list. Add every address your PBX, SIP trunk or servers send from."
       />
-      {!canManage && (
-        <p className="fs-hint" role="note">
-          Only owners and admins can change the allowlist.
-        </p>
-      )}
-      <Card>
-        {data.isLoading ? (
-          <Spinner />
-        ) : data.isError ? (
-          <ErrorBox message={errorMessage(data.error)} />
-        ) : entries.length ? (
-          <div className="table-wrap">
-            <table className="rt">
-              <thead>
-                <tr>
-                  <th>Address</th>
-                  <th>Description</th>
-                  <th className="hide-md">Added</th>
-                  <th />
-                </tr>
-              </thead>
-              <tbody>
-                {entries.map((e) => (
-                  <tr key={e.id} {...rowOpen(() => openEntry(e))}>
-                    <RowMain
-                      onOpen={() => openEntry(e)}
-                      label={`Open ${addressText(e.cidr)}`}
-                      title={addressText(e.cidr)}
-                      sub={e.description || coverage(e.cidr)}
-                    >
-                      <div className="cell-stack">
-                        <strong>{addressText(e.cidr)}</strong>
-                        <span>{coverage(e.cidr)}</span>
-                      </div>
-                    </RowMain>
-                    <td>{e.description || '—'}</td>
-                    <td className="hide-md">
-                      {new Date(e.created_at).toLocaleDateString()}
-                    </td>
-                    <td>
-                      <div className="row-actions">
-                        <button
-                          className="table-action wide-only"
-                          onClick={() => openEntry(e)}
-                        >
-                          {canManage ? 'Edit' : 'View'}{' '}
-                          <AnimatedIcon
-                            icon={ChevronRight}
-                            size={14}
-                            animation="nudge"
-                          />
-                        </button>
-                        {canManage && (
-                          <HoldButton
-                            iconOnly
-                            aria-label={`Remove ${addressText(e.cidr)}`}
-                            onHold={() => del.mutate(e)}
-                          />
-                        )}
-                      </div>
-                    </td>
-                  </tr>
-                ))}
-              </tbody>
-            </table>
-          </div>
-        ) : (
-          <Empty
-            icon={<ShieldCheck size={16} />}
-            text={
-              canManage
-                ? 'No addresses yet. Add the public IP of each PBX, SIP trunk or server that sends SIP to Cloudvoice.'
-                : 'No addresses yet. An owner or admin can add the public IPs your systems send SIP from.'
-            }
-            action={
-              canManage ? (
-                <AddButton onClick={openAdd}>Add address</AddButton>
-              ) : undefined
-            }
-          />
-        )}
-      </Card>
 
-      <Drawer
-        open={open}
-        onClose={() => setOpen(false)}
-        title={editing ? 'Edit address' : 'Add address'}
-        subtitle={
-          editing ? `Added ${shortDate(editing.created_at)}` : undefined
-        }
-      >
-        <form
-          className="form-stack"
-          noValidate
-          onSubmit={(e) => {
-            e.preventDefault();
-            submit();
-          }}
-        >
-          <label className="field">
-            <span>IP address or range</span>
-            <input
-              autoFocus={!editing}
-              inputMode="text"
-              autoCapitalize="off"
-              autoCorrect="off"
-              autoComplete="off"
-              spellCheck={false}
-              enterKeyHint="done"
-              aria-invalid={addressError ? true : undefined}
-              aria-describedby={addressMsgId}
-              value={form.cidr}
-              onBlur={() => setTouched(true)}
-              onChange={(e) => {
-                setErr('');
-                setForm((f) => ({ ...f, cidr: e.target.value }));
+      {canManage && (
+        <Card>
+          <section className="set-section" aria-labelledby="allow-add">
+            <h2 id="allow-add">Add an address</h2>
+            <form
+              className="allow-form"
+              noValidate
+              onSubmit={(e) => {
+                e.preventDefault();
+                submitAdd();
               }}
-            />
-            <small
-              id={addressMsgId}
-              className={addressError ? 'field-error' : undefined}
-              role={addressError ? 'alert' : 'status'}
             >
-              {addressNote}
-            </small>
-            {cidrChanged && !addressError && (
-              <small>
-                Saving stops SIP from {addressText(editing!.cidr)} within a few
-                seconds.
-              </small>
-            )}
-          </label>
-          <Field label="Description" hint="Optional, e.g. Head office PBX">
-            <input
-              maxLength={DESCRIPTION_MAX}
-              value={form.description}
-              onChange={(e) =>
-                setForm((f) => ({ ...f, description: e.target.value }))
+              <AddressFields
+                draft={add}
+                onChange={(d) => {
+                  setAddErr('');
+                  setAdd(d);
+                }}
+                serverError={addErr}
+                touched={addTouched}
+                onTouch={() => setAddTouched(true)}
+                addressRef={addRef}
+              />
+              <div className="set-actions">
+                <button
+                  className="btn primary"
+                  disabled={create.isPending || !add.cidr.trim()}
+                >
+                  {create.isPending ? 'Adding…' : 'Add address'}
+                </button>
+              </div>
+            </form>
+          </section>
+        </Card>
+      )}
+
+      <Card>
+        <section className="set-section" aria-labelledby="allow-list">
+          <h2 id="allow-list">
+            Allowed addresses{entries.length ? ` (${entries.length})` : ''}
+          </h2>
+          {!canManage && (
+            <p className="set-intro">
+              Only owners and admins can change the allowlist.
+            </p>
+          )}
+          {data.isLoading ? (
+            <Spinner />
+          ) : data.isError ? (
+            <ErrorBox message={errorMessage(data.error)} />
+          ) : !entries.length ? (
+            <Empty
+              icon={<ShieldCheck size={16} />}
+              text={
+                canManage
+                  ? 'No addresses yet. Until you add one, SIP from your systems is blocked.'
+                  : 'No addresses yet. An owner or admin can add the public IPs your systems send SIP from.'
               }
             />
-          </Field>
-          <DrawerActions>
-            <button className="btn primary" disabled={save.isPending || !dirty}>
-              {save.isPending
-                ? 'Saving…'
-                : editing
-                  ? 'Save changes'
-                  : 'Add address'}
-            </button>
-            <button
-              type="button"
-              className="btn"
-              onClick={() => setOpen(false)}
-            >
-              Cancel
-            </button>
-          </DrawerActions>
-          {editing && (
-            <HoldToDelete
-              label="Hold to remove address"
-              consequence={`Removing it stops SIP from ${addressText(editing.cidr)} within a few seconds.`}
-              onHold={() => del.mutate(editing)}
-            />
+          ) : (
+            <ul className="allow-list">
+              {entries.map((e) => {
+                const open = e.id === editId;
+                const facts = [
+                  e.description,
+                  coverage(e.cidr),
+                  `added ${shortDate(e.created_at)}`,
+                ]
+                  .filter(Boolean)
+                  .join(' · ');
+                return (
+                  <li key={e.id} className={'set-row' + (open ? ' open' : '')}>
+                    <div className="set-head">
+                      {canManage && !open ? (
+                        <button
+                          type="button"
+                          className="set-label allow-open"
+                          onClick={() => openEdit(e)}
+                          aria-label={`Change ${addressText(e.cidr)}`}
+                        >
+                          <strong className="allow-addr">
+                            {addressText(e.cidr)}
+                          </strong>
+                          <p>{facts}</p>
+                        </button>
+                      ) : (
+                        <div className="set-label">
+                          <strong className="allow-addr">
+                            {addressText(e.cidr)}
+                          </strong>
+                          <p>{facts}</p>
+                        </div>
+                      )}
+                      {canManage && !open && (
+                        <div className="allow-actions">
+                          <button
+                            type="button"
+                            className="btn allow-change"
+                            tabIndex={-1}
+                            aria-hidden="true"
+                            onClick={() => openEdit(e)}
+                          >
+                            Change
+                          </button>
+                          <HoldButton
+                            iconOnly
+                            aria-label={`Hold to remove ${addressText(e.cidr)}`}
+                            onHold={() => remove.mutate(e)}
+                          />
+                        </div>
+                      )}
+                    </div>
+                    {open && (
+                      <form
+                        className="set-edit allow-form"
+                        noValidate
+                        onSubmit={(ev) => {
+                          ev.preventDefault();
+                          submitEdit();
+                        }}
+                        onKeyDown={(ev) => {
+                          if (ev.key === 'Escape') setEditId(null);
+                        }}
+                      >
+                        <AddressFields
+                          draft={edit}
+                          onChange={(d) => {
+                            setEditErr('');
+                            setEdit(d);
+                          }}
+                          serverError={editErr}
+                          touched={editTouched}
+                          onTouch={() => setEditTouched(true)}
+                          previous={e.cidr}
+                          autoFocus
+                        />
+                        <div className="set-actions">
+                          <button
+                            className="btn primary"
+                            disabled={update.isPending || !editDirty}
+                          >
+                            {update.isPending ? 'Saving…' : 'Save changes'}
+                          </button>
+                          <button
+                            type="button"
+                            className="btn"
+                            onClick={() => setEditId(null)}
+                          >
+                            Cancel
+                          </button>
+                        </div>
+                      </form>
+                    )}
+                  </li>
+                );
+              })}
+            </ul>
           )}
-        </form>
-      </Drawer>
-
-      <Drawer
-        open={!!view}
-        onClose={() => setView(null)}
-        title="Allowlisted address"
-      >
-        {view && (
-          <DetailView>
-            <DetailSummary
-              title={addressText(view.cidr)}
-              subtitle={view.description || undefined}
-              facts={<span>{coverage(view.cidr)}</span>}
-            />
-            <DetailSection title="Details">
-              <DetailRows>
-                <DetailRow label="Address">
-                  <CopyValue value={view.cidr} label="address" />
-                </DetailRow>
-                <DetailRow label="Description">
-                  {view.description || '—'}
-                </DetailRow>
-                <DetailRow label="Added">{date(view.created_at)}</DetailRow>
-                <DetailRow label="Last changed">
-                  {date(view.updated_at)}
-                </DetailRow>
-              </DetailRows>
-            </DetailSection>
-          </DetailView>
-        )}
-      </Drawer>
-    </>
+        </section>
+      </Card>
+    </div>
   );
 }
