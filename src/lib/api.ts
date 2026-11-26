@@ -5,6 +5,7 @@ import type {
   AudioFile,
   ApiEnvelope,
   ApiKey,
+  IpAllowlistEntry,
   Application,
   Call,
   CallCenterMember,
@@ -327,6 +328,17 @@ export const webhooksApi = {
     unwrap<any>(
       await api.post(`/v1/webhooks/${id}/deliveries/${deliveryId}/retry`),
     ),
+};
+export const ipAllowlistApi = {
+  list: async () => list<IpAllowlistEntry>(await api.get('/v1/ip-allowlist')),
+  create: async (body: { cidr: string; description?: string | null }) =>
+    unwrap<IpAllowlistEntry>(await api.post('/v1/ip-allowlist', body)),
+  update: async (
+    id: string,
+    body: { cidr?: string; description?: string | null },
+  ) =>
+    unwrap<IpAllowlistEntry>(await api.patch(`/v1/ip-allowlist/${id}`, body)),
+  remove: async (id: string) => api.delete(`/v1/ip-allowlist/${id}`),
 };
 export const apiKeysApi = {
   list: async () =>

@@ -64,6 +64,7 @@ const nav: NavEntry[] = [
     items: [
       { to: '/sip-users', label: 'SIP users' },
       { to: '/gateways', label: 'SIP gateways' },
+      { to: '/ip-allowlist', label: 'IP allowlist' },
     ],
   },
   { to: '/messaging', label: 'Messaging', icon: <ChatIcon /> },
