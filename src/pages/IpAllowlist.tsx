@@ -1,8 +1,9 @@
-import { useState } from 'react';
+import { useId, useState } from 'react';
 import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query';
 import { ChevronRight, ShieldCheck } from 'lucide-react';
 import { AnimatedIcon } from '../components/AnimatedIcon';
 import { errorMessage, ipAllowlistApi } from '../lib/api';
+import { checkAllowlistCidr } from '../lib/cidr';
 import { useSession } from '../lib/session';
 import { showToast } from '../lib/toast';
 import type { IpAllowlistEntry } from '../types/api';
@@ -28,12 +29,11 @@ import {
   DetailSummary,
   DetailView,
   DrawerActions,
-  FormSection,
 } from '../components/Details';
 
 const DESCRIPTION_MAX = 255;
-const REMOVE_CONSEQUENCE =
-  'SIP from this address is blocked within a few seconds of removing it.';
+const ADDRESS_EXAMPLE =
+  'A single IP, like 41.0.0.10, or a range, like 41.0.0.0/24.';
 
 /** "41.0.0.10/32" → "41.0.0.10"; ranges keep their prefix. */
 function addressText(cidr: string) {
@@ -51,6 +51,12 @@ function coverage(cidr: string) {
 }
 
 const date = (iso: string) => new Date(iso).toLocaleString();
+const shortDate = (iso: string) =>
+  new Date(iso).toLocaleDateString(undefined, {
+    day: 'numeric',
+    month: 'short',
+    year: 'numeric',
+  });
 
 type Form = { cidr: string; description: string };
 
@@ -68,7 +74,11 @@ export default function IpAllowlist() {
   const [editing, setEditing] = useState<IpAllowlistEntry | null>(null);
   const [view, setView] = useState<IpAllowlistEntry | null>(null);
   const [form, setForm] = useState<Form>({ cidr: '', description: '' });
+  // Server error for the address, and whether to show local problems yet
+  // (after leaving the field or pressing save, not while typing).
   const [err, setErr] = useState('');
+  const [touched, setTouched] = useState(false);
+  const addressMsgId = useId();
 
   const done = (message: string) => {
     qc.invalidateQueries({ queryKey: ['ip-allowlist'] });
@@ -105,6 +115,7 @@ export default function IpAllowlist() {
 
   function openAdd() {
     setErr('');
+    setTouched(false);
     setEditing(null);
     setForm({ cidr: '', description: '' });
     setOpen(true);
@@ -113,14 +124,36 @@ export default function IpAllowlist() {
   function openEntry(e: IpAllowlistEntry) {
     if (!canManage) return setView(e);
     setErr('');
+    setTouched(false);
     setEditing(e);
     setForm({ cidr: addressText(e.cidr), description: e.description ?? '' });
     setOpen(true);
   }
 
   const entries = data.data || [];
-  const cidrChanged =
-    !!editing && form.cidr.trim() !== addressText(editing.cidr);
+  const check = checkAllowlistCidr(form.cidr);
+  const cidrChanged = !!editing && check.ok && check.cidr !== editing.cidr;
+  const descChanged =
+    !!editing &&
+    (form.description.trim() || null) !== (editing.description || null);
+  const dirty = editing ? cidrChanged || descChanged : !!form.cidr.trim();
+
+  // The line under the address: the server's error, a local problem once
+  // shown, what a valid address covers, or an example.
+  const addressError =
+    err || (touched && form.cidr.trim() && !check.ok ? check.error : '');
+  const addressNote = addressError
+    ? addressError
+    : check.ok
+      ? check.covers
+      : ADDRESS_EXAMPLE;
+
+  function submit() {
+    setTouched(true);
+    setErr('');
+    if (!check.ok || !dirty) return;
+    save.mutate();
+  }
 
   return (
     <>
@@ -220,64 +253,66 @@ export default function IpAllowlist() {
         open={open}
         onClose={() => setOpen(false)}
         title={editing ? 'Edit address' : 'Add address'}
-        subtitle={editing ? addressText(editing.cidr) : undefined}
+        subtitle={
+          editing ? `Added ${shortDate(editing.created_at)}` : undefined
+        }
       >
         <form
           className="form-stack"
+          noValidate
           onSubmit={(e) => {
             e.preventDefault();
-            setErr('');
-            save.mutate();
+            submit();
           }}
         >
-          <ErrorBox message={err} />
-          <FormSection title="Address">
-            <Field
-              label="IP address or range"
-              hint="A single address, like 41.0.0.10, or a range, like 41.0.0.0/24. Public addresses only, up to a /24 for IPv4 or a /48 for IPv6."
+          <label className="field">
+            <span>IP address or range</span>
+            <input
+              autoFocus={!editing}
+              inputMode="text"
+              autoCapitalize="off"
+              autoCorrect="off"
+              autoComplete="off"
+              spellCheck={false}
+              enterKeyHint="done"
+              aria-invalid={addressError ? true : undefined}
+              aria-describedby={addressMsgId}
+              value={form.cidr}
+              onBlur={() => setTouched(true)}
+              onChange={(e) => {
+                setErr('');
+                setForm((f) => ({ ...f, cidr: e.target.value }));
+              }}
+            />
+            <small
+              id={addressMsgId}
+              className={addressError ? 'field-error' : undefined}
+              role={addressError ? 'alert' : 'status'}
             >
-              <input
-                required
-                autoFocus
-                inputMode="text"
-                autoCapitalize="off"
-                autoCorrect="off"
-                spellCheck={false}
-                placeholder="41.0.0.10"
-                value={form.cidr}
-                onChange={(e) =>
-                  setForm((f) => ({ ...f, cidr: e.target.value }))
-                }
-              />
-            </Field>
-            {cidrChanged && (
-              <p className="fs-hint" role="status">
-                Saving moves the allowlist to the new address. SIP from{' '}
-                {addressText(editing!.cidr)} is blocked within a few seconds.
-              </p>
+              {addressNote}
+            </small>
+            {cidrChanged && !addressError && (
+              <small>
+                Saving stops SIP from {addressText(editing!.cidr)} within a few
+                seconds.
+              </small>
             )}
-            <Field
-              label="Description"
-              hint="Optional. So you can tell addresses apart, e.g. Head office PBX"
-            >
-              <input
-                maxLength={DESCRIPTION_MAX}
-                value={form.description}
-                onChange={(e) =>
-                  setForm((f) => ({ ...f, description: e.target.value }))
-                }
-              />
-            </Field>
-          </FormSection>
+          </label>
+          <Field label="Description" hint="Optional, e.g. Head office PBX">
+            <input
+              maxLength={DESCRIPTION_MAX}
+              value={form.description}
+              onChange={(e) =>
+                setForm((f) => ({ ...f, description: e.target.value }))
+              }
+            />
+          </Field>
           <DrawerActions>
-            <button
-              className="btn primary"
-              disabled={save.isPending || !form.cidr.trim()}
-            >
+            <button className="btn primary" disabled={save.isPending || !dirty}>
               {save.isPending
                 ? 'Saving…'
                 : editing
-                  ? 'Save address'
+                  ? 'Save changes'
                   : 'Add address'}
             </button>
             <button
@@ -291,7 +326,7 @@ export default function IpAllowlist() {
           {editing && (
             <HoldToDelete
               label="Hold to remove address"
-              consequence={REMOVE_CONSEQUENCE}
+              consequence={`Removing it stops SIP from ${addressText(editing.cidr)} within a few seconds.`}
               onHold={() => del.mutate(editing)}
             />
           )}
