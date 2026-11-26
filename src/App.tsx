@@ -22,6 +22,7 @@ import WebhookEdit from './pages/WebhookEdit';
 import EventTester from './pages/EventTester';
 import WebSocketPage from './pages/WebSocket';
 import ApiKeys from './pages/ApiKeys';
+import IpAllowlist from './pages/IpAllowlist';
 import Organisation from './pages/Organisation';
 import Settings from './pages/Settings';
 function Protected() {
@@ -46,6 +47,7 @@ export default function App() {
           <Route path="/gateways" element={<Gateways />} />
           <Route path="/gateways/new" element={<GatewayEdit />} />
           <Route path="/gateways/:id/edit" element={<GatewayEdit />} />
+          <Route path="/ip-allowlist" element={<IpAllowlist />} />
           <Route path="/calls" element={<Calls />} />
           <Route path="/recordings" element={<Recordings />} />
           <Route path="/audio-files" element={<AudioFiles />} />

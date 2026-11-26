@@ -8,6 +8,7 @@
 | Numbers        | Full supported CRUD                                           |
 | SIP Users      | Full supported CRUD + password rotation                       |
 | SIP Gateways   | Full supported CRUD + test                                    |
+| IP Allowlist   | Full supported CRUD (owners and admins edit, others view)     |
 | Calls          | List/view/originate/hangup                                    |
 | Recordings     | List/view/play/download/delete                                |
 | Applications   | Full supported CRUD + visual flow builder                     |

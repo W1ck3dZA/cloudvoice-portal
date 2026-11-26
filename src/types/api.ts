@@ -381,3 +381,14 @@ export interface CallCenterMember {
   bridged_at: string | null;
   left_at: string | null;
 }
+export interface IpAllowlistEntry {
+  id: string;
+  organisation_id: string;
+  /** Canonical CIDR; a single address is /32 (IPv4) or /128 (IPv6). */
+  cidr: string;
+  description: string | null;
+  created_by: string | null;
+  updated_by: string | null;
+  created_at: string;
+  updated_at: string;
+}
