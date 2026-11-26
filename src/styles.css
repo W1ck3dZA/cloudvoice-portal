@@ -4366,3 +4366,86 @@ tr.tap:hover td {
   border-color: var(--inf);
   box-shadow: 0 0 0 3px var(--inb);
 }
+
+/* IP allowlist: inline add and in-place change, built on the settings rows. */
+.allow-page {
+  display: flex;
+  flex-direction: column;
+  gap: 16px;
+  max-width: var(--form-max);
+}
+.allow-page .page-header {
+  margin-bottom: 10px;
+}
+.allow-form {
+  display: flex;
+  flex-direction: column;
+  gap: 16px;
+  margin-top: 12px;
+}
+.set-edit.allow-form {
+  margin-top: 0;
+}
+.allow-fields {
+  display: grid;
+  gap: 16px;
+}
+@media (min-width: 640px) {
+  .allow-fields {
+    grid-template-columns: minmax(0, 1fr) minmax(0, 1fr);
+    align-items: start;
+  }
+}
+.allow-fields .field small {
+  font-weight: 400;
+}
+.allow-list {
+  list-style: none;
+  margin: 0;
+  padding: 0;
+}
+.allow-list > .set-row:first-child {
+  border-top: 0;
+}
+.allow-addr {
+  font-size: 15px !important;
+  overflow-wrap: anywhere;
+}
+.allow-list .set-head {
+  flex-wrap: nowrap;
+}
+.allow-open {
+  display: block;
+  padding: 4px 0;
+  border: 0;
+  background: none;
+  color: inherit;
+  font: inherit;
+  text-align: left;
+  cursor: pointer;
+  border-radius: 8px;
+}
+.allow-open:hover .allow-addr {
+  color: var(--accent-ink);
+}
+.allow-actions {
+  display: flex;
+  flex: none;
+  align-items: center;
+  gap: 8px;
+}
+/* Phones: tapping the address opens it; only the remove button stays. */
+@media (max-width: 639px) {
+  .allow-change {
+    display: none;
+  }
+}
+.allow-actions .btn {
+  min-height: 40px;
+  padding: 9px 16px;
+}
+.set-intro {
+  margin: 0 0 8px;
+  font-size: 13px;
+  color: var(--mute);
+}
